@@ -21,6 +21,10 @@ La lecture NFC demande un compte Apple Developer payant (la capacité « NFC Tag
 
 L'accueil reprend la maquette « ManaProcess » : barre d'application (recherche, alertes, menu), taux d'occupation, quatre tuiles, liste « À traiter », courbe d'occupation et répartition du parc. La barre d'onglets donne accès à Accueil, Parc, Locations, Entretien, Rapports et Plus ; le bouton central ouvre les actions rapides (dont le scan NFC). L'écran Entretien présente deux tuiles (contrôles à venir, actions en cours), le matériel à désinfecter, en maintenance, et les prochains contrôles sur 7 ou 30 jours. L'écran Locations sépare les contrats en cours, à renouveler (retour sous 14 jours) et terminés (historique de démonstration), avec tri, filtre par commune et menu par bénéficiaire. L'écran Parc propose quatre vues (Liste, Plan, Statistiques, Maintenance), des tuiles par état, des favoris et un menu d'actions par carte. L'historique d'occupation et la tendance « +5 % » sont des valeurs de démonstration.
 
+## Rapports
+
+Cinq vues : Vue d'ensemble (rentabilité du parc, tuiles, courbe d'occupation sur 7 jours, 30 jours ou 12 mois, répartition, activité), Rentabilité (classement par équipement), Utilisation (jours de location cumulés), Activité, Exports (inventaire, contrats, rentabilité copiés au format CSV). Les tendances « +5 % » et « +12 % » et les courbes passées sont des valeurs de démonstration.
+
 ## Rentabilité
 
 Chaque fiche compare les loyers encaissés depuis l'achat au prix d'achat (pourcentage amorti, semaines restantes ou bénéfice). L'onglet Rapports donne la synthèse du parc et le classement par équipement. Les prix d'achat viennent du catalogue quand il en donne un plausible, sinon ils sont estimés (indiqué « estimé ») ; les jours de location passés sont des valeurs de démonstration.
