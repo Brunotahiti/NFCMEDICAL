@@ -19,7 +19,7 @@ La lecture NFC demande un compte Apple Developer payant (la capacité « NFC Tag
 
 ## Tableau de bord et rapports
 
-L'accueil reprend la maquette « ManaProcess » : barre d'application (recherche, alertes, menu), taux d'occupation, quatre tuiles, liste « À traiter », courbe d'occupation et répartition du parc. La barre d'onglets donne accès à Accueil, Parc, Locations, Entretien et Rapports ; le bouton central ouvre les actions rapides (dont le scan NFC) et l'icône de profil ouvre le menu (Paramètres, plan, crédits). L'écran Parc propose quatre vues (Liste, Plan, Statistiques, Maintenance), des tuiles par état, des favoris et un menu d'actions par carte. L'historique d'occupation et la tendance « +5 % » sont des valeurs de démonstration.
+L'accueil reprend la maquette « ManaProcess » : barre d'application (recherche, alertes, menu), taux d'occupation, quatre tuiles, liste « À traiter », courbe d'occupation et répartition du parc. La barre d'onglets donne accès à Accueil, Parc, Locations, Entretien, Rapports et Plus ; le bouton central ouvre les actions rapides (dont le scan NFC). L'écran Entretien présente deux tuiles (contrôles à venir, actions en cours), le matériel à désinfecter, en maintenance, et les prochains contrôles sur 7 ou 30 jours. L'écran Locations sépare les contrats en cours, à renouveler (retour sous 14 jours) et terminés (historique de démonstration), avec tri, filtre par commune et menu par bénéficiaire. L'écran Parc propose quatre vues (Liste, Plan, Statistiques, Maintenance), des tuiles par état, des favoris et un menu d'actions par carte. L'historique d'occupation et la tendance « +5 % » sont des valeurs de démonstration.
 
 ## Rentabilité
 
