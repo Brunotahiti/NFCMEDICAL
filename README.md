@@ -17,6 +17,10 @@ Démo d'application iPhone pour gérer un parc de matériel médical en location
 
 La lecture NFC demande un compte Apple Developer payant (la capacité « NFC Tag Reading » n'est pas proposée aux comptes gratuits) et un vrai iPhone. Avec un compte gratuit, retirez la capacité NFC dans Signing & Capabilities : l'app se lance quand même et simule le scan, comme dans le simulateur.
 
+## Durée des locations
+
+Chaque fiche en location affiche depuis combien de temps le matériel est loué, combien de temps il reste, la durée prévue et une barre de progression ; « + 1 semaine » repousse le retour. La durée prévue se choisit à la mise en location (1, 2, 4 semaines ou 3 mois). L'écran Locations et les cartes du Parc reprennent ces durées.
+
 ## Puces NFC : un lien par équipement
 
 Chaque puce contient un lien (enregistrement NDEF de type URI), par exemple `https://votre-site.pf/materiel/LIT-0142`. À la lecture, l'app retrouve l'équipement dont le lien est identique, ou dont la référence termine le lien.

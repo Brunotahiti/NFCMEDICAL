@@ -147,6 +147,19 @@ main>*{flex:none}
 .mp-r{font:600 8.5px var(--f-text);letter-spacing:.14em;fill:var(--map-line);text-anchor:middle}
 .mp-k{font:500 9px var(--f-text);fill:var(--muted)}
 .map [data-place]{cursor:pointer}
+.rent{background:var(--surface);border-radius:22px;box-shadow:var(--shadow);padding:16px;display:flex;flex-direction:column;gap:12px}
+.rent .cols{display:grid;grid-template-columns:1fr 1fr}
+.rent .cols>div+div{border-left:1px solid var(--line);padding-left:16px}
+.rent small{display:block;font-size:12.5px;color:var(--muted)}
+.rent b{display:block;font-family:var(--f-display);font-size:23px;font-weight:700;letter-spacing:-.02em;line-height:1.25}
+.rent .late b{color:var(--crit)}
+.rent .foot{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.bar{display:block;height:10px;border-radius:5px;background:var(--surface-2);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,var(--hero),var(--hero2))}
+.bar.over i{background:var(--crit)}
+.mini .bar{height:4px;margin-top:5px}
+.durs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.durs .chip{background:var(--bg)}
 .credits{align-self:center;font-size:13px;color:var(--muted);text-decoration:underline;padding:8px}
 .cred{font-size:13px;padding:8px 0;border-top:1px solid var(--line)}
 .cred b{display:block;font-weight:600}.cred span{color:var(--muted)}
@@ -425,6 +438,18 @@ function dateOf(d){var t=new Date();t.setHours(12,0,0,0);t.setDate(t.getDate()+d
 function fmt(d){return dateOf(d).toLocaleDateString('fr-FR',{day:'numeric',month:'short'});}
 function rel(d){if(d===0)return 'Aujourd\'hui';if(d===-1)return 'Hier';if(d===1)return 'Demain';return fmt(d);}
 function initials(n){return n.split(' ').filter(function(w){return /^[A-ZÉ]/.test(w);}).slice(0,2).map(function(w){return w[0];}).join('');}
+function jours(n){return n+' jour'+(n>1?'s':'');}
+function sem(n){var w=Math.floor(n/7),d=n%7;return n<14?jours(n):w+' sem.'+(d?' '+d+' j':'');}
+/* Durée de location : écoulée, prévue, restante (négative = retard). */
+function rent(e){var el=-e.since,tot=e.end-e.since;return {el:el,tot:tot,left:e.end,pct:Math.max(3,Math.min(100,Math.round(el/Math.max(tot,1)*100)))};}
+function leftTxt(r){return r.left<0?'retard de '+jours(-r.left):r.left===0?'retour aujourd\'hui':'reste '+sem(r.left);}
+function rentCard(e){
+  var r=rent(e),late=r.left<0;
+  return '<div class="rent"><div class="cols"><div><small>Loué depuis</small><b class="num">'+(r.el===0?'Aujourd\'hui':sem(r.el))+'</b><small>début le '+fmt(e.since)+'</small></div>'
+    +'<div class="'+(late?'late':'')+'"><small>'+(late?'En retard de':r.left===0?'Retour prévu':'Encore')+'</small><b class="num">'+(late?sem(-r.left):r.left===0?'Aujourd\'hui':sem(r.left))+'</b><small>retour le '+fmt(e.end)+'</small></div></div>'
+    +'<div class="bar'+(late?' over':'')+'" role="img" aria-label="'+r.pct+' % de la durée prévue écoulée"><i style="width:'+r.pct+'%"></i></div>'
+    +'<div class="foot"><span>Durée prévue : '+jours(r.tot)+(r.tot>=14?' ('+sem(r.tot)+')':'')+'</span><button class="more" data-act="extend">+ 1 semaine</button></div></div>';
+}
 function count(st){return equip.filter(function(e){return e.st===st;}).length;}
 function pill(e){return '<span class="pill '+STATUS[e.st].c+'">'+ic(PIC[e.st])+STATUS[e.st].l+'</span>';}
 function where(e){
@@ -531,7 +556,7 @@ function parcRows(){
     if(!q)return true;
     return (e.n+' '+e.ref+' '+e.m+' '+(e.pt?pat(e.pt).n:'')).toLowerCase().indexOf(q)>=0;
   }).map(function(e){
-    return card(e,null,'<span class="ft"><span class="dt">'+ic('cal')+(e.since===0?'Aujourd\'hui':fmt(e.since))+'</span><span class="pxc num">'+xpf(e.px)+'</span></span>');
+    return card(e,null,'<span class="ft"><span class="dt">'+ic('cal')+(e.st==='loc'?(function(r){return r.left<0?'Retard '+(-r.left)+' j':r.left===0?'Retour auj.':'Reste '+r.left+' j';})(rent(e)):(e.since===0?'Aujourd\'hui':fmt(e.since)))+'</span><span class="pxc num">'+xpf(e.px)+'</span></span>');
   }).join('');
   return r||'<div class="empty" style="grid-column:1/-1">Aucun équipement ne correspond.</div>';
 }
@@ -547,7 +572,7 @@ function viewLoc(){
     return '<article class="pcard" style="--pc:var('+PC[i%PC.length]+')"><header><span class="avatar">'+initials(p.n)+'</span><div class="who"><div class="t">'+esc(p.n)+'</div><div class="s">'+esc(p.z)+'</div></div>'
       +(back?'<span class="pill p-loc">'+ic('ret')+'Retour auj.</span>':'<span class="pill p-dispo">'+ic('okc')+'Actif</span>')
       +'<div class="amt num">'+xpf(sum)+'<small>/ semaine</small></div></header>'
-      +it.map(function(e){return '<button class="mini" data-open="'+e.id+'">'+ph(e)+'<span class="nm"><b>'+esc(e.n)+'</b><span class="when">'+ic('cal')+(e.end===0?'Retour aujourd\'hui':'Depuis le '+fmt(e.since))+'</span></span><span class="chev">'+ICON.chev+'</span></button>';}).join('')+'</article>';
+      +it.map(function(e){return '<button class="mini" data-open="'+e.id+'">'+ph(e)+'<span class="nm"><b>'+esc(e.n)+'</b><span class="when">'+ic('cal')+'Depuis '+(rent(e).el===0?'aujourd\'hui':sem(rent(e).el))+' · '+leftTxt(rent(e))+'</span><span class="bar'+(rent(e).left<0?' over':'')+'"><i style="width:'+rent(e).pct+'%"></i></span></span><span class="chev">'+ICON.chev+'</span></button>';}).join('')+'</article>';
   }).join('');
   var np=patients.filter(function(p){return rented.some(function(e){return e.pt===p.id;});}).length;
   return '<div class="stat2"><div class="st-a">'+ic('coins')+'<div><b class="num">'+xpf(rev)+'</b><span>Loyers par semaine</span></div></div><div>'+ic('users')+'<div><b class="num">'+np+'</b><span>Bénéficiaires équipés</span></div></div></div>'
@@ -597,9 +622,10 @@ function renderDetail(){
     +'<div class="dbody pad"><div class="dhead"><h2>'+esc(e.n)+'</h2><p>'+esc(e.m)+' · '+e.ref+'</p></div>'
     +'<div class="tagcard">'+ICON.nfc+'<div><small>Lien de la puce NFC</small><code class="lnk">'+(e.link?esc(midLink(e.link)):'Aucune puce associée')+'</code></div><button class="cp" data-act="copy" aria-label="Copier le lien">'+ic('copy')+'</button></div>'
     +'<button class="btn soft prog" data-act="program">'+ICON.nfc+'Écrire le lien sur une puce'+'</button>'
+    +(e.st==='loc'?rentCard(e):'')
     +'<dl class="kv" style="margin:0">'
     +'<div><dt>'+ic('pin')+'Emplacement</dt><dd>'+esc(where(e))+'</dd></div>'
-    +(p?'<div><dt>'+ic('heart')+'Prise en charge</dt><dd>'+esc(p.z.split(' · ')[1]||p.z)+'</dd></div><div><dt>'+ic('cal')+'En location depuis</dt><dd>'+fmt(e.since)+' ('+(-e.since)+' j)</dd></div>'+(e.end!==null?'<div><dt>'+ic('ret')+'Retour prévu</dt><dd>'+(e.end===0?'<span class="pill p-dispo">Aujourd\'hui</span>':rel(e.end))+'</dd></div>':''):'')
+    +(p?'<div><dt>'+ic('heart')+'Prise en charge</dt><dd>'+esc(p.z.split(' · ')[1]||p.z)+'</dd></div>':'')
     +'<div><dt>'+ic('coins')+'Tarif de location</dt><dd class="num">'+xpf(e.px)+' / semaine</dd></div>'
     +'<div><dt>'+ic('tool')+'Prochain contrôle</dt>'+chk+'</div></dl>'
     +'<section>'+secH('pin','Localisation')+'<div class="mapcard">'+mapSvg([{id:placeOf(e),n:null}],placeOf(e),false)+'<div class="mapfoot"><div><b>'+esc(place(placeOf(e)).n)+'</b><span>'+esc(place(placeOf(e)).a)+'</span></div>'+mapBtn(placeOf(e))+'</div></div></section>'
@@ -746,11 +772,15 @@ function openState(st){
 /* Lien ouvert directement (puce scannée hors de l'app) : …#LIT-0142 ouvre la fiche. */
 function openFromHash(){var r=decodeURIComponent(location.hash.slice(1)).toUpperCase();var e=equip.filter(function(x){return x.ref===r;})[0];if(e)openDetail(e.id);}
 window.addEventListener('hashchange',openFromHash);
+var DURS=[[7,'1 semaine'],[14,'2 semaines'],[28,'4 semaines'],[90,'3 mois']],rentDur=28;
 function pickPatient(){
-  openSheet('<h2>Attribuer à un bénéficiaire</h2><div class="plist">'+patients.map(function(p){
+  openSheet('<h2>Mettre en location</h2><label class="fld" style="text-align:center">Durée prévue</label><div class="durs">'+DURS.map(function(d){
+      return '<button class="chip" data-dur="'+d[0]+'" aria-pressed="'+(rentDur===d[0])+'">'+d[1]+'</button>';}).join('')+'</div>'
+    +'<label class="fld" style="text-align:center">Bénéficiaire</label><div class="plist">'+patients.map(function(p){
     return '<button class="pick" data-pick="'+p.id+'"><span class="avatar">'+initials(p.n)+'</span><span class="body"><div class="t">'+esc(p.n)+'</div><div class="s">'+esc(p.z)+'</div></span></button>';}).join('')
     +'</div><button class="btn soft" data-act="close-sheet">Annuler</button>');
 }
+
 var toastT;
 function toast(t){toastEl.textContent=t;toastEl.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){toastEl.classList.remove('show');},2200);}
 
@@ -763,9 +793,11 @@ function act(a,e){
   renderDetail();
 }
 document.addEventListener('click',function(x){
-  var t=x.target.closest('[data-tab],[data-open],[data-act],[data-filter],[data-pick],[data-link],[data-place],[data-mode],[data-state],[data-tag],[data-map]');if(!t)return;
+  var t=x.target.closest('[data-tab],[data-open],[data-act],[data-filter],[data-pick],[data-link],[data-place],[data-mode],[data-state],[data-tag],[data-map],[data-dur]');if(!t)return;
   var d=t.dataset;
-  if(d.map){openMap(d.map);}
+  if(d.dur){rentDur=+d.dur;pickPatient();}
+  else if(d.act==='extend'){var xe=byId(S.cur);xe.end+=7;xe.h.push(ev(0,'Location prolongée d\'une semaine'));renderDetail();toast('Retour repoussé au '+fmt(xe.end));}
+  else if(d.map){openMap(d.map);}
   else if(d.tag){openTag(d.tag);}
   else if(d.act==='settings')openSettings();
   else if(d.act==='close-settings')closeSettings();
@@ -784,7 +816,7 @@ document.addEventListener('click',function(x){
   else if(d.link){var lu=pendingLink;pendingLink=null;assignLink(byId(d.link),lu);}
   else if(d.open){closeSheet();openDetail(d.open);}
   else if(d.filter){closeSheet();S.filter=d.filter;S.mode='grid';S.tab='parc';render();}
-  else if(d.pick){var e=byId(S.cur),p=pat(d.pick);e.st='loc';e.pt=p.id;e.since=0;e.end=28;e.h.push(ev(0,'Livré chez '+p.n));closeSheet();renderDetail();toast('Location démarrée');}
+  else if(d.pick){var e=byId(S.cur),p=pat(d.pick);e.st='loc';e.pt=p.id;e.since=0;e.end=rentDur;e.h.push(ev(0,'Livré chez '+p.n+' pour '+DURS.filter(function(x){return x[0]===rentDur;})[0][1]));closeSheet();renderDetail();toast('Location démarrée');}
   else if(d.act==='scan')startScan();
   else if(d.act==='close-sheet')closeSheet();
   else if(d.act==='credits')openSheet('<h2>Crédits photos</h2><p class="sub">Photos issues de Wikimedia Commons, redimensionnées.</p><div class="plist">'+CREDITS.map(function(c){return '<div class="cred"><b>'+c[0]+'</b><span>'+c[1]+' · '+c[2]+'</span></div>';}).join('')+'</div><button class="btn soft" data-act="close-sheet">Fermer</button>');
