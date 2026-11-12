@@ -6,4 +6,5 @@ Démo d'application mobile pour gérer un parc de matériel médical en location
 - Écrans : tableau de bord, inventaire du parc, scan NFC, locations par bénéficiaire, entretien (désinfection, maintenance, contrôles).
 - `photos/` : photos du matériel, issues de Wikimedia Commons (auteurs et licences dans l'écran Parc, « Crédits photos »).
 - La lecture NFC est simulée : Safari sur iPhone ne donne pas accès au NFC depuis une page web. Une version réelle demandera une application native (Core NFC).
+- Les tarifs sont en francs pacifiques (XPF).
 - Toutes les données sont fictives et remises à zéro à chaque rechargement.

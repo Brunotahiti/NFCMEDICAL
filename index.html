@@ -133,7 +133,7 @@ main>*{flex:none}
 .mini .when{font-size:12px;color:var(--muted);flex:none}
 .stat2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .stat2 div{background:var(--surface);border-radius:18px;box-shadow:var(--shadow);padding:14px}
-.stat2 b{display:block;font-family:var(--f-display);font-size:24px;font-weight:700;letter-spacing:-.02em}
+.stat2 b{display:block;font-family:var(--f-display);font-size:21px;font-weight:700;letter-spacing:-.02em}
 .stat2 span{font-size:13px;color:var(--muted)}
 
 /* Barre d'onglets */
@@ -257,20 +257,20 @@ var patients=[
 ];
 var seq=0;
 function ev(d,txt){return {d:d,txt:txt,q:seq++};}
-/* d = décalage en jours par rapport à aujourd'hui ; prix = tarif de location hebdomadaire en € */
+/* d = décalage en jours par rapport à aujourd'hui ; px = tarif de location hebdomadaire en francs pacifiques (XPF) */
 var equip=[
-  {id:'e1',ph:'lit',k:'lit',n:'Lit médicalisé 3 fonctions',m:'Alto Confort 90',ref:'LIT-0142',uid:'04:A2:3B:91:7C:5E:80',st:'loc',pt:'p1',since:-38,end:22,chk:64,px:14,h:[ev(-38,'Livré et installé chez Jeanne Morel'),ev(-40,'Désinfection validée'),ev(-120,'Contrôle annuel conforme')]},
-  {id:'e2',ph:'matelas-air',k:'matelas',n:'Matelas à air anti-escarres',m:'AirSoft Classe II',ref:'MAT-0077',uid:'04:5F:19:C2:8A:6D:81',st:'loc',pt:'p1',since:-38,end:22,chk:-3,px:11,h:[ev(-38,'Livré chez Jeanne Morel'),ev(-41,'Désinfection validée')]},
-  {id:'e3',ph:'oxy',k:'oxy',n:'Concentrateur d\'oxygène 5 L',m:'OxyFlow 5',ref:'OXY-0031',uid:'04:D8:72:0B:4E:A1:80',st:'loc',pt:'p3',since:-12,end:0,chk:18,px:23,h:[ev(-12,'Livré chez Lucie Bernard'),ev(-13,'Filtre remplacé, débit vérifié à 5 L/min'),ev(-14,'Désinfection validée')]},
-  {id:'e4',ph:'fauteuil',k:'fauteuil',n:'Fauteuil roulant manuel',m:'Léger Pliant 43 cm',ref:'FRM-0208',uid:'04:1C:E4:55:9B:3F:80',st:'loc',pt:'p4',since:-21,end:9,chk:140,px:9,h:[ev(-21,'Livré chez Henri Girard'),ev(-22,'Désinfection validée')]},
-  {id:'e5',ph:'leve',k:'leve',n:'Lève-personne électrique',m:'Transfert 150 kg',ref:'LEV-0019',uid:'04:7A:0D:B6:21:C8:81',st:'loc',pt:'p5',since:-64,end:30,chk:6,px:19,h:[ev(-64,'Livré à la Résidence Les Tilleuls'),ev(-66,'Sangles contrôlées')]},
-  {id:'e6',ph:'lit-bas',k:'lit',n:'Lit médicalisé Alzheimer',m:'Alto Bas 20 cm',ref:'LIT-0156',uid:'04:93:6E:F0:3D:17:80',st:'loc',pt:'p2',since:-6,end:50,chk:200,px:17,h:[ev(-6,'Livré chez André Lefèvre'),ev(-7,'Désinfection validée')]},
-  {id:'e7',ph:'pompe',k:'pompe',n:'Pompe à perfusion',m:'VoluMed P2',ref:'PMP-0044',uid:'04:E1:58:2A:C7:90:80',st:'desinf',pt:null,since:-1,end:null,chk:45,px:21,h:[ev(-1,'Retour de location, en attente de désinfection'),ev(-30,'Livré chez un patient')]},
-  {id:'e8',ph:'fauteuil-transfert',k:'fauteuil',n:'Fauteuil de transfert',m:'Transit Confort 48 cm',ref:'FRT-0063',uid:'04:2B:A9:74:10:DE:81',st:'desinf',pt:null,since:0,end:null,chk:88,px:16,h:[ev(0,'Retour de location, en attente de désinfection')]},
-  {id:'e9',ph:'oxy-portable',k:'oxy',n:'Concentrateur d\'oxygène portable',m:'OxyGo Mobile',ref:'OXY-0038',uid:'04:6C:33:8F:E2:4B:80',st:'maint',pt:null,since:-4,end:null,chk:-9,px:29,h:[ev(-4,'Panne signalée : alarme batterie'),ev(-5,'Retour de location')]},
-  {id:'e10',ph:'deamb',k:'deamb',n:'Déambulateur 4 roues',m:'Rollator Alu',ref:'DEA-0112',uid:'04:F4:07:D1:5A:26:80',st:'dispo',pt:null,since:-9,end:null,chk:120,px:5,h:[ev(-9,'Désinfection validée, remis en stock')]},
-  {id:'e11',ph:'lit',k:'lit',n:'Lit médicalisé 3 fonctions',m:'Alto Confort 90',ref:'LIT-0149',uid:'04:38:C5:6B:92:0A:81',st:'dispo',pt:null,since:-3,end:null,chk:75,px:14,h:[ev(-3,'Désinfection validée, remis en stock'),ev(-4,'Retour de location')]},
-  {id:'e12',ph:'surmatelas',k:'matelas',n:'Surmatelas à air à bulles',m:'AirBulle Classe IA',ref:'MAT-0081',uid:'04:8D:21:AE:F6:73:80',st:'dispo',pt:null,since:-15,end:null,chk:12,px:7,h:[ev(-15,'Désinfection validée, remis en stock')]}
+  {id:'e1',ph:'lit',k:'lit',n:'Lit médicalisé 3 fonctions',m:'Alto Confort 90',ref:'LIT-0142',uid:'04:A2:3B:91:7C:5E:80',st:'loc',pt:'p1',since:-38,end:22,chk:64,px:1700,h:[ev(-38,'Livré et installé chez Jeanne Morel'),ev(-40,'Désinfection validée'),ev(-120,'Contrôle annuel conforme')]},
+  {id:'e2',ph:'matelas-air',k:'matelas',n:'Matelas à air anti-escarres',m:'AirSoft Classe II',ref:'MAT-0077',uid:'04:5F:19:C2:8A:6D:81',st:'loc',pt:'p1',since:-38,end:22,chk:-3,px:1300,h:[ev(-38,'Livré chez Jeanne Morel'),ev(-41,'Désinfection validée')]},
+  {id:'e3',ph:'oxy',k:'oxy',n:'Concentrateur d\'oxygène 5 L',m:'OxyFlow 5',ref:'OXY-0031',uid:'04:D8:72:0B:4E:A1:80',st:'loc',pt:'p3',since:-12,end:0,chk:18,px:2750,h:[ev(-12,'Livré chez Lucie Bernard'),ev(-13,'Filtre remplacé, débit vérifié à 5 L/min'),ev(-14,'Désinfection validée')]},
+  {id:'e4',ph:'fauteuil',k:'fauteuil',n:'Fauteuil roulant manuel',m:'Léger Pliant 43 cm',ref:'FRM-0208',uid:'04:1C:E4:55:9B:3F:80',st:'loc',pt:'p4',since:-21,end:9,chk:140,px:1100,h:[ev(-21,'Livré chez Henri Girard'),ev(-22,'Désinfection validée')]},
+  {id:'e5',ph:'leve',k:'leve',n:'Lève-personne électrique',m:'Transfert 150 kg',ref:'LEV-0019',uid:'04:7A:0D:B6:21:C8:81',st:'loc',pt:'p5',since:-64,end:30,chk:6,px:2300,h:[ev(-64,'Livré à la Résidence Les Tilleuls'),ev(-66,'Sangles contrôlées')]},
+  {id:'e6',ph:'lit-bas',k:'lit',n:'Lit médicalisé Alzheimer',m:'Alto Bas 20 cm',ref:'LIT-0156',uid:'04:93:6E:F0:3D:17:80',st:'loc',pt:'p2',since:-6,end:50,chk:200,px:2000,h:[ev(-6,'Livré chez André Lefèvre'),ev(-7,'Désinfection validée')]},
+  {id:'e7',ph:'pompe',k:'pompe',n:'Pompe à perfusion',m:'VoluMed P2',ref:'PMP-0044',uid:'04:E1:58:2A:C7:90:80',st:'desinf',pt:null,since:-1,end:null,chk:45,px:2500,h:[ev(-1,'Retour de location, en attente de désinfection'),ev(-30,'Livré chez un patient')]},
+  {id:'e8',ph:'fauteuil-transfert',k:'fauteuil',n:'Fauteuil de transfert',m:'Transit Confort 48 cm',ref:'FRT-0063',uid:'04:2B:A9:74:10:DE:81',st:'desinf',pt:null,since:0,end:null,chk:88,px:1900,h:[ev(0,'Retour de location, en attente de désinfection')]},
+  {id:'e9',ph:'oxy-portable',k:'oxy',n:'Concentrateur d\'oxygène portable',m:'OxyGo Mobile',ref:'OXY-0038',uid:'04:6C:33:8F:E2:4B:80',st:'maint',pt:null,since:-4,end:null,chk:-9,px:3500,h:[ev(-4,'Panne signalée : alarme batterie'),ev(-5,'Retour de location')]},
+  {id:'e10',ph:'deamb',k:'deamb',n:'Déambulateur 4 roues',m:'Rollator Alu',ref:'DEA-0112',uid:'04:F4:07:D1:5A:26:80',st:'dispo',pt:null,since:-9,end:null,chk:120,px:600,h:[ev(-9,'Désinfection validée, remis en stock')]},
+  {id:'e11',ph:'lit',k:'lit',n:'Lit médicalisé 3 fonctions',m:'Alto Confort 90',ref:'LIT-0149',uid:'04:38:C5:6B:92:0A:81',st:'dispo',pt:null,since:-3,end:null,chk:75,px:1700,h:[ev(-3,'Désinfection validée, remis en stock'),ev(-4,'Retour de location')]},
+  {id:'e12',ph:'surmatelas',k:'matelas',n:'Surmatelas à air à bulles',m:'AirBulle Classe IA',ref:'MAT-0081',uid:'04:8D:21:AE:F6:73:80',st:'dispo',pt:null,since:-15,end:null,chk:12,px:850,h:[ev(-15,'Désinfection validée, remis en stock')]}
 ];
 var CREDITS=[['Lit médicalisé','Blogotron','CC0'],['Lit bas','Tiia Monto','CC BY-SA 4.0'],['Matelas à air','BrokenSphere','CC BY-SA 3.0'],['Surmatelas à bulles','Jorgebarrios','CC BY-SA 3.0'],['Concentrateur d\'oxygène','BrokenSphere','CC BY-SA 3.0'],['Concentrateur portable','Oxystore','CC BY-SA 4.0'],['Fauteuil roulant manuel','Davronov Alexander','CC BY-SA 4.0'],['Fauteuil de transfert','SuddenFrost','CC BY-SA 4.0'],['Lève-personne','Solmarsol','CC BY-SA 3.0'],['Pompe à perfusion','Fatimah Bello','CC0'],['Déambulateur','sani-aktiv.de','CC BY-SA 2.0']];
 var scanOrder=['e3','e8','e11','e9','e1','e7','e5','e10'], scanIdx=0;
@@ -280,6 +280,7 @@ var $=function(id){return document.getElementById(id);};
 var main=$('main'),detail=$('detail'),sheet=$('sheet'),scrim=$('scrim'),toastEl=$('toast');
 var timers=[];
 
+function xpf(n){return n.toLocaleString('fr-FR').replace(/\s/g,'\u202f')+'\u00a0XPF';}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function byId(id){for(var i=0;i<equip.length;i++)if(equip[i].id===id)return equip[i];}
 function pat(id){for(var i=0;i<patients.length;i++)if(patients[i].id===id)return patients[i];}
@@ -323,9 +324,9 @@ function viewHome(){
   acts.sort(function(a,b){return b.h.d-a.h.d||b.h.q-a.h.q;});
   var act=acts.slice(0,5).map(function(a){return '<button class="row" data-open="'+a.e.id+'">'+ph(a.e)+'<span class="body"><div class="t wrap">'+esc(a.h.txt)+'</div><div class="s">'+a.e.ref+' · '+rel(a.h.d)+'</div></span></button>';}).join('');
   return '<div class="hero"><div class="hero-top"><div><div class="lbl">Taux d\'occupation du parc</div><div class="big num">'+occ+'<small>%</small></div></div>'
-    +'<div class="side"><b class="num">'+rev+' €</b>par semaine</div></div><div class="segbar">'+seg+'</div><div class="legend">'+leg+'</div></div>'
+    +'<div class="side"><b class="num">'+xpf(rev)+'</b>par semaine</div></div><div class="segbar">'+seg+'</div><div class="legend">'+leg+'</div></div>'
     +'<section><div class="sec-h"><h2>À traiter</h2><span>'+al.length+'</span></div><div class="list">'+(al.join('')||'<div class="empty">Rien à signaler, le parc est à jour.</div>')+'</div></section>'
-    +(dispo.length?'<section><div class="sec-h"><h2>Prêt à louer</h2><button data-filter="dispo">Tout voir</button></div><div class="hscroll">'+dispo.map(function(e){return card(e,e.ref+' · '+e.px+' € / sem.');}).join('')+'</div></section>':'')
+    +(dispo.length?'<section><div class="sec-h"><h2>Prêt à louer</h2><button data-filter="dispo">Tout voir</button></div><div class="hscroll">'+dispo.map(function(e){return card(e,xpf(e.px)+' / semaine');}).join('')+'</div></section>':'')
     +'<section><div class="sec-h"><h2>Activité récente</h2></div><div class="list">'+act+'</div></section>';
 }
 function viewParc(){
@@ -351,11 +352,11 @@ function viewLoc(){
     var it=rented.filter(function(e){return e.pt===p.id;});
     if(!it.length)return '';
     var sum=it.reduce(function(a,e){return a+e.px;},0);
-    return '<article class="pcard"><header><span class="avatar">'+initials(p.n)+'</span><div style="min-width:0"><div class="t" style="font-weight:600">'+esc(p.n)+'</div><div class="s" style="font-size:13px;color:var(--muted)">'+esc(p.z)+'</div></div><div class="amt num">'+sum+' €<small>/ semaine</small></div></header>'
+    return '<article class="pcard"><header><span class="avatar">'+initials(p.n)+'</span><div style="min-width:0"><div class="t" style="font-weight:600">'+esc(p.n)+'</div><div class="s" style="font-size:13px;color:var(--muted)">'+esc(p.z)+'</div></div><div class="amt num">'+xpf(sum)+'<small>/ semaine</small></div></header>'
       +it.map(function(e){return '<button class="mini" data-open="'+e.id+'">'+ph(e)+'<span class="nm">'+esc(e.n)+'</span><span class="when">'+(e.end===0?'retour aujourd\'hui':'depuis le '+fmt(e.since))+'</span></button>';}).join('')+'</article>';
   }).join('');
   var np=patients.filter(function(p){return rented.some(function(e){return e.pt===p.id;});}).length;
-  return '<div class="stat2"><div><b class="num">'+rev+' €</b><span>Loyers par semaine</span></div><div><b class="num">'+np+'</b><span>Bénéficiaires équipés</span></div></div>'
+  return '<div class="stat2"><div><b class="num">'+xpf(rev)+'</b><span>Loyers par semaine</span></div><div><b class="num">'+np+'</b><span>Bénéficiaires équipés</span></div></div>'
     +'<section><div class="sec-h"><h2>Contrats en cours</h2><span>'+rented.length+' équipements</span></div>'+(cards||'<div class="list"><div class="empty">Aucune location en cours.</div></div>')+'</section>';
 }
 function viewEnt(){
@@ -397,7 +398,7 @@ function renderDetail(){
     +'<dl class="kv" style="margin:0">'
     +'<div><dt>Emplacement</dt><dd>'+esc(where(e))+'</dd></div>'
     +(p?'<div><dt>Prise en charge</dt><dd>'+esc(p.z.split(' · ')[1]||p.z)+'</dd></div><div><dt>En location depuis</dt><dd>'+fmt(e.since)+' ('+(-e.since)+' j)</dd></div>'+(e.end!==null?'<div><dt>Retour prévu</dt><dd>'+rel(e.end)+'</dd></div>':''):'')
-    +'<div><dt>Tarif de location</dt><dd class="num">'+e.px+' € / semaine</dd></div>'
+    +'<div><dt>Tarif de location</dt><dd class="num">'+xpf(e.px)+' / semaine</dd></div>'
     +'<div><dt>Prochain contrôle</dt>'+chk+'</div></dl>'
     +'<section><div class="sec-h"><h2>Historique</h2><span>'+e.h.length+' événements</span></div><ol class="tl">'+hist+'</ol></section></div></div>'
     +'<div class="actions pad">'+acts+'</div>';
