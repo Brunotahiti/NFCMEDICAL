@@ -169,6 +169,16 @@ main>*{flex:none}
 .bar{display:block;height:10px;border-radius:5px;background:var(--surface-2);overflow:hidden}
 .bar i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,var(--hero),var(--hero2))}
 .bar.over i{background:var(--crit)}
+.bar.done i{background:var(--ok)}
+.pct{flex:none;font-family:var(--f-display);font-size:17px;font-weight:700;color:var(--accent)}
+.pct.ok{color:var(--ok)}
+.rent b.pct{display:inline;font-size:20px}
+.rent .cols b{font-size:20px}
+.prow .bar{height:6px;margin:5px 0 3px}
+.more-d summary{list-style:none;cursor:pointer;align-self:center;text-align:center;font-size:14px;font-weight:600;color:var(--accent);padding:10px}
+.more-d summary::-webkit-details-marker{display:none}
+.more-d summary::after{content:" ▾"}
+.more-d[open] summary::after{content:" ▴"}
 .mini .bar{height:4px;margin-top:5px}
 .durs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .durs .chip{background:var(--bg)}
@@ -421,35 +431,36 @@ var seq=0;
 function ev(d,txt){return {d:d,txt:txt,q:seq++};}
 /* d = décalage en jours par rapport à aujourd'hui ; px = tarif de location hebdomadaire en francs pacifiques (XPF) */
 /* Catalogue de location. Colonnes : référence, photo (null = pas encore de photo), type d'icône, produit, marque ou famille,
-   prix catalogue, état, bénéficiaire, début (jours), retour prévu (jours), prochain contrôle (jours), loyer hebdomadaire de démonstration en XPF. */
+   prix catalogue, état, bénéficiaire, début (jours), retour prévu (jours), prochain contrôle (jours), loyer hebdomadaire de démonstration en XPF,
+   prix d'achat en XPF, jours de location cumulés avant la location en cours, prix d'achat estimé (absent de la liste). */
 var RAW=[
- ['LIT-0101','lit','lit','Lit Mantovani','Thuasne','Accessoires dès 1 290 XPF','loc','p1',-38,22,64,1700],
- ['LIT-0102','lit-bas','lit','Lit X5','Herdegen','Dès 133 000 XPF (prix LPPR)','loc','p2',-6,50,200,1900],
- ['LIT-0103','lit-allura','lit','Lit Allura','Burmeier','Dès 160 474 XPF','dispo',null,-3,null,75,2100],
- ['PSR-0104','porte-serum','pompe','Porte sérum à roulettes à 4 crochets','Herdegen','Dès 13 178 XPF','loc','p3',-12,0,150,300],
- ['LEV-0105','leve','leve','Lève-personne Birdie','Invacare','Dès 4 015 XPF','loc','p5',-64,30,6,2300],
- ['LEV-0106','leve','leve','Lève-personne Birdie Evo Compact','Invacare','Sur demande','dispo',null,-15,null,12,2400],
- ['LEV-0107',null,'leve','Lève-personne verticalisateur Isa Compact','Invacare','Dès 67 555 XPF','maint',null,-4,null,-9,2600],
- ['DEA-0108','deamb-fixe','deamb','Déambulateur fixe/articulé Maxigo','Herdegen','Dès 8 946 XPF','loc','p4',-21,9,140,500],
- ['DEA-0109','deamb-fixe','deamb','Déambulateur fixe Movigo','Herdegen','Dès 8 946 XPF','dispo',null,-9,null,120,450],
- ['ROL-0110',null,'deamb','Rollator 2 roues Simply','Herdegen','8 946 XPF','desinf',null,0,null,88,500],
- ['ROL-0111',null,'deamb','Delta Rollator 3 roues','Herdegen','8 946 XPF','dispo',null,-20,null,95,550],
- ['ROL-0112','rollator-4','deamb','Rollator 4 roues 286i','Vermeiren','8 946 XPF','loc','p1',-38,22,-3,600],
- ['ROL-0113','rollator-4b','deamb','Rollator 4 roues Simply','Herdegen','Dès 8 946 XPF','dispo',null,-9,null,110,600],
- ['FRM-0114','fauteuil','fauteuil','Fauteuil roulant dossier fixe Albatros','Herdegen','Dès 63 725 XPF','loc','p4',-21,9,160,1100],
- ['TNS-0115','tens','pompe','Tens Eco 2','Appareils électroniques','Dès 2 028 XPF','loc','p2',-6,22,300,400],
- ['TNS-0116','tens','pompe','Tensi+ électrostimulateur TENS','Appareils électroniques','Dès 995 XPF','dispo',null,-30,null,280,400],
- ['AER-0117','aerosol','oxy','Aérosols ST23 et ST24','Aérosol et oxygène','Dès 1 913 XPF','loc','p3',-12,16,40,700],
- ['AER-0118','aerosol','oxy','Aérosol Atomisor','Aérosol et oxygène','Dès 1 913 XPF','desinf',null,-1,null,45,700],
- ['AER-0119','aerosol','oxy','Aérosol LS 290','Aérosol et oxygène','Dès 1 916 XPF','dispo',null,-5,null,70,700],
- ['AER-0120','aerosol','oxy','Aérosol AMSA','Aérosol et oxygène','Dès 2 485 XPF','dispo',null,-12,null,55,800],
- ['OXY-0121','oxy','oxy','Concentrateur d\'O2 Platinum 9','Invacare','Dès 229 990 XPF','loc','p3',-12,0,18,2750],
- ['ASP-0122','aspirateur','oxy','Aspirateur SV3','Aérosol et oxygène','Dès 155 XPF','loc','p5',-20,40,25,900],
- ['TLT-0123','tire-lait','pompe','Tire-lait Medela Symphony +','Medela','Dès 1 004 XPF','loc','p2',-10,18,210,1000],
- ['TLT-0124','tire-lait','pompe','Tire-lait Kitett Fisio Pro','Kitett','Dès 114 990 XPF','desinf',null,-2,null,190,1000]
+ ['LIT-0101','lit','lit','Lit Mantovani','Thuasne','Accessoires dès 1 290 XPF','loc','p1',-38,22,64,1700,120000,410,true],
+ ['LIT-0102','lit-bas','lit','Lit X5','Herdegen','Dès 133 000 XPF (prix LPPR)','loc','p2',-6,50,200,1900,133000,520,false],
+ ['LIT-0103','lit-allura','lit','Lit Allura','Burmeier','Dès 160 474 XPF','dispo',null,-3,null,75,2100,160474,330,false],
+ ['PSR-0104','porte-serum','pompe','Porte sérum à roulettes à 4 crochets','Herdegen','Dès 13 178 XPF','loc','p3',-12,0,150,300,13178,290,false],
+ ['LEV-0105','leve','leve','Lève-personne Birdie','Invacare','Dès 4 015 XPF','loc','p5',-64,30,6,2300,95000,180,true],
+ ['LEV-0106','leve','leve','Lève-personne Birdie Evo Compact','Invacare','Sur demande','dispo',null,-15,null,12,2400,110000,95,true],
+ ['LEV-0107',null,'leve','Lève-personne verticalisateur Isa Compact','Invacare','Dès 67 555 XPF','maint',null,-4,null,-9,2600,67555,240,false],
+ ['DEA-0108','deamb-fixe','deamb','Déambulateur fixe/articulé Maxigo','Herdegen','Dès 8 946 XPF','loc','p4',-21,9,140,500,8946,150,false],
+ ['DEA-0109','deamb-fixe','deamb','Déambulateur fixe Movigo','Herdegen','Dès 8 946 XPF','dispo',null,-9,null,120,450,8946,60,false],
+ ['ROL-0110',null,'deamb','Rollator 2 roues Simply','Herdegen','8 946 XPF','desinf',null,0,null,88,500,8946,175,false],
+ ['ROL-0111',null,'deamb','Delta Rollator 3 roues','Herdegen','8 946 XPF','dispo',null,-20,null,95,550,8946,40,false],
+ ['ROL-0112','rollator-4','deamb','Rollator 4 roues 286i','Vermeiren','8 946 XPF','loc','p1',-38,22,-3,600,8946,130,false],
+ ['ROL-0113','rollator-4b','deamb','Rollator 4 roues Simply','Herdegen','Dès 8 946 XPF','dispo',null,-9,null,110,600,8946,20,false],
+ ['FRM-0114','fauteuil','fauteuil','Fauteuil roulant dossier fixe Albatros','Herdegen','Dès 63 725 XPF','loc','p4',-21,9,160,1100,63725,460,false],
+ ['TNS-0115','tens','pompe','Tens Eco 2','Appareils électroniques','Dès 2 028 XPF','loc','p2',-6,22,300,400,12000,260,true],
+ ['TNS-0116','tens','pompe','Tensi+ électrostimulateur TENS','Appareils électroniques','Dès 995 XPF','dispo',null,-30,null,280,400,9000,70,true],
+ ['AER-0117','aerosol','oxy','Aérosols ST23 et ST24','Aérosol et oxygène','Dès 1 913 XPF','loc','p3',-12,16,40,700,18000,200,true],
+ ['AER-0118','aerosol','oxy','Aérosol Atomisor','Aérosol et oxygène','Dès 1 913 XPF','desinf',null,-1,null,45,700,18000,310,true],
+ ['AER-0119','aerosol','oxy','Aérosol LS 290','Aérosol et oxygène','Dès 1 916 XPF','dispo',null,-5,null,70,700,18000,85,true],
+ ['AER-0120','aerosol','oxy','Aérosol AMSA','Aérosol et oxygène','Dès 2 485 XPF','dispo',null,-12,null,55,800,22000,45,true],
+ ['OXY-0121','oxy','oxy','Concentrateur d\'O2 Platinum 9','Invacare','Dès 229 990 XPF','loc','p3',-12,0,18,2750,229990,505,false],
+ ['ASP-0122','aspirateur','oxy','Aspirateur SV3','Aérosol et oxygène','Dès 155 XPF','loc','p5',-20,40,25,900,45000,270,true],
+ ['TLT-0123','tire-lait','pompe','Tire-lait Medela Symphony +','Medela','Dès 1 004 XPF','loc','p2',-10,18,210,1000,180000,610,true],
+ ['TLT-0124','tire-lait','pompe','Tire-lait Kitett Fisio Pro','Kitett','Dès 114 990 XPF','desinf',null,-2,null,190,1000,114990,380,false]
 ];
 var equip=RAW.map(function(r,i){
-  var e={id:'e'+(i+1),ref:r[0],ph:r[1],k:r[2],n:r[3],m:r[4],cat:r[5],st:r[6],pt:r[7],since:r[8],end:r[9],chk:r[10],px:r[11]};
+  var e={id:'e'+(i+1),ref:r[0],ph:r[1],k:r[2],n:r[3],m:r[4],cat:r[5],st:r[6],pt:r[7],since:r[8],end:r[9],chk:r[10],px:r[11],buy:r[12],days:r[13],est:r[14]};
   e.h=e.st==='loc'?[ev(e.since,'Livré chez '+patients.filter(function(p){return p.id===e.pt;})[0].n),ev(e.since-1,'Désinfection validée')]
     :e.st==='dispo'?[ev(e.since,'Désinfection validée, remis en stock')]
     :e.st==='desinf'?[ev(e.since,'Retour de location, en attente de désinfection')]
@@ -483,6 +494,19 @@ function rentCard(e){
     +'<div class="'+(late?'late':'')+'"><small>'+(late?'En retard de':r.left===0?'Retour prévu':'Encore')+'</small><b class="num">'+(late?sem(-r.left):r.left===0?'Aujourd\'hui':sem(r.left))+'</b><small>retour le '+fmt(e.end)+'</small></div></div>'
     +'<div class="bar'+(late?' over':'')+'" role="img" aria-label="'+r.pct+' % de la durée prévue écoulée"><i style="width:'+r.pct+'%"></i></div>'
     +'<div class="foot"><span>Durée prévue : '+jours(r.tot)+(r.tot>=14?' ('+sem(r.tot)+')':'')+'</span><button class="more" data-act="extend">+ 1 semaine</button></div></div>';
+}
+/* Rentabilité : loyers encaissés depuis l'achat rapportés au prix d'achat. */
+function profit(e){
+  var d=e.days+(e.st==='loc'?-e.since:0),rev=Math.round(e.px*d/7),pct=Math.round(rev/e.buy*100);
+  return {days:d,rev:rev,pct:pct,gain:rev-e.buy,weeks:Math.max(0,Math.ceil((e.buy-rev)/e.px))};
+}
+function profitTxt(r){return r.gain>=0?'Amorti · bénéfice '+xpf(r.gain):'Encore '+sem(r.weeks*7).replace(' sem.',' semaines')+' de location pour l\'amortir';}
+function profitCard(e){
+  var r=profit(e);
+  return '<div class="rent"><div class="cols"><div><small>Loyers encaissés</small><b class="num">'+xpf(r.rev)+'</b><small>'+jours(r.days)+' de location</small></div>'
+    +'<div><small>Prix d\'achat'+(e.est?' (estimé)':'')+'</small><b class="num">'+xpf(e.buy)+'</b><small>'+xpf(e.px)+' / semaine</small></div></div>'
+    +'<div class="bar'+(r.pct>=100?' done':'')+'" role="img" aria-label="Amorti à '+r.pct+' %"><i style="width:'+Math.max(3,Math.min(100,r.pct))+'%"></i></div>'
+    +'<div class="foot"><span>'+profitTxt(r)+'</span><b class="pct num'+(r.pct>=100?' ok':'')+'">'+r.pct+' %</b></div></div>';
 }
 function count(st){return equip.filter(function(e){return e.st===st;}).length;}
 function pill(e){return '<span class="pill '+STATUS[e.st].c+'">'+ic(PIC[e.st])+STATUS[e.st].l+'</span>';}
@@ -595,6 +619,18 @@ function parcRows(){
   }).join('');
   return r||'<div class="empty" style="grid-column:1/-1">Aucun équipement ne correspond.</div>';
 }
+function parcProfit(){
+  var inv=0,rev=0;equip.forEach(function(e){inv+=e.buy;rev+=profit(e).rev;});
+  var pct=Math.round(rev/inv*100),done=equip.filter(function(e){return profit(e).pct>=100;}).length;
+  var rows=equip.slice().sort(function(a,b){return profit(b).pct-profit(a).pct;}).map(function(e){
+    var r=profit(e);
+    return '<button class="row prow" data-open="'+e.id+'">'+ph(e)+'<span class="body"><div class="t">'+esc(e.n)+'</div><span class="bar'+(r.pct>=100?' done':'')+'"><i style="width:'+Math.max(3,Math.min(100,r.pct))+'%"></i></span><div class="s">'+xpf(r.rev)+' sur '+xpf(e.buy)+'</div></span><b class="pct num'+(r.pct>=100?' ok':'')+'">'+r.pct+' %</b></button>';}).join('');
+  return '<div class="rent"><div class="cols"><div><small>Loyers encaissés</small><b class="num">'+xpf(rev)+'</b><small>depuis l\'achat du matériel</small></div>'
+    +'<div><small>Investissement</small><b class="num">'+xpf(inv)+'</b><small>'+equip.length+' équipements</small></div></div>'
+    +'<div class="bar"><i style="width:'+Math.min(100,pct)+'%"></i></div>'
+    +'<div class="foot"><span>'+done+' équipement'+(done>1?'s':'')+' amorti'+(done>1?'s':'')+' sur '+equip.length+'</span><b class="pct num">'+pct+' %</b></div></div>'
+    +'<details class="more-d"><summary>Détail par équipement</summary><div class="list">'+rows+'</div></details>';
+}
 function viewLoc(){
   var rented=equip.filter(function(e){return e.st==='loc';});
   var rev=rented.reduce(function(a,e){return a+e.px;},0);
@@ -611,6 +647,7 @@ function viewLoc(){
   }).join('');
   var np=patients.filter(function(p){return rented.some(function(e){return e.pt===p.id;});}).length;
   return '<div class="stat2"><div class="st-a">'+ic('coins')+'<div><b class="num">'+xpf(rev)+'</b><span>Loyers par semaine</span></div></div><div>'+ic('users')+'<div><b class="num">'+np+'</b><span>Bénéficiaires équipés</span></div></div></div>'
+    +'<section>'+secH('coins','Rentabilité du parc')+parcProfit()+'</section>'
     +'<section>'+secH('clip','Contrats en cours','<span>'+rented.length+' équipements</span>')+(cards||'<div class="list"><div class="empty">Aucune location en cours.</div></div>')+'</section>';
 }
 function rowE(e,sub,right){
@@ -664,6 +701,7 @@ function renderDetail(){
     +'<div><dt>'+ic('clip')+'Prix catalogue</dt><dd class="num">'+esc(e.cat)+'</dd></div>'
     +'<div><dt>'+ic('coins')+'Tarif de location</dt><dd class="num">'+xpf(e.px)+' / semaine</dd></div>'
     +'<div><dt>'+ic('tool')+'Prochain contrôle</dt>'+chk+'</div></dl>'
+    +'<section>'+secH('coins','Rentabilité')+profitCard(e)+'</section>'
     +'<section>'+secH('pin','Localisation')+'<div class="mapcard">'+mapSvg([{id:placeOf(e),n:null}],placeOf(e),false)+'<div class="mapfoot"><div><b>'+esc(place(placeOf(e)).n)+'</b><span>'+esc(place(placeOf(e)).a)+'</span></div>'+mapBtn(placeOf(e))+'</div></div></section>'
     +'<section>'+secH('hist','Historique','<span>'+e.h.length+' événements</span>')+'<ol class="tl">'+hist+'</ol></section></div></div>'
     +'<div class="actions pad">'+acts+'</div>';
