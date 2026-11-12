@@ -7,7 +7,7 @@ Démo d'application iPhone pour gérer un parc de matériel médical en location
 - `index.html` + `photos/` : l'interface (une page web sans dépendance), pensée pour l'iPhone 15 Pro Max, thème clair et sombre.
 - `ios/` : le projet Xcode. L'app affiche cette interface et branche le bouton de scan sur la vraie lecture NFC de l'iPhone (Core NFC).
 
-Écrans : tableau de bord, inventaire du parc, scan NFC, locations par bénéficiaire, entretien (désinfection, maintenance, contrôles). Tarifs en francs pacifiques (XPF). Toutes les données sont fictives et reviennent à zéro à chaque lancement (seules les puces associées sont mémorisées).
+Écrans : tableau de bord, inventaire du parc (liste ou plan de Tahiti), scan NFC, locations par bénéficiaire, entretien (désinfection, maintenance, contrôles). Tarifs en francs pacifiques (XPF). Toutes les données sont fictives et reviennent à zéro à chaque lancement (seules les puces associées sont mémorisées).
 
 ## Ouvrir dans Xcode
 
@@ -21,6 +21,10 @@ La lecture NFC demande un compte Apple Developer payant (la capacité « NFC Tag
 
 - Puce connue : la fiche de l'équipement s'ouvre.
 - Puce inconnue : l'app propose de l'associer à un équipement ; l'association est mémorisée sur l'appareil.
+
+## Plan
+
+Le plan est un contour simplifié de Tahiti dessiné dans la page ; chaque équipement est placé au dépôt ou au domicile du bénéficiaire (adresses fictives). Le bouton « Plans » d'une fiche ouvre l'endroit dans Apple Plans.
 
 ## Modifier l'interface
 

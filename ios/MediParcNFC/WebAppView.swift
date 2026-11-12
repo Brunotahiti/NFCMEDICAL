@@ -15,6 +15,8 @@ struct WebAppView: UIViewRepresentable {
         webView.scrollView.bounces = false
         webView.scrollView.isScrollEnabled = false
         webView.allowsLinkPreview = false
+        webView.navigationDelegate = context.coordinator
+        webView.uiDelegate = context.coordinator
         context.coordinator.webView = webView
 
         if let url = URL(string: "mediparc://app/index.html") {
@@ -25,7 +27,7 @@ struct WebAppView: UIViewRepresentable {
 
     func updateUIView(_ uiView: WKWebView, context: Context) {}
 
-    final class Coordinator: NSObject, WKScriptMessageHandler {
+    final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate, WKUIDelegate {
         weak var webView: WKWebView?
         private let reader = NFCReader()
 
@@ -44,6 +46,26 @@ struct WebAppView: UIViewRepresentable {
                     }
                 }
             }
+        }
+
+        /// Les liens externes (ex. « Plans ») s'ouvrent hors de l'app.
+        func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
+                     decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+            if navigationAction.navigationType == .linkActivated,
+               let url = navigationAction.request.url, url.scheme != "mediparc" {
+                UIApplication.shared.open(url)
+                decisionHandler(.cancel)
+                return
+            }
+            decisionHandler(.allow)
+        }
+
+        func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
+                     for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+            if let url = navigationAction.request.url {
+                UIApplication.shared.open(url)
+            }
+            return nil
         }
 
         private func run(_ script: String) {

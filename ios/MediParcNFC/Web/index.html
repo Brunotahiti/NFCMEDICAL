@@ -12,7 +12,7 @@
 <style>
 /* Layout : appli plein écran en une colonne (430 pt, iPhone 15 Pro Max) — en-tête, contenu défilant, barre d'onglets flottante avec bouton de scan central ; fiches et feuilles glissent par-dessus. */
 :root{
-  --bg:#EDF6F8; --bg-top:#C9EBF2; --hero2:#0E8F93; --deco:1; --glow:rgba(11,110,125,.30); --surface:#FFFFFF; --surface-2:#E2EAEC; --ink:#0D2730; --muted:#5B7078; --line:#D5DFE1;
+  --bg:#EDF6F8; --bg-top:#C9EBF2; --hero2:#0E8F93; --deco:1; --map-sea:#CDEDF3; --map-reef:#A9E2EA; --map-land:#CFE7C6; --map-line:#8FBF8E; --glow:rgba(11,110,125,.30); --surface:#FFFFFF; --surface-2:#E2EAEC; --ink:#0D2730; --muted:#5B7078; --line:#D5DFE1;
   --accent:#0A7C88; --accent-ink:#FFFFFF; --accent-soft:#D8EEF2;
   --hero:#0B5361; --hero-fg:#F2FAFB; --hero-muted:#A9CBD2; --hero-track:#1D5360;
   --ok:#1A7F54; --ok-soft:#DCF2E6; --warn:#A65F00; --warn-soft:#FBEBD0;
@@ -26,7 +26,7 @@
   --gl:max(16px, env(safe-area-inset-left, 0px)); --gr:max(16px, env(safe-area-inset-right, 0px));
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --bg:#07181E; --bg-top:#0D2D38; --hero2:#1A6E78; --deco:.55; --glow:rgba(0,0,0,.45); --surface:#0F252D; --surface-2:#17333C; --ink:#E8F1F2; --muted:#8FA6AD; --line:#21404A;
+  --bg:#07181E; --bg-top:#0D2D38; --hero2:#1A6E78; --deco:.55; --map-sea:#0C2F3A; --map-reef:#15505C; --map-land:#1F4A3A; --map-line:#3C7A5E; --glow:rgba(0,0,0,.45); --surface:#0F252D; --surface-2:#17333C; --ink:#E8F1F2; --muted:#8FA6AD; --line:#21404A;
   --accent:#4CC3D9; --accent-ink:#04222A; --accent-soft:#123C47;
   --hero:#123E4A; --hero-fg:#F2FAFB; --hero-muted:#9DC3CB; --hero-track:#0A2A33;
   --ok:#5AD39A; --ok-soft:#10382A; --warn:#F2B45A; --warn-soft:#3B2B0E;
@@ -34,7 +34,7 @@
   --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.28); --scrim:rgba(0,0,0,.6);
   color-scheme:dark } }
 :root[data-theme="dark"]{
-  --bg:#07181E; --bg-top:#0D2D38; --hero2:#1A6E78; --deco:.55; --glow:rgba(0,0,0,.45); --surface:#0F252D; --surface-2:#17333C; --ink:#E8F1F2; --muted:#8FA6AD; --line:#21404A;
+  --bg:#07181E; --bg-top:#0D2D38; --hero2:#1A6E78; --deco:.55; --map-sea:#0C2F3A; --map-reef:#15505C; --map-land:#1F4A3A; --map-line:#3C7A5E; --glow:rgba(0,0,0,.45); --surface:#0F252D; --surface-2:#17333C; --ink:#E8F1F2; --muted:#8FA6AD; --line:#21404A;
   --accent:#4CC3D9; --accent-ink:#04222A; --accent-soft:#123C47;
   --hero:#123E4A; --hero-fg:#F2FAFB; --hero-muted:#9DC3CB; --hero-track:#0A2A33;
   --ok:#5AD39A; --ok-soft:#10382A; --warn:#F2B45A; --warn-soft:#3B2B0E;
@@ -72,8 +72,8 @@ section{display:flex;flex-direction:column;gap:10px}
 .sec-h h2{display:flex;align-items:center;gap:9px;font-family:var(--f-display);font-size:20px;font-weight:600;letter-spacing:-.015em}
 .sec-h h2 svg{color:var(--accent);width:24px;height:24px}
 .sec-h>span{font-size:13px;color:var(--muted)}
-.sec-h .badge{min-width:30px;height:30px;padding:0 9px;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:14px;display:grid;place-items:center}
-.sec-h .more{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--accent);background:var(--surface);border:1px solid var(--line);padding:7px 13px;border-radius:99px}
+.badge{flex:none;min-width:30px;height:30px;padding:0 9px;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:14px;display:grid;place-items:center}
+.more{text-decoration:none;flex:none;display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--accent);background:var(--surface);border:1px solid var(--line);padding:7px 13px;border-radius:99px}
 
 /* Carte parc */
 .hero{background:radial-gradient(120% 90% at 85% 0%,var(--hero2),transparent 60%),linear-gradient(140deg,var(--hero),var(--hero2));color:var(--hero-fg);border-radius:28px;padding:20px 20px 22px;display:flex;flex-direction:column;gap:16px;box-shadow:0 16px 32px -8px var(--glow)}
@@ -132,6 +132,20 @@ main>*{flex:none}
 .hscroll{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity;scroll-padding-left:var(--gl);margin-left:calc(-1 * var(--gl));margin-right:calc(-1 * var(--gr));padding:2px var(--gr) 14px var(--gl);margin-bottom:-14px}
 .hscroll::-webkit-scrollbar{display:none}
 .hscroll .card{flex:none;width:156px;scroll-snap-align:start}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--surface-2);border-radius:16px;padding:4px;gap:4px}
+.seg button{display:flex;justify-content:center;align-items:center;gap:7px;padding:10px;border-radius:12px;font-weight:600;font-size:14px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.seg button[aria-pressed="true"] svg{color:var(--accent)}
+.mapcard{display:block;width:100%;background:var(--map-sea);border-radius:22px;box-shadow:var(--shadow);overflow:hidden}
+.mapcard svg.map{display:block;width:100%;height:auto}
+.mapfoot{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);padding:12px 14px;text-align:left}
+.mapfoot b{display:block;font-family:var(--f-display);font-weight:600;font-size:15px}
+.mapfoot span{font-size:13px;color:var(--muted)}
+.mp-l{font:600 10.5px var(--f-text);fill:var(--ink);paint-order:stroke;stroke:var(--map-sea);stroke-width:3px;stroke-linejoin:round;text-anchor:middle}
+.mp-c{font:700 12px var(--f-display);fill:var(--hero-fg);text-anchor:middle}
+.mp-r{font:600 8.5px var(--f-text);letter-spacing:.14em;fill:var(--map-line);text-anchor:middle}
+.mp-k{font:500 9px var(--f-text);fill:var(--muted)}
+.map [data-place]{cursor:pointer}
 .credits{align-self:center;font-size:13px;color:var(--muted);text-decoration:underline;padding:8px}
 .cred{font-size:13px;padding:8px 0;border-top:1px solid var(--line)}
 .cred b{display:block;font-weight:600}.cred span{color:var(--muted)}
@@ -344,12 +358,13 @@ var STATUS={loc:{l:'En location',c:'p-loc',seg:'--seg-loc'},dispo:{l:'Disponible
   desinf:{l:'Désinfection',c:'p-desinf',seg:'--seg-desinf'},maint:{l:'Maintenance',c:'p-maint',seg:'--seg-maint'}};
 
 var patients=[
-  {id:'p1',n:'Jeanne Morel',z:'Secteur Nord · Maintien à domicile'},
-  {id:'p2',n:'André Lefèvre',z:'Secteur Centre · Sortie d\'hospitalisation'},
-  {id:'p3',n:'Lucie Bernard',z:'Secteur Sud · Soins palliatifs'},
-  {id:'p4',n:'Henri Girard',z:'Secteur Est · Rééducation'},
-  {id:'p5',n:'Résidence Les Tilleuls',z:'EHPAD · Chambre 14'}
+  {id:'p1',c:'Punaauia',lat:-17.635,lon:-149.607,n:'Jeanne Morel',z:'Punaauia · Maintien à domicile'},
+  {id:'p2',c:'Mahina',lat:-17.508,lon:-149.482,n:'André Lefèvre',z:'Mahina · Sortie d\'hospitalisation'},
+  {id:'p3',c:'Paea',lat:-17.718,lon:-149.588,n:'Lucie Bernard',z:'Paea · Soins palliatifs'},
+  {id:'p4',c:'Taravao',lat:-17.737,lon:-149.303,n:'Henri Girard',z:'Taravao · Rééducation'},
+  {id:'p5',c:'Papara',lat:-17.752,lon:-149.512,n:'Résidence Les Tilleuls',z:'Papara · EHPAD, chambre 14'}
 ];
+var DEPOT={id:'depot',n:'Dépôt MédiParc',c:'Papeete',lat:-17.532,lon:-149.572};
 var seq=0;
 function ev(d,txt){return {d:d,txt:txt,q:seq++};}
 /* d = décalage en jours par rapport à aujourd'hui ; px = tarif de location hebdomadaire en francs pacifiques (XPF) */
@@ -370,7 +385,7 @@ var equip=[
 var CREDITS=[['Lit médicalisé','Blogotron','CC0'],['Lit bas','Tiia Monto','CC BY-SA 4.0'],['Matelas à air','BrokenSphere','CC BY-SA 3.0'],['Surmatelas à bulles','Jorgebarrios','CC BY-SA 3.0'],['Concentrateur d\'oxygène','BrokenSphere','CC BY-SA 3.0'],['Concentrateur portable','Oxystore','CC BY-SA 4.0'],['Fauteuil roulant manuel','Davronov Alexander','CC BY-SA 4.0'],['Fauteuil de transfert','SuddenFrost','CC BY-SA 4.0'],['Lève-personne','Solmarsol','CC BY-SA 3.0'],['Pompe à perfusion','Fatimah Bello','CC0'],['Déambulateur','sani-aktiv.de','CC BY-SA 2.0']];
 var scanOrder=['e3','e8','e11','e9','e1','e7','e5','e10'], scanIdx=0;
 
-var S={tab:'home',filter:'all',q:'',cur:null};
+var S={tab:'home',filter:'all',q:'',cur:null,mode:'grid',place:'depot'};
 var $=function(id){return document.getElementById(id);};
 var main=$('main'),detail=$('detail'),sheet=$('sheet'),scrim=$('scrim'),toastEl=$('toast');
 var timers=[];
@@ -398,6 +413,37 @@ function rowEq(e,sub){
   return '<button class="row" data-open="'+e.id+'">'+ph(e)+'<span class="body"><div class="t">'+esc(e.n)+'</div><div class="s">'+esc(sub||(e.ref+' · '+where(e)))+'</div></span>'+pill(e)+'</button>';
 }
 
+/* ---------- Plan de Tahiti (contour simplifié, projection plate : 6,1 px par km) ---------- */
+var COAST=[[-17.545,-149.615],[-17.53,-149.57],[-17.515,-149.52],[-17.495,-149.495],[-17.51,-149.42],[-17.535,-149.35],[-17.57,-149.31],[-17.61,-149.295],[-17.68,-149.3],[-17.725,-149.295],[-17.735,-149.225],[-17.745,-149.155],[-17.79,-149.12],[-17.855,-149.15],[-17.85,-149.26],[-17.8,-149.29],[-17.765,-149.31],[-17.75,-149.325],[-17.76,-149.36],[-17.775,-149.42],[-17.765,-149.5],[-17.74,-149.57],[-17.69,-149.595],[-17.63,-149.615],[-17.575,-149.62]];
+function mx(lon){return (lon+149.7)*645;}
+function my(lat){return (-17.47-lat)*677;}
+var COAST_D=(function(){
+  var p=COAST.map(function(c){return [mx(c[1]),my(c[0])];}),n=p.length,f=function(v){return v.toFixed(1);},d='M'+f(p[0][0])+' '+f(p[0][1]);
+  for(var i=0;i<n;i++){var a=p[(i-1+n)%n],b=p[i],c=p[(i+1)%n],e=p[(i+2)%n];
+    d+='C'+f(b[0]+(c[0]-a[0])/6)+' '+f(b[1]+(c[1]-a[1])/6)+' '+f(c[0]-(e[0]-b[0])/6)+' '+f(c[1]-(e[1]-b[1])/6)+' '+f(c[0])+' '+f(c[1]);}
+  return d+'Z';})();
+function place(id){return id==='depot'?DEPOT:pat(id);}
+function placeOf(e){return e.st==='loc'?e.pt:'depot';}
+function atPlace(id){return equip.filter(function(e){return placeOf(e)===id;});}
+/* pins : [{id, n (nombre ou null)}], sel : lieu mis en avant, tap : épingles cliquables */
+function mapSvg(pins,sel,tap){
+  var h='<svg class="map" viewBox="0 0 400 292" role="img" aria-label="Plan de Tahiti avec l\'emplacement du matériel">'
+    +'<path d="'+COAST_D+'" fill="none" stroke="var(--map-reef)" stroke-width="16" stroke-linejoin="round"/>'
+    +'<path d="'+COAST_D+'" fill="var(--map-land)" stroke="var(--map-line)" stroke-width="1.2"/>'
+    +'<text class="mp-r" x="'+mx(-149.45)+'" y="'+my(-17.635)+'">TAHITI NUI</text><text class="mp-r" x="'+mx(-149.21)+'" y="'+my(-17.8)+'">TAHITI ITI</text>'
+    +'<path d="M16 276h61" stroke="var(--muted)" stroke-width="1.5"/><path d="M16 272v8M77 272v8" stroke="var(--muted)" stroke-width="1.5"/><text class="mp-k" x="84" y="279">10 km</text>';
+  pins.slice().sort(function(a,b){return (a.id===sel)-(b.id===sel);}).forEach(function(pn){
+    var pl=place(pn.id),x=mx(pl.lon).toFixed(1),y=my(pl.lat).toFixed(1),on=pn.id===sel,r=on?15:12;
+    h+='<g transform="translate('+x+' '+y+')"'+(tap?' data-place="'+pn.id+'"':'')+'>'
+      +(on?'<circle r="21" fill="var(--accent)" opacity=".22"/>':'')
+      +(pn.id==='depot'?'<rect x="'+(-r)+'" y="'+(-r)+'" width="'+2*r+'" height="'+2*r+'" rx="6" fill="var(--hero)" stroke="var(--surface)" stroke-width="2.5"/>':'<circle r="'+r+'" fill="var(--hero2)" stroke="var(--surface)" stroke-width="2.5"/>')
+      +(pn.n===null?'<circle r="4" fill="var(--hero-fg)"/>':'<text class="mp-c" y="4.3">'+pn.n+'</text>')
+      +'<text class="mp-l" y="'+(r+13)+'">'+esc(pl.c)+'</text></g>';
+  });
+  return h+'</svg>';
+}
+function allPins(){return [DEPOT].concat(patients).map(function(pl){return {id:pl.id,n:atPlace(pl.id).length};}).filter(function(x){return x.n>0;});}
+
 /* ---------- Vues ---------- */
 function viewHome(){
   var tot=equip.length,nLoc=count('loc'),occ=Math.round(nLoc/tot*100);
@@ -421,6 +467,7 @@ function viewHome(){
   return '<div class="hero"><div class="lbl">'+ic('lit')+'Taux d\'occupation du parc</div><div class="hero-top"><div><div class="big num">'+occ+'<small>%</small></div></div>'
     +'<div class="side">'+ic('coins')+'<div><b class="num">'+xpf(rev)+'</b>par semaine</div></div></div><div class="segbar">'+seg+'</div><div class="legend">'+leg+'</div></div>'
     +'<section>'+secH('clip','À traiter',badge(al.length))+'<div class="list">'+(al.join('')||'<div class="empty">Rien à signaler, le parc est à jour.</div>')+'</div></section>'
+    +'<section>'+secH('pin','Où est le matériel','<button class="more" data-mode="plan">Ouvrir'+ic('arrow')+'</button>')+'<div class="mapcard">'+mapSvg(allPins(),null,true)+'</div></section>'
     +(dispo.length?'<section>'+secH('lit','Prêt à louer','<button class="more" data-filter="dispo">Tout voir'+ic('arrow')+'</button>')+'<div class="hscroll">'+dispo.map(function(e){return card(e,xpf(e.px)+' / semaine');}).join('')+'</div></section>':'')
     +'<section>'+secH('hist','Activité récente')+'<div class="list">'+act+'</div></section>';
 }
@@ -429,7 +476,14 @@ function viewParc(){
   var chips=[['all','Tout']].concat(Object.keys(STATUS).map(function(s){return [s,STATUS[s].l];})).map(function(c){
     var n=c[0]==='all'?equip.length:count(c[0]);
     return '<button class="chip" data-filter="'+c[0]+'" aria-pressed="'+(S.filter===c[0])+'">'+ic(CI[c[0]])+c[1]+' · '+n+'</button>';}).join('');
-  return '<div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.500"/><path d="m16 16 4 4"/></svg><input id="q" type="search" placeholder="Nom, référence ou patient" value="'+esc(S.q)+'" autocomplete="off" aria-label="Rechercher un équipement"><button class="sbtn" data-act="scan" aria-label="Scanner une puce">'+ic('frame')+'</button></div>'
+  var seg='<div class="seg"><button data-mode="grid" aria-pressed="'+(S.mode==='grid')+'">'+ic('grid')+'Liste</button><button data-mode="plan" aria-pressed="'+(S.mode==='plan')+'">'+ic('pin')+'Plan</button></div>';
+  if(S.mode==='plan'){
+    if(!atPlace(S.place).length)S.place=allPins()[0].id;
+    var pl=place(S.place),here=atPlace(S.place);
+    return seg+'<div class="mapcard">'+mapSvg(allPins(),S.place,true)+'<div class="mapfoot"><div><b>'+esc(pl.n)+'</b><span>'+esc(pl.c)+' · Tahiti</span></div>'+badge(here.length)+'</div></div>'
+      +'<section>'+secH('lit','Matériel sur place')+'<div class="list">'+here.map(function(e){return rowEq(e,e.ref+' · '+e.m);}).join('')+'</div></section>';
+  }
+  return seg+'<div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.500"/><path d="m16 16 4 4"/></svg><input id="q" type="search" placeholder="Nom, référence ou patient" value="'+esc(S.q)+'" autocomplete="off" aria-label="Rechercher un équipement"><button class="sbtn" data-act="scan" aria-label="Scanner une puce">'+ic('frame')+'</button></div>'
     +'<div class="chips">'+chips+'</div><div class="grid" id="parc-list">'+parcRows()+'</div><button class="credits" data-act="credits">Crédits photos</button>';
 }
 function parcRows(){
@@ -507,6 +561,7 @@ function renderDetail(){
     +(p?'<div><dt>'+ic('heart')+'Prise en charge</dt><dd>'+esc(p.z.split(' · ')[1]||p.z)+'</dd></div><div><dt>'+ic('cal')+'En location depuis</dt><dd>'+fmt(e.since)+' ('+(-e.since)+' j)</dd></div>'+(e.end!==null?'<div><dt>'+ic('ret')+'Retour prévu</dt><dd>'+(e.end===0?'<span class="pill p-dispo">Aujourd\'hui</span>':rel(e.end))+'</dd></div>':''):'')
     +'<div><dt>'+ic('coins')+'Tarif de location</dt><dd class="num">'+xpf(e.px)+' / semaine</dd></div>'
     +'<div><dt>'+ic('tool')+'Prochain contrôle</dt>'+chk+'</div></dl>'
+    +'<section>'+secH('pin','Localisation')+'<div class="mapcard">'+mapSvg([{id:placeOf(e),n:null}],placeOf(e),false)+'<div class="mapfoot"><div><b>'+esc(place(placeOf(e)).n)+'</b><span>'+esc(place(placeOf(e)).c)+' · Tahiti</span></div><a class="more" target="_blank" rel="noopener" href="https://maps.apple.com/?ll='+place(placeOf(e)).lat+','+place(placeOf(e)).lon+'&amp;q='+encodeURIComponent(place(placeOf(e)).n)+'">Plans'+ic('arrow')+'</a></div></div></section>'
     +'<section>'+secH('hist','Historique','<span>'+e.h.length+' événements</span>')+'<ol class="tl">'+hist+'</ol></section></div></div>'
     +'<div class="actions pad">'+acts+'</div>';
 }
@@ -562,12 +617,14 @@ function act(a,e){
   renderDetail();
 }
 document.addEventListener('click',function(x){
-  var t=x.target.closest('[data-tab],[data-open],[data-act],[data-filter],[data-pick],[data-link]');if(!t)return;
+  var t=x.target.closest('[data-tab],[data-open],[data-act],[data-filter],[data-pick],[data-link],[data-place],[data-mode]');if(!t)return;
   var d=t.dataset;
-  if(d.tab){S.tab=d.tab;render();}
+  if(d.place){var same=S.tab==='parc'&&S.mode==='plan';S.place=d.place;S.tab='parc';S.mode='plan';render(same);}
+  else if(d.mode){S.mode=d.mode;S.tab='parc';render();}
+  else if(d.tab){S.tab=d.tab;render();}
   else if(d.link){var le=byId(d.link);le.uid=pendingUid;pendingUid=null;le.h.push(ev(0,'Puce NFC associée'));saveUids();closeSheet();openDetail(le.id);toast('Puce associée à '+le.ref);}
   else if(d.open){openDetail(d.open);}
-  else if(d.filter){S.filter=d.filter;S.tab='parc';render();}
+  else if(d.filter){S.filter=d.filter;S.mode='grid';S.tab='parc';render();}
   else if(d.pick){var e=byId(S.cur),p=pat(d.pick);e.st='loc';e.pt=p.id;e.since=0;e.end=28;e.h.push(ev(0,'Livré chez '+p.n));closeSheet();renderDetail();toast('Location démarrée');}
   else if(d.act==='scan')startScan();
   else if(d.act==='close-sheet')closeSheet();
