@@ -21,6 +21,7 @@ La lecture NFC demande un compte Apple Developer payant (la capacité « NFC Tag
 
 - Puce connue : la fiche de l'équipement s'ouvre.
 - Puce inconnue : l'app propose de l'associer à un équipement ; l'association est mémorisée sur l'appareil.
+- Paramétrer une puce : dans une fiche, « Associer / Remplacer la puce NFC » lit la puce présentée et l'attribue à cet équipement (une puce déjà utilisée ailleurs est réattribuée).
 
 ## Plan
 
