@@ -1,8 +1,11 @@
 # Sert la démo MédiParc sur https://manaprocess.cloud/materiel/ derrière le Traefik du VPS.
-# L'image est construite par GitHub Actions (.github/workflows/site-image.yml).
+# L'image est construite sur le serveur, directement depuis le dépôt GitHub (qui doit être public).
 services:
   site:
-    image: ghcr.io/brunotahiti/nfcmedical:site
+    build:
+      context: https://github.com/Brunotahiti/NFCMEDICAL.git#claude/bold-gates-7zd8o7
+      dockerfile: deploy/Dockerfile
+    image: mediparc-nfc:latest
     container_name: mediparc-nfc
     restart: unless-stopped
     mem_limit: 64m

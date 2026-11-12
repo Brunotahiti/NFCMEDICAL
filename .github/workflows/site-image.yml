@@ -1,14 +1,8 @@
 name: Image du site
 
 # Construit l'image du site (manaprocess.cloud/materiel) et la publie sur ghcr.io.
+# Lancement manuel uniquement (onglet Actions > Image du site > Run workflow).
 on:
-  push:
-    branches: [main, claude/bold-gates-7zd8o7]
-    paths:
-      - index.html
-      - photos/**
-      - deploy/**
-      - .github/workflows/site-image.yml
   workflow_dispatch:
 
 permissions:
@@ -20,8 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Générer le site
-        run: deploy/build.sh
       - name: Construire et publier l'image
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
