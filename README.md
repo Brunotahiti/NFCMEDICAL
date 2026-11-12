@@ -43,6 +43,14 @@ Les associations sont mémorisées sur l'appareil. Une puce lue hors de l'app ou
 
 Le plan dessiné montre où se trouve le matériel (dépôt ou domicile du bénéficiaire, adresses fictives). Dans l'app iPhone, « Zoomer » ouvre la vraie carte Apple Plans, zoomable jusqu'à l'adresse, avec l'itinéraire. Dans la démo en ligne, « Zoomer » ouvre Apple Plans dans le navigateur.
 
+## Mise en ligne sur manaprocess.cloud
+
+Pour qu'une puce scannée sans l'app ouvre la fiche dans Safari, la démo doit être servie à `https://manaprocess.cloud/materiel/`. Le dossier `deploy/` contient :
+
+- `build.sh` : génère le site dans `deploy/site/materiel` ;
+- `nginx.conf` : sert la page pour toute adresse `/materiel/…` ;
+- `docker-compose.yml` : conteneur nginx avec des étiquettes Traefik, à adapter au serveur (réseau, point d'entrée, résolveur de certificat).
+
 ## Modifier l'interface
 
 Modifier `index.html` à la racine, puis recopier dans le projet Xcode :
