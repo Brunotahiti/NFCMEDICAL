@@ -1,0 +1,426 @@
+<title>MédiParc NFC</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout : appli plein écran en une colonne (430 pt, iPhone 15 Pro Max) — en-tête, contenu défilant, barre d'onglets flottante avec bouton de scan central ; fiches et feuilles glissent par-dessus. */
+:root{
+  --bg:#EEF3F4; --surface:#FFFFFF; --surface-2:#E2EAEC; --ink:#0D2730; --muted:#5B7078; --line:#D5DFE1;
+  --accent:#0A6E82; --accent-ink:#FFFFFF; --accent-soft:#D8EEF2;
+  --hero:#0D3B47; --hero-fg:#F2FAFB; --hero-muted:#A9CBD2; --hero-track:#1D5360;
+  --ok:#1A7F54; --ok-soft:#DCF2E6; --warn:#A65F00; --warn-soft:#FBEBD0;
+  --crit:#B8352B; --crit-soft:#FADFDC; --info:#3154C4; --info-soft:#E0E7FB;
+  --seg-loc:#7FA0FF; --seg-dispo:#5FD6A0; --seg-desinf:#F5BE6B; --seg-maint:#FF9288;
+  --shadow:0 1px 2px rgba(13,39,48,.06),0 8px 24px rgba(13,39,48,.07);
+  --scrim:rgba(6,22,28,.45);
+  --f-display:"Sora","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --f-text:"Inter",-apple-system,"SF Pro Text","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --gl:max(16px, env(safe-area-inset-left, 0px)); --gr:max(16px, env(safe-area-inset-right, 0px));
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#07181E; --surface:#0F252D; --surface-2:#17333C; --ink:#E8F1F2; --muted:#8FA6AD; --line:#21404A;
+  --accent:#4CC3D9; --accent-ink:#04222A; --accent-soft:#123C47;
+  --hero:#123E4A; --hero-fg:#F2FAFB; --hero-muted:#9DC3CB; --hero-track:#0A2A33;
+  --ok:#5AD39A; --ok-soft:#10382A; --warn:#F2B45A; --warn-soft:#3B2B0E;
+  --crit:#FF8A7E; --crit-soft:#42201C; --info:#93ABFF; --info-soft:#1B2955;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.28); --scrim:rgba(0,0,0,.6);
+  color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#07181E; --surface:#0F252D; --surface-2:#17333C; --ink:#E8F1F2; --muted:#8FA6AD; --line:#21404A;
+  --accent:#4CC3D9; --accent-ink:#04222A; --accent-soft:#123C47;
+  --hero:#123E4A; --hero-fg:#F2FAFB; --hero-muted:#9DC3CB; --hero-track:#0A2A33;
+  --ok:#5AD39A; --ok-soft:#10382A; --warn:#F2B45A; --warn-soft:#3B2B0E;
+  --crit:#FF8A7E; --crit-soft:#42201C; --info:#93ABFF; --info-soft:#1B2955;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.28); --scrim:rgba(0,0,0,.6);
+  color-scheme:dark }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-text);font-size:15px;line-height:1.4;
+  -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3,p{margin:0}
+.app{position:relative;height:100%;max-width:480px;margin:0 auto;display:flex;flex-direction:column;overflow:hidden}
+.pad{padding-left:var(--gl);padding-right:var(--gr)}
+.num{font-variant-numeric:tabular-nums}
+
+/* En-tête */
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-block:14px 10px}
+.top .eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.top h1{font-family:var(--f-display);font-size:28px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.demo-tag{font-size:11px;font-weight:600;color:var(--accent);background:var(--accent-soft);padding:5px 10px;border-radius:99px;white-space:nowrap}
+
+main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-block:4px 20px;display:flex;flex-direction:column;gap:22px}
+section{display:flex;flex-direction:column;gap:10px}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline}
+.sec-h h2{font-family:var(--f-display);font-size:17px;font-weight:600;letter-spacing:-.01em}
+.sec-h span,.sec-h button{font-size:13px;color:var(--muted)}
+.sec-h button{color:var(--accent);font-weight:600}
+
+/* Carte parc */
+.hero{background:var(--hero);color:var(--hero-fg);border-radius:26px;padding:20px;display:flex;flex-direction:column;gap:16px;box-shadow:var(--shadow)}
+.hero-top{display:flex;justify-content:space-between;align-items:flex-end}
+.hero .lbl{font-size:13px;color:var(--hero-muted)}
+.hero .big{font-family:var(--f-display);font-size:52px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.hero .big small{font-size:22px;font-weight:600;margin-left:2px}
+.hero .side{text-align:right;font-size:13px;color:var(--hero-muted)}
+.hero .side b{display:block;font-family:var(--f-display);font-size:20px;color:var(--hero-fg);font-weight:600}
+.segbar{display:flex;gap:3px;height:12px}
+.segbar i{border-radius:6px;min-width:6px;transition:flex-grow .5s ease}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
+.legend button{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--hero-muted)}
+.legend b{margin-left:auto;color:var(--hero-fg);font-weight:600}
+.dot{width:9px;height:9px;border-radius:50%;flex:none}
+
+/* Lignes */
+.list{background:var(--surface);border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:12px 14px;width:100%;min-height:64px}
+.row + .row{border-top:1px solid var(--line)}
+.row .body{flex:1;min-width:0}
+.row .t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .s{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .t.wrap{white-space:normal;font-weight:500;font-size:14px}
+.row .chev{color:var(--muted);flex:none;opacity:.6}
+.ico{width:42px;height:42px;border-radius:13px;background:var(--surface-2);color:var(--ink);display:grid;place-items:center;flex:none}
+.ico svg,.tab svg,.btn svg,.chev svg,.back svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ico.a-crit{background:var(--crit-soft);color:var(--crit)} .ico.a-warn{background:var(--warn-soft);color:var(--warn)}
+.ico.a-info{background:var(--info-soft);color:var(--info)} .ico.a-ok{background:var(--ok-soft);color:var(--ok)}
+.pill{font-size:12px;font-weight:600;padding:4px 9px;border-radius:99px;white-space:nowrap;flex:none}
+.p-loc{background:var(--info-soft);color:var(--info)} .p-dispo{background:var(--ok-soft);color:var(--ok)}
+.p-desinf{background:var(--warn-soft);color:var(--warn)} .p-maint{background:var(--crit-soft);color:var(--crit)}
+.p-mute{background:var(--surface-2);color:var(--muted)}
+.empty{padding:22px 16px;text-align:center;color:var(--muted);font-size:14px}
+
+/* Recherche et filtres */
+.search{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:14px;padding:0 12px;box-shadow:var(--shadow);color:var(--muted)}
+.search svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;flex:none}
+.search input{flex:1;min-width:0;border:0;background:none;font:inherit;font-size:16px;color:var(--ink);padding:12px 0;outline:none}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-left:calc(-1 * var(--gl));margin-right:calc(-1 * var(--gr));padding-left:var(--gl);padding-right:var(--gr)}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;font-size:13px;font-weight:600;padding:8px 13px;border-radius:99px;background:var(--surface);color:var(--muted);border:1px solid var(--line)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* Locations */
+.pcard{background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:14px;display:flex;flex-direction:column;gap:10px}
+.pcard header{display:flex;align-items:center;gap:12px}
+.avatar{width:42px;height:42px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-family:var(--f-display);font-weight:600;font-size:14px;flex:none}
+.pcard .amt{margin-left:auto;text-align:right;font-family:var(--f-display);font-weight:600;font-size:16px}
+.pcard .amt small{display:block;font-family:var(--f-text);font-weight:400;font-size:12px;color:var(--muted)}
+.mini{display:flex;align-items:center;gap:8px;width:100%;padding:9px 11px;border-radius:12px;background:var(--bg);font-size:14px}
+.mini span:first-child{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.mini .when{font-size:12px;color:var(--muted);flex:none}
+.stat2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat2 div{background:var(--surface);border-radius:18px;box-shadow:var(--shadow);padding:14px}
+.stat2 b{display:block;font-family:var(--f-display);font-size:24px;font-weight:700;letter-spacing:-.02em}
+.stat2 span{font-size:13px;color:var(--muted)}
+
+/* Barre d'onglets */
+.tabs{flex:none;margin:0 var(--gr) 8px var(--gl);background:var(--surface);border-radius:26px;box-shadow:var(--shadow);border:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr 76px 1fr 1fr;align-items:center;padding:6px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 0;font-size:11px;font-weight:600;color:var(--muted);border-radius:18px}
+.tab[aria-current="page"]{color:var(--accent)}
+.scanbtn{justify-self:center;width:62px;height:62px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;margin-top:-26px;box-shadow:0 0 0 6px var(--bg),0 10px 22px rgba(10,110,130,.35)}
+.scanbtn svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.scanbtn:active{transform:scale(.95)}
+
+/* Fiche équipement */
+.detail{position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.2,.8,.2,1);z-index:20;visibility:hidden}
+.detail.open{transform:none;visibility:visible}
+.dbar{display:flex;align-items:center;justify-content:space-between;padding-block:10px}
+.back{display:flex;align-items:center;gap:2px;color:var(--accent);font-weight:600;font-size:16px;padding:8px 8px 8px 0}
+.dscroll{flex:1;min-height:0;overflow-y:auto;padding-block:4px 16px;display:flex;flex-direction:column;gap:18px}
+.dhead{display:flex;gap:14px;align-items:center}
+.dhead .ico{width:64px;height:64px;border-radius:20px;background:var(--surface);box-shadow:var(--shadow)}
+.dhead .ico svg{width:32px;height:32px}
+.dhead h2{font-family:var(--f-display);font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.2;text-wrap:balance}
+.dhead p{color:var(--muted);font-size:14px}
+.tagcard{background:var(--hero);color:var(--hero-fg);border-radius:20px;padding:14px 16px;display:flex;align-items:center;gap:12px}
+.tagcard svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;flex:none}
+.tagcard small{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--hero-muted);font-weight:600}
+.tagcard code{font-family:var(--f-mono);font-size:14px;letter-spacing:.02em}
+.tagcard .ref{margin-left:auto;text-align:right}
+.kv{background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:2px 16px}
+.kv div{display:flex;justify-content:space-between;gap:16px;padding:12px 0;font-size:14px}
+.kv div + div{border-top:1px solid var(--line)}
+.kv dt{color:var(--muted)} .kv dd{margin:0;font-weight:600;text-align:right}
+.kv .late{color:var(--crit)}
+.tl{list-style:none;margin:0;padding:0 0 0 6px;display:flex;flex-direction:column}
+.tl li{position:relative;padding:0 0 16px 22px;font-size:14px}
+.tl li::before{content:"";position:absolute;left:0;top:5px;width:9px;height:9px;border-radius:50%;background:var(--accent)}
+.tl li::after{content:"";position:absolute;left:4px;top:16px;bottom:-3px;width:1px;background:var(--line)}
+.tl li:last-child{padding-bottom:0}.tl li:last-child::after{display:none}
+.tl time{display:block;font-size:12px;color:var(--muted)}
+.actions{flex:none;display:flex;flex-direction:column;gap:8px;padding-block:10px 10px;border-top:1px solid var(--line);background:var(--bg)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;border-radius:16px;font-weight:600;font-size:16px;background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:none;color:var(--crit);min-height:44px;font-size:15px}
+.btn.soft{background:var(--surface-2);color:var(--ink)}
+.btn:active{opacity:.85}
+
+/* Feuilles */
+.scrim{position:absolute;inset:0;background:var(--scrim);opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s;z-index:30}
+.scrim.open{opacity:1;visibility:visible}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:28px 28px 0 0;padding-block:10px 20px;transform:translateY(105%);transition:transform .34s cubic-bezier(.2,.8,.2,1);z-index:31;display:flex;flex-direction:column;gap:14px;max-height:86%;visibility:hidden}
+.sheet.open{transform:none;visibility:visible}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);align-self:center}
+.sheet h2{font-family:var(--f-display);font-size:21px;font-weight:700;letter-spacing:-.02em;text-align:center}
+.sheet p.sub{text-align:center;color:var(--muted);font-size:14px;max-width:30ch;align-self:center}
+.radar{position:relative;width:190px;height:190px;align-self:center;display:grid;place-items:center;margin:6px 0}
+.radar span{position:absolute;inset:0;border-radius:50%;border:2px solid var(--accent);opacity:0;animation:ping 2.1s ease-out infinite}
+.radar span:nth-child(2){animation-delay:.7s}.radar span:nth-child(3){animation-delay:1.4s}
+.radar .core{width:92px;height:92px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;transition:background .25s,transform .25s}
+.radar .core svg{width:42px;height:42px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.radar.found span{animation:none}
+.radar.found .core{background:var(--ok);color:var(--surface);transform:scale(1.1)}
+@keyframes ping{0%{transform:scale(.48);opacity:.75}100%{transform:scale(1);opacity:0}}
+.sheet .plist{overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.pick{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border-radius:16px;background:var(--bg)}
+.pick .body{flex:1;min-width:0}.pick .t{font-weight:600}.pick .s{font-size:13px;color:var(--muted)}
+
+.toast{position:absolute;left:50%;top:14px;transform:translate(-50%,-90px);background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:99px;font-size:14px;font-weight:600;z-index:40;transition:transform .35s cubic-bezier(.2,.8,.2,1);box-shadow:var(--shadow);max-width:calc(100% - 32px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toast.show{transform:translate(-50%,0)}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="app" id="app">
+  <header class="top pad">
+    <div><div class="eyebrow" id="eyebrow"></div><h1 id="title"></h1></div>
+    <span class="demo-tag">Données de démo</span>
+  </header>
+  <main class="pad" id="main"></main>
+  <nav class="tabs" aria-label="Navigation principale">
+    <button class="tab" data-tab="home"><svg viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5V20a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg>Accueil</button>
+    <button class="tab" data-tab="parc"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg>Parc</button>
+    <button class="scanbtn" data-act="scan" aria-label="Scanner une puce NFC"><svg viewBox="0 0 24 24"><path d="M7 15.5a5 5 0 0 0 0-7M11 18a9 9 0 0 0 0-12M15 20.5a13 13 0 0 0 0-17"/></svg></button>
+    <button class="tab" data-tab="loc"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14.2a6.5 6.5 0 0 1 3.5 5.8"/></svg>Locations</button>
+    <button class="tab" data-tab="ent"><svg viewBox="0 0 24 24"><path d="M14.5 6.5a4 4 0 0 0 5 5L11 20a2.1 2.1 0 0 1-3-3l8.500-8.500zM14.500 6.500l3-3"/></svg>Entretien</button>
+  </nav>
+
+  <div class="detail" id="detail" aria-hidden="true"></div>
+  <div class="scrim" id="scrim" data-act="close-sheet"></div>
+  <div class="sheet pad" id="sheet" role="dialog" aria-modal="true"></div>
+  <div class="toast" id="toast" role="status"></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var ICON={
+  lit:'<path d="M3 19V7M3 15h18v4M21 15v-2.500a3 3 0 0 0-3-3h-7V15"/><circle cx="7" cy="11.500" r="1.800"/>',
+  fauteuil:'<circle cx="10" cy="16" r="5"/><path d="M8 4v8h7l2.500 6H20"/><circle cx="8" cy="3.500" r=".6"/>',
+  oxy:'<path d="M9.500 3h5v3a4 4 0 0 1 1.500 3v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9a4 4 0 0 1 1.500-3zM10 13h4"/>',
+  leve:'<path d="M6 21V5a2 2 0 0 1 2-2h8v5M13 11.500a3 3 0 0 0 6 0M3 21h7"/>',
+  matelas:'<rect x="3" y="8.500" width="18" height="7" rx="2.500"/><path d="M7.500 8.500v7M12 8.500v7M16.500 8.500v7"/>',
+  pompe:'<rect x="6" y="3" width="12" height="18" rx="2.500"/><path d="M9.500 7.500h5M9.500 11h5M12 15v2.500"/>',
+  deamb:'<path d="M7 21V7.500a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3V21M7 12.500h10"/>',
+  chev:'<svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg>',
+  nfc:'<svg viewBox="0 0 24 24"><path d="M7 15.500a5 5 0 0 0 0-7M11 18a9 9 0 0 0 0-12M15 20.500a13 13 0 0 0 0-17"/></svg>',
+  check:'<svg viewBox="0 0 24 24"><path d="m5 12.500 4.500 4.500L19 7.500"/></svg>',
+  clock:'<circle cx="12" cy="12" r="8.500"/><path d="M12 7.500V12l3 2"/>',
+  drop:'<path d="M12 3.500c3.500 4 5.500 6.800 5.500 9.500a5.500 5.500 0 0 1-11 0c0-2.700 2-5.500 5.500-9.500z"/>',
+  tool:'<path d="M14.500 6.500a4 4 0 0 0 5 5L11 20a2.100 2.100 0 0 1-3-3z"/>',
+  ret:'<path d="M9 7 4 12l5 5M4 12h11a5 5 0 0 1 0 10h-2"/>'
+};
+function svg(k){return '<svg viewBox="0 0 24 24">'+ICON[k]+'</svg>';}
+
+var STATUS={loc:{l:'En location',c:'p-loc',seg:'--seg-loc'},dispo:{l:'Disponible',c:'p-dispo',seg:'--seg-dispo'},
+  desinf:{l:'Désinfection',c:'p-desinf',seg:'--seg-desinf'},maint:{l:'Maintenance',c:'p-maint',seg:'--seg-maint'}};
+
+var patients=[
+  {id:'p1',n:'Jeanne Morel',z:'Secteur Nord · Maintien à domicile'},
+  {id:'p2',n:'André Lefèvre',z:'Secteur Centre · Sortie d\'hospitalisation'},
+  {id:'p3',n:'Lucie Bernard',z:'Secteur Sud · Soins palliatifs'},
+  {id:'p4',n:'Henri Girard',z:'Secteur Est · Rééducation'},
+  {id:'p5',n:'Résidence Les Tilleuls',z:'EHPAD · Chambre 14'}
+];
+var seq=0;
+function ev(d,txt){return {d:d,txt:txt,q:seq++};}
+/* d = décalage en jours par rapport à aujourd'hui ; prix = tarif de location hebdomadaire en € */
+var equip=[
+  {id:'e1',k:'lit',n:'Lit médicalisé 3 fonctions',m:'Alto Confort 90',ref:'LIT-0142',uid:'04:A2:3B:91:7C:5E:80',st:'loc',pt:'p1',since:-38,end:22,chk:64,px:14,h:[ev(-38,'Livré et installé chez Jeanne Morel'),ev(-40,'Désinfection validée'),ev(-120,'Contrôle annuel conforme')]},
+  {id:'e2',k:'matelas',n:'Matelas à air anti-escarres',m:'AirSoft Classe II',ref:'MAT-0077',uid:'04:5F:19:C2:8A:6D:81',st:'loc',pt:'p1',since:-38,end:22,chk:-3,px:11,h:[ev(-38,'Livré chez Jeanne Morel'),ev(-41,'Désinfection validée')]},
+  {id:'e3',k:'oxy',n:'Concentrateur d\'oxygène 5 L',m:'OxyFlow 5',ref:'OXY-0031',uid:'04:D8:72:0B:4E:A1:80',st:'loc',pt:'p3',since:-12,end:0,chk:18,px:23,h:[ev(-12,'Livré chez Lucie Bernard'),ev(-13,'Filtre remplacé, débit vérifié à 5 L/min'),ev(-14,'Désinfection validée')]},
+  {id:'e4',k:'fauteuil',n:'Fauteuil roulant manuel',m:'Léger Pliant 43 cm',ref:'FRM-0208',uid:'04:1C:E4:55:9B:3F:80',st:'loc',pt:'p4',since:-21,end:9,chk:140,px:9,h:[ev(-21,'Livré chez Henri Girard'),ev(-22,'Désinfection validée')]},
+  {id:'e5',k:'leve',n:'Lève-personne électrique',m:'Transfert 150 kg',ref:'LEV-0019',uid:'04:7A:0D:B6:21:C8:81',st:'loc',pt:'p5',since:-64,end:30,chk:6,px:19,h:[ev(-64,'Livré à la Résidence Les Tilleuls'),ev(-66,'Sangles contrôlées')]},
+  {id:'e6',k:'lit',n:'Lit médicalisé Alzheimer',m:'Alto Bas 20 cm',ref:'LIT-0156',uid:'04:93:6E:F0:3D:17:80',st:'loc',pt:'p2',since:-6,end:50,chk:200,px:17,h:[ev(-6,'Livré chez André Lefèvre'),ev(-7,'Désinfection validée')]},
+  {id:'e7',k:'pompe',n:'Pompe à perfusion',m:'VoluMed P2',ref:'PMP-0044',uid:'04:E1:58:2A:C7:90:80',st:'desinf',pt:null,since:-1,end:null,chk:45,px:21,h:[ev(-1,'Retour de location, en attente de désinfection'),ev(-30,'Livré chez un patient')]},
+  {id:'e8',k:'fauteuil',n:'Fauteuil roulant confort',m:'Relax Inclinable 45 cm',ref:'FRC-0063',uid:'04:2B:A9:74:10:DE:81',st:'desinf',pt:null,since:0,end:null,chk:88,px:16,h:[ev(0,'Retour de location, en attente de désinfection')]},
+  {id:'e9',k:'oxy',n:'Concentrateur d\'oxygène portable',m:'OxyGo Mobile',ref:'OXY-0038',uid:'04:6C:33:8F:E2:4B:80',st:'maint',pt:null,since:-4,end:null,chk:-9,px:29,h:[ev(-4,'Panne signalée : alarme batterie'),ev(-5,'Retour de location')]},
+  {id:'e10',k:'deamb',n:'Déambulateur 4 roues',m:'Rollator Alu',ref:'DEA-0112',uid:'04:F4:07:D1:5A:26:80',st:'dispo',pt:null,since:-9,end:null,chk:120,px:5,h:[ev(-9,'Désinfection validée, remis en stock')]},
+  {id:'e11',k:'lit',n:'Lit médicalisé 3 fonctions',m:'Alto Confort 90',ref:'LIT-0149',uid:'04:38:C5:6B:92:0A:81',st:'dispo',pt:null,since:-3,end:null,chk:75,px:14,h:[ev(-3,'Désinfection validée, remis en stock'),ev(-4,'Retour de location')]},
+  {id:'e12',k:'matelas',n:'Matelas mousse viscoélastique',m:'ViscoPrév Classe IB',ref:'MAT-0081',uid:'04:8D:21:AE:F6:73:80',st:'dispo',pt:null,since:-15,end:null,chk:12,px:7,h:[ev(-15,'Désinfection validée, remis en stock')]}
+];
+var scanOrder=['e3','e8','e11','e9','e1','e7','e5','e10'], scanIdx=0;
+
+var S={tab:'home',filter:'all',q:'',cur:null};
+var $=function(id){return document.getElementById(id);};
+var main=$('main'),detail=$('detail'),sheet=$('sheet'),scrim=$('scrim'),toastEl=$('toast');
+var timers=[];
+
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function byId(id){for(var i=0;i<equip.length;i++)if(equip[i].id===id)return equip[i];}
+function pat(id){for(var i=0;i<patients.length;i++)if(patients[i].id===id)return patients[i];}
+function dateOf(d){var t=new Date();t.setHours(12,0,0,0);t.setDate(t.getDate()+d);return t;}
+function fmt(d){return dateOf(d).toLocaleDateString('fr-FR',{day:'numeric',month:'short'});}
+function rel(d){if(d===0)return 'Aujourd\'hui';if(d===-1)return 'Hier';if(d===1)return 'Demain';return fmt(d);}
+function initials(n){return n.split(' ').filter(function(w){return /^[A-ZÉ]/.test(w);}).slice(0,2).map(function(w){return w[0];}).join('');}
+function count(st){return equip.filter(function(e){return e.st===st;}).length;}
+function pill(e){return '<span class="pill '+STATUS[e.st].c+'">'+STATUS[e.st].l+'</span>';}
+function where(e){
+  if(e.st==='loc')return pat(e.pt).n;
+  if(e.st==='dispo')return 'Dépôt · en stock';
+  if(e.st==='desinf')return 'Dépôt · zone de lavage';
+  return 'Atelier technique';
+}
+function rowEq(e,sub){
+  return '<button class="row" data-open="'+e.id+'"><span class="ico">'+svg(e.k)+'</span><span class="body"><div class="t">'+esc(e.n)+'</div><div class="s">'+esc(sub||(e.ref+' · '+where(e)))+'</div></span>'+pill(e)+'</button>';
+}
+
+/* ---------- Vues ---------- */
+function viewHome(){
+  var tot=equip.length,nLoc=count('loc'),occ=Math.round(nLoc/tot*100);
+  var rev=equip.filter(function(e){return e.st==='loc';}).reduce(function(a,e){return a+e.px;},0);
+  var seg=['loc','dispo','desinf','maint'].map(function(s){return '<i style="flex-grow:'+count(s)+';background:var('+STATUS[s].seg+')"></i>';}).join('');
+  var leg=['loc','dispo','desinf','maint'].map(function(s){return '<button data-filter="'+s+'"><span class="dot" style="background:var('+STATUS[s].seg+')"></span>'+STATUS[s].l+'<b class="num">'+count(s)+'</b></button>';}).join('');
+  var al=[];
+  equip.forEach(function(e){
+    if(e.chk<0)al.push('<button class="row" data-open="'+e.id+'"><span class="ico a-crit"><svg viewBox="0 0 24 24">'+ICON.clock+'</svg></span><span class="body"><div class="t">Contrôle en retard de '+(-e.chk)+' j</div><div class="s">'+esc(e.n)+' · '+e.ref+'</div></span><span class="chev">'+ICON.chev+'</span></button>');
+  });
+  equip.forEach(function(e){
+    if(e.st==='loc'&&e.end===0)al.push('<button class="row" data-open="'+e.id+'"><span class="ico a-info"><svg viewBox="0 0 24 24">'+ICON.ret+'</svg></span><span class="body"><div class="t">Retour prévu aujourd\'hui</div><div class="s">'+esc(e.n)+' · '+esc(pat(e.pt).n)+'</div></span><span class="chev">'+ICON.chev+'</span></button>');
+  });
+  var nd=count('desinf');
+  if(nd)al.push('<button class="row" data-tab="ent"><span class="ico a-warn"><svg viewBox="0 0 24 24">'+ICON.drop+'</svg></span><span class="body"><div class="t">'+nd+' désinfection'+(nd>1?'s':'')+' en attente</div><div class="s">À valider avant remise en stock</div></span><span class="chev">'+ICON.chev+'</span></button>');
+  var acts=[];
+  equip.forEach(function(e){e.h.forEach(function(h){acts.push({e:e,h:h});});});
+  acts.sort(function(a,b){return b.h.d-a.h.d||b.h.q-a.h.q;});
+  var act=acts.slice(0,5).map(function(a){return '<button class="row" data-open="'+a.e.id+'"><span class="ico">'+svg(a.e.k)+'</span><span class="body"><div class="t wrap">'+esc(a.h.txt)+'</div><div class="s">'+a.e.ref+' · '+rel(a.h.d)+'</div></span></button>';}).join('');
+  return '<div class="hero"><div class="hero-top"><div><div class="lbl">Taux d\'occupation du parc</div><div class="big num">'+occ+'<small>%</small></div></div>'
+    +'<div class="side"><b class="num">'+rev+' €</b>par semaine</div></div><div class="segbar">'+seg+'</div><div class="legend">'+leg+'</div></div>'
+    +'<section><div class="sec-h"><h2>À traiter</h2><span>'+al.length+'</span></div><div class="list">'+(al.join('')||'<div class="empty">Rien à signaler, le parc est à jour.</div>')+'</div></section>'
+    +'<section><div class="sec-h"><h2>Activité récente</h2></div><div class="list">'+act+'</div></section>';
+}
+function viewParc(){
+  var chips=[['all','Tout']].concat(Object.keys(STATUS).map(function(s){return [s,STATUS[s].l];})).map(function(c){
+    var n=c[0]==='all'?equip.length:count(c[0]);
+    return '<button class="chip" data-filter="'+c[0]+'" aria-pressed="'+(S.filter===c[0])+'">'+c[1]+' · '+n+'</button>';}).join('');
+  return '<label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.500"/><path d="m16 16 4 4"/></svg><input id="q" type="search" placeholder="Nom, référence ou patient" value="'+esc(S.q)+'" autocomplete="off" aria-label="Rechercher un équipement"></label>'
+    +'<div class="chips">'+chips+'</div><div class="list" id="parc-list">'+parcRows()+'</div>';
+}
+function parcRows(){
+  var q=S.q.trim().toLowerCase();
+  var r=equip.filter(function(e){
+    if(S.filter!=='all'&&e.st!==S.filter)return false;
+    if(!q)return true;
+    return (e.n+' '+e.ref+' '+e.m+' '+(e.pt?pat(e.pt).n:'')).toLowerCase().indexOf(q)>=0;
+  }).map(function(e){return rowEq(e);}).join('');
+  return r||'<div class="empty">Aucun équipement ne correspond.</div>';
+}
+function viewLoc(){
+  var rented=equip.filter(function(e){return e.st==='loc';});
+  var rev=rented.reduce(function(a,e){return a+e.px;},0);
+  var cards=patients.map(function(p){
+    var it=rented.filter(function(e){return e.pt===p.id;});
+    if(!it.length)return '';
+    var sum=it.reduce(function(a,e){return a+e.px;},0);
+    return '<article class="pcard"><header><span class="avatar">'+initials(p.n)+'</span><div style="min-width:0"><div class="t" style="font-weight:600">'+esc(p.n)+'</div><div class="s" style="font-size:13px;color:var(--muted)">'+esc(p.z)+'</div></div><div class="amt num">'+sum+' €<small>/ semaine</small></div></header>'
+      +it.map(function(e){return '<button class="mini" data-open="'+e.id+'"><span>'+esc(e.n)+'</span><span class="when">'+(e.end===0?'retour aujourd\'hui':'depuis le '+fmt(e.since))+'</span></button>';}).join('')+'</article>';
+  }).join('');
+  var np=patients.filter(function(p){return rented.some(function(e){return e.pt===p.id;});}).length;
+  return '<div class="stat2"><div><b class="num">'+rev+' €</b><span>Loyers par semaine</span></div><div><b class="num">'+np+'</b><span>Bénéficiaires équipés</span></div></div>'
+    +'<section><div class="sec-h"><h2>Contrats en cours</h2><span>'+rented.length+' équipements</span></div>'+(cards||'<div class="list"><div class="empty">Aucune location en cours.</div></div>')+'</section>';
+}
+function viewEnt(){
+  function block(t,arr,empty,sub){return '<section><div class="sec-h"><h2>'+t+'</h2><span>'+arr.length+'</span></div><div class="list">'+(arr.map(function(e){return rowEq(e,sub(e));}).join('')||'<div class="empty">'+empty+'</div>')+'</div></section>';}
+  var de=equip.filter(function(e){return e.st==='desinf';}),ma=equip.filter(function(e){return e.st==='maint';});
+  var ck=equip.slice().sort(function(a,b){return a.chk-b.chk;}).slice(0,5);
+  return block('Désinfection en attente',de,'Aucun matériel en zone de lavage.',function(e){return e.ref+' · retour '+rel(e.since).toLowerCase();})
+    +block('En maintenance',ma,'Aucun matériel à l\'atelier.',function(e){return e.ref+' · depuis le '+fmt(e.since);})
+    +'<section><div class="sec-h"><h2>Prochains contrôles</h2></div><div class="list">'+ck.map(function(e){
+      var c=e.chk<0?['p-maint','Retard '+(-e.chk)+' j']:e.chk<=14?['p-desinf','Dans '+e.chk+' j']:['p-mute',fmt(e.chk)];
+      return '<button class="row" data-open="'+e.id+'"><span class="ico">'+svg(e.k)+'</span><span class="body"><div class="t">'+esc(e.n)+'</div><div class="s">'+e.ref+' · contrôle de sécurité</div></span><span class="pill '+c[0]+'">'+c[1]+'</span></button>';}).join('')+'</div></section>';
+}
+var VIEWS={home:['',"Aujourd'hui",viewHome],parc:['Inventaire','Parc matériel',viewParc],loc:['Patients','Locations',viewLoc],ent:['Atelier','Entretien',viewEnt]};
+function render(keepScroll){
+  var v=VIEWS[S.tab],y=main.scrollTop;
+  $('eyebrow').textContent=v[0]||new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+  $('title').textContent=v[1];
+  main.innerHTML=v[2]();
+  main.scrollTop=keepScroll?y:0;
+  var tabs=document.querySelectorAll('.tab');
+  for(var i=0;i<tabs.length;i++){if(tabs[i].dataset.tab===S.tab)tabs[i].setAttribute('aria-current','page');else tabs[i].removeAttribute('aria-current');}
+}
+
+/* ---------- Fiche ---------- */
+function renderDetail(){
+  var e=byId(S.cur);if(!e)return;
+  var p=e.pt?pat(e.pt):null,acts='';
+  if(e.st==='dispo')acts='<button class="btn" data-act="assign">Mettre en location</button>';
+  else if(e.st==='loc')acts='<button class="btn" data-act="return">Enregistrer le retour</button>';
+  else if(e.st==='desinf')acts='<button class="btn" data-act="clean">'+ICON.check+'Valider la désinfection</button>';
+  else acts='<button class="btn" data-act="repair">'+ICON.check+'Clôturer la maintenance</button>';
+  if(e.st!=='maint')acts+='<button class="btn ghost" data-act="fault">Signaler une panne</button>';
+  var chk=e.chk<0?'<dd class="late">En retard de '+(-e.chk)+' j</dd>':'<dd>'+dateOf(e.chk).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})+'</dd>';
+  var hist=e.h.slice().sort(function(a,b){return b.d-a.d||b.q-a.q;}).map(function(h){return '<li><time>'+rel(h.d)+'</time>'+esc(h.txt)+'</li>';}).join('');
+  detail.innerHTML='<div class="dbar pad"><button class="back" data-act="back"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg>Retour</button>'+pill(e)+'</div>'
+    +'<div class="dscroll pad"><div class="dhead"><span class="ico">'+svg(e.k)+'</span><div style="min-width:0"><h2>'+esc(e.n)+'</h2><p>'+esc(e.m)+'</p></div></div>'
+    +'<div class="tagcard">'+ICON.nfc+'<div><small>Puce NFC · NTAG 216</small><code>'+e.uid+'</code></div><div class="ref"><small>Réf.</small><code>'+e.ref+'</code></div></div>'
+    +'<dl class="kv" style="margin:0">'
+    +'<div><dt>Emplacement</dt><dd>'+esc(where(e))+'</dd></div>'
+    +(p?'<div><dt>Prise en charge</dt><dd>'+esc(p.z.split(' · ')[1]||p.z)+'</dd></div><div><dt>En location depuis</dt><dd>'+fmt(e.since)+' ('+(-e.since)+' j)</dd></div>'+(e.end!==null?'<div><dt>Retour prévu</dt><dd>'+rel(e.end)+'</dd></div>':''):'')
+    +'<div><dt>Tarif de location</dt><dd class="num">'+e.px+' € / semaine</dd></div>'
+    +'<div><dt>Prochain contrôle</dt>'+chk+'</div></dl>'
+    +'<section><div class="sec-h"><h2>Historique</h2><span>'+e.h.length+' événements</span></div><ol class="tl">'+hist+'</ol></section></div>'
+    +'<div class="actions pad">'+acts+'</div>';
+}
+function openDetail(id){S.cur=id;renderDetail();detail.classList.add('open');detail.setAttribute('aria-hidden','false');}
+function closeDetail(){detail.classList.remove('open');detail.setAttribute('aria-hidden','true');S.cur=null;render(true);}
+
+/* ---------- Feuilles ---------- */
+function openSheet(html){sheet.innerHTML='<div class="grab"></div>'+html;sheet.classList.add('open');scrim.classList.add('open');}
+function closeSheet(){timers.forEach(clearTimeout);timers=[];sheet.classList.remove('open');scrim.classList.remove('open');}
+function startScan(){
+  openSheet('<h2 id="scan-t">Prêt à scanner</h2><p class="sub" id="scan-s">Approchez le haut de l\'iPhone de la puce collée sur l\'équipement.</p>'
+    +'<div class="radar" id="radar"><span></span><span></span><span></span><div class="core" id="core">'+ICON.nfc+'</div></div>'
+    +'<button class="btn soft" data-act="close-sheet">Annuler</button>');
+  timers.push(setTimeout(function(){
+    var e=byId(scanOrder[scanIdx++%scanOrder.length]);
+    $('radar').classList.add('found');$('core').innerHTML=ICON.check;
+    $('scan-t').textContent='Puce reconnue';$('scan-s').textContent=e.n+' · '+e.ref;
+    if(navigator.vibrate){try{navigator.vibrate(40);}catch(x){}}
+    timers.push(setTimeout(function(){closeSheet();openDetail(e.id);},850));
+  },1900));
+}
+function pickPatient(){
+  openSheet('<h2>Attribuer à un bénéficiaire</h2><div class="plist">'+patients.map(function(p){
+    return '<button class="pick" data-pick="'+p.id+'"><span class="avatar">'+initials(p.n)+'</span><span class="body"><div class="t">'+esc(p.n)+'</div><div class="s">'+esc(p.z)+'</div></span></button>';}).join('')
+    +'</div><button class="btn soft" data-act="close-sheet">Annuler</button>');
+}
+var toastT;
+function toast(t){toastEl.textContent=t;toastEl.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){toastEl.classList.remove('show');},2200);}
+
+/* ---------- Actions ---------- */
+function act(a,e){
+  if(a==='return'){var n=pat(e.pt).n;e.st='desinf';e.pt=null;e.end=null;e.since=0;e.h.push(ev(0,'Retour de location ('+n+'), en attente de désinfection'));toast('Retour enregistré');}
+  else if(a==='clean'){e.st='dispo';e.since=0;e.h.push(ev(0,'Désinfection validée, remis en stock'));toast('Désinfection validée');}
+  else if(a==='repair'){e.st='dispo';e.since=0;if(e.chk<0)e.chk=365;e.h.push(ev(0,'Maintenance clôturée, contrôle conforme'));toast('Matériel remis en stock');}
+  else if(a==='fault'){e.st='maint';e.pt=null;e.end=null;e.since=0;e.h.push(ev(0,'Panne signalée, envoyé à l\'atelier'));toast('Panne signalée');}
+  renderDetail();
+}
+document.addEventListener('click',function(x){
+  var t=x.target.closest('[data-tab],[data-open],[data-act],[data-filter],[data-pick]');if(!t)return;
+  var d=t.dataset;
+  if(d.tab){S.tab=d.tab;render();}
+  else if(d.open){openDetail(d.open);}
+  else if(d.filter){S.filter=d.filter;S.tab='parc';render();}
+  else if(d.pick){var e=byId(S.cur),p=pat(d.pick);e.st='loc';e.pt=p.id;e.since=0;e.end=28;e.h.push(ev(0,'Livré chez '+p.n));closeSheet();renderDetail();toast('Location démarrée');}
+  else if(d.act==='scan')startScan();
+  else if(d.act==='close-sheet')closeSheet();
+  else if(d.act==='back')closeDetail();
+  else if(d.act==='assign')pickPatient();
+  else if(S.cur)act(d.act,byId(S.cur));
+});
+document.addEventListener('input',function(x){if(x.target.id==='q'){S.q=x.target.value;$('parc-list').innerHTML=parcRows();}});
+document.addEventListener('keydown',function(x){if(x.key==='Escape'){if(sheet.classList.contains('open'))closeSheet();else if(S.cur)closeDetail();}});
+render();
+})();
+</script>
