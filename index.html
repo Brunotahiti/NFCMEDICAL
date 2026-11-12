@@ -36,7 +36,7 @@
 
 *{box-sizing:border-box}
 html,body{height:100%}
-body{background:var(--bg);color:var(--ink);font-family:var(--f-text);font-size:15px;line-height:1.4;
+body{background:linear-gradient(180deg,var(--bg-top) 0,var(--bg-top) 50%,var(--bg) 50%);color:var(--ink);font-family:var(--f-text);font-size:15px;line-height:1.4;
   -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overflow:hidden}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit}
 button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -251,7 +251,7 @@ main>*{flex:none}
 .radar.found .core{background:var(--ok);color:var(--surface);transform:scale(1.35);padding:4px;overflow:hidden}
 .radar .core img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
 @keyframes ping{0%{transform:scale(.48);opacity:.75}100%{transform:scale(1);opacity:0}}
-.sheet .plist{overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.sheet .plist{overflow-y:auto;min-height:0;display:flex;flex-direction:column;gap:8px}
 .pick{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border-radius:16px;background:var(--bg)}
 .pick .body{flex:1;min-width:0}.pick .t{font-weight:600}.pick .s{font-size:13px;color:var(--muted)}
 
@@ -508,7 +508,13 @@ function closeDetail(){detail.classList.remove('open');detail.setAttribute('aria
 /* ---------- Feuilles ---------- */
 function openSheet(html){sheet.innerHTML='<div class="grab"></div>'+html;sheet.classList.add('open');scrim.classList.add('open');}
 function closeSheet(){timers.forEach(clearTimeout);timers=[];sheet.classList.remove('open');scrim.classList.remove('open');}
-function startScan(){
+var UIDKEY='mediparc-puces';
+function saveUids(){try{var m={};equip.forEach(function(e){m[e.id]=e.uid;});localStorage.setItem(UIDKEY,JSON.stringify(m));}catch(x){}}
+try{var saved=JSON.parse(localStorage.getItem(UIDKEY)||'{}');equip.forEach(function(e){if(saved[e.id])e.uid=saved[e.id];});}catch(x){}
+function nativeNfc(){return window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.nfc;}
+/* Dans l'app iOS, le scan passe par Core NFC ; ailleurs (navigateur, simulateur) la lecture est simulée. */
+function startScan(){var n=nativeNfc();if(n){n.postMessage('scan');}else simScan();}
+function simScan(){
   openSheet('<h2 id="scan-t">Prêt à scanner</h2><p class="sub" id="scan-s">Approchez le haut de l\'iPhone de la puce collée sur l\'équipement.</p>'
     +'<div class="radar" id="radar"><span></span><span></span><span></span><div class="core" id="core">'+ICON.nfc+'</div></div>'
     +'<button class="btn soft" data-act="close-sheet">Annuler</button>');
@@ -516,10 +522,21 @@ function startScan(){
     var e=byId(scanOrder[scanIdx++%scanOrder.length]);
     $('radar').classList.add('found');$('core').innerHTML='<img src="'+src(e)+'" alt="">';
     $('scan-t').textContent='Puce reconnue';$('scan-s').textContent=e.n+' · '+e.ref;
-    if(navigator.vibrate){try{navigator.vibrate(40);}catch(x){}}
     timers.push(setTimeout(function(){closeSheet();openDetail(e.id);},850));
   },1900));
 }
+var pendingUid=null;
+window.onNfcUnavailable=simScan;
+window.onNfcCancelled=function(){};
+window.onNfcTag=function(uid){
+  uid=String(uid).toUpperCase();
+  var e=equip.filter(function(x){return x.uid.toUpperCase()===uid;})[0];
+  if(e){closeSheet();openDetail(e.id);toast('Puce reconnue · '+e.ref);return;}
+  pendingUid=uid;
+  openSheet('<h2>Puce inconnue</h2><p class="sub">'+esc(uid)+'<br>Choisissez l\'équipement auquel associer cette puce.</p><div class="plist">'+equip.map(function(x){
+    return '<button class="pick" data-link="'+x.id+'">'+ph(x)+'<span class="body"><div class="t">'+esc(x.n)+'</div><div class="s">'+x.ref+'</div></span></button>';}).join('')
+    +'</div><button class="btn soft" data-act="close-sheet">Annuler</button>');
+};
 function pickPatient(){
   openSheet('<h2>Attribuer à un bénéficiaire</h2><div class="plist">'+patients.map(function(p){
     return '<button class="pick" data-pick="'+p.id+'"><span class="avatar">'+initials(p.n)+'</span><span class="body"><div class="t">'+esc(p.n)+'</div><div class="s">'+esc(p.z)+'</div></span></button>';}).join('')
@@ -537,9 +554,10 @@ function act(a,e){
   renderDetail();
 }
 document.addEventListener('click',function(x){
-  var t=x.target.closest('[data-tab],[data-open],[data-act],[data-filter],[data-pick]');if(!t)return;
+  var t=x.target.closest('[data-tab],[data-open],[data-act],[data-filter],[data-pick],[data-link]');if(!t)return;
   var d=t.dataset;
   if(d.tab){S.tab=d.tab;render();}
+  else if(d.link){var le=byId(d.link);le.uid=pendingUid;pendingUid=null;le.h.push(ev(0,'Puce NFC associée'));saveUids();closeSheet();openDetail(le.id);toast('Puce associée à '+le.ref);}
   else if(d.open){openDetail(d.open);}
   else if(d.filter){S.filter=d.filter;S.tab='parc';render();}
   else if(d.pick){var e=byId(S.cur),p=pat(d.pick);e.st='loc';e.pt=p.id;e.since=0;e.end=28;e.h.push(ev(0,'Livré chez '+p.n));closeSheet();renderDetail();toast('Location démarrée');}
