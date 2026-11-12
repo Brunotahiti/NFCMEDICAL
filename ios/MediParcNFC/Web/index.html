@@ -259,6 +259,21 @@ main>*{flex:none}
 .actions .btn svg{width:20px;height:20px;flex:none}
 .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:56px;border-radius:18px;font-family:var(--f-display);font-weight:600;font-size:16px;background:linear-gradient(140deg,var(--hero),var(--hero2));color:var(--hero-fg);box-shadow:0 10px 20px -8px var(--glow)}
 .btn.soft{box-shadow:none;font-family:var(--f-text)}
+.btn.danger{background:var(--crit-soft);color:var(--crit);border:1px solid var(--crit);box-shadow:none}
+#settings{z-index:19}
+.sbar{display:flex;align-items:center;gap:14px;padding-block:12px}
+.sbar .back{position:static}
+.sbar h2{font-family:var(--f-display);font-size:26px;font-weight:700;letter-spacing:-.02em}
+.sbody{display:flex;flex-direction:column;gap:20px;padding-block:6px 24px}
+.note{font-size:14px;color:var(--muted);line-height:1.45}
+.row .s code,.sheet .sub code{font-family:var(--f-mono);font-size:11.5px}
+.fld{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:-8px}
+.uidrow{display:flex;gap:8px}
+.uidrow .btn{width:auto;flex:none;padding:0 16px;min-height:52px}
+input.uid{flex:1;min-width:0;height:52px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font-family:var(--f-mono);font-size:16px;padding:0 12px;text-transform:uppercase}
+input.uid::placeholder{color:var(--muted);opacity:.6}
+.err{font-size:13px;color:var(--crit);margin-top:-6px}
+.stack{display:flex;flex-direction:column;gap:10px}
 .btn.prog{min-height:48px;margin-top:-8px;background:var(--surface);color:var(--accent);box-shadow:var(--shadow);font-size:15px}
 .actions .btn.danger{flex:none;width:auto;box-shadow:none;background:var(--crit-soft);color:var(--crit);border:1px solid var(--crit);font-size:13px;padding:0 10px}
 .btn.danger svg{width:20px;height:20px}
@@ -307,7 +322,7 @@ main>*{flex:none}
   </svg></div>
   <header class="top pad" id="top">
     <div><div class="eyebrow" id="eyebrow"></div><h1 id="title"></h1></div>
-    <span class="demo-tag"><svg class="i" viewBox="0 0 24 24"><path d="M5 20v-6M10 20V9M15 20v-9M20 20V5"/></svg>Données de démo</span>
+    <button class="demo-tag" data-act="settings"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>Paramètres</button>
   </header>
   <main class="pad" id="main"></main>
   <nav class="tabs" aria-label="Navigation principale">
@@ -318,6 +333,7 @@ main>*{flex:none}
     <button class="tab" data-tab="ent"><svg viewBox="0 0 24 24"><path d="M14.5 6.5a4 4 0 0 0 5 5L11 20a2.1 2.1 0 0 1-3-3l8.500-8.500zM14.500 6.500l3-3"/></svg>Entretien</button>
   </nav>
 
+  <div class="detail" id="settings" aria-hidden="true"></div>
   <div class="detail" id="detail" aria-hidden="true"></div>
   <div class="scrim" id="scrim" data-act="close-sheet"></div>
   <div class="sheet pad" id="sheet" role="dialog" aria-modal="true"></div>
@@ -357,6 +373,7 @@ var ICON={
   frame:'<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><rect x="9" y="9" width="6" height="6" rx="1.200"/>',
   users:'<circle cx="9" cy="8" r="3.500"/><path d="M2.500 20a6.500 6.500 0 0 1 13 0M16 4.800a3.500 3.500 0 0 1 0 6.400M18 14.200a6.500 6.500 0 0 1 3.500 5.800"/>',
   up:'<path d="M12 19V5M6 11l6-6 6 6"/>',
+  tag:'<path d="M7 15.500a5 5 0 0 0 0-7M11 18a9 9 0 0 0 0-12M15 20.500a13 13 0 0 0 0-17"/>',
   ret:'<path d="M9 7 4 12l5 5M4 12h11a5 5 0 0 1 0 10h-2"/>'
 };
 function ic(k){return '<svg class="i" viewBox="0 0 24 24">'+ICON[k]+'</svg>';}
@@ -586,8 +603,9 @@ function closeDetail(){detail.classList.remove('open');detail.setAttribute('aria
 
 /* ---------- Feuilles ---------- */
 function openSheet(html){sheet.innerHTML='<div class="grab"></div>'+html;sheet.classList.add('open');scrim.classList.add('open');}
-function closeSheet(){timers.forEach(clearTimeout);timers=[];sheet.classList.remove('open');scrim.classList.remove('open');}
-var UIDKEY='mediparc-puces';
+function closeSheet(){sheet.style.height='';timers.forEach(clearTimeout);timers=[];sheet.classList.remove('open');scrim.classList.remove('open');}
+var UIDKEY='mediparc-puces',ORIG={};equip.forEach(function(e){ORIG[e.id]=e.uid;});
+var settingsEl=$('settings'),setOpen=false,tagId=null;
 function saveUids(){try{var m={};equip.forEach(function(e){m[e.id]=e.uid;});localStorage.setItem(UIDKEY,JSON.stringify(m));}catch(x){}}
 try{var saved=JSON.parse(localStorage.getItem(UIDKEY)||'{}');equip.forEach(function(e){if(e.id in saved)e.uid=saved[e.id];});}catch(x){}
 function nativeNfc(){return window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.nfc;}
@@ -607,10 +625,10 @@ function simScan(){
 var pendingUid=null,linkTarget=null;
 function assignUid(e,uid){
   equip.forEach(function(o){if(o!==e&&o.uid.toUpperCase()===uid){o.uid='';o.h.push(ev(0,'Puce NFC réattribuée à '+e.ref));}});
-  e.uid=uid;e.h.push(ev(0,'Puce NFC associée ('+uid+')'));saveUids();closeSheet();openDetail(e.id);toast('Puce associée à '+e.ref);
+  e.uid=uid;e.h.push(ev(0,'Puce NFC associée ('+uid+')'));saveUids();closeSheet();if(setOpen)renderSettings();else openDetail(e.id);toast('Puce associée à '+e.ref);
 }
-function programTag(){
-  linkTarget=S.cur;var n=nativeNfc();if(n){n.postMessage('scan');return;}
+function programTag(id){
+  linkTarget=id;var n=nativeNfc();if(n){n.postMessage('scan');return;}
   var e=byId(linkTarget);
   openSheet('<h2 id="scan-t">Associer une puce</h2><p class="sub" id="scan-s">Approchez l\'iPhone de la puce à coller sur : '+esc(e.n)+'.</p>'
     +'<div class="radar" id="radar"><span></span><span></span><span></span><div class="core" id="core">'+ICON.nfc+'</div></div>'
@@ -620,6 +638,43 @@ function programTag(){
     $('radar').classList.add('found');$('core').innerHTML=ICON.check;$('scan-t').textContent='Puce lue';$('scan-s').textContent=uid;
     timers.push(setTimeout(function(){linkTarget=null;assignUid(e,uid);},850));
   },1900));
+}
+/* ---------- Paramètres : association des puces réelles ---------- */
+function renderSettings(){
+  var n=equip.filter(function(e){return e.uid;}).length;
+  settingsEl.innerHTML='<div class="sbar pad"><button class="back" data-act="close-settings" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><h2>Paramètres</h2></div>'
+    +'<div class="dscroll"><div class="sbody pad">'
+    +'<div class="banner"><div>'+ic('tag')+'<div><b class="num">'+n+' / '+equip.length+'</b><span>Équipements avec puce</span></div></div><div>'+ic('warn')+'<div><b class="num">'+(equip.length-n)+'</b><span>Sans puce</span></div></div></div>'
+    +'<p class="note">Touchez un équipement pour lui associer une vraie puce : scannez-la avec l\'iPhone ou saisissez son code. Les associations restent enregistrées sur cet appareil.</p>'
+    +'<section>'+secH('tag','Puces NFC')+'<div class="list">'+equip.map(function(e){
+      return '<button class="row" data-tag="'+e.id+'">'+ph(e)+'<span class="body"><div class="t">'+esc(e.n)+'</div><div class="s">'+e.ref+(e.uid?' · <code>'+esc(e.uid)+'</code>':'')+'</div></span>'
+        +(e.uid?'':'<span class="pill p-desinf">À associer</span>')+'<span class="chev">'+ICON.chev+'</span></button>';}).join('')+'</div></section>'
+    +'<section>'+secH('gear','Démonstration')+'<div class="stack"><button class="btn" data-act="scan">'+ICON.nfc+'Tester une puce</button>'
+    +'<button class="btn soft" data-act="clear-all">Effacer toutes les puces</button><button class="btn soft" data-act="restore-all">Rétablir les puces de démonstration</button></div>'
+    +'<p class="note">Patients, tarifs, adresses et historique sont des données de démonstration.</p></section></div></div>';
+}
+function openSettings(){setOpen=true;renderSettings();settingsEl.classList.add('open');settingsEl.setAttribute('aria-hidden','false');}
+function closeSettings(){setOpen=false;settingsEl.classList.remove('open');settingsEl.setAttribute('aria-hidden','true');render(true);}
+function openTag(id){
+  tagId=id;var e=byId(id);
+  openSheet('<h2>'+esc(e.n)+'</h2><p class="sub">'+e.ref+' · '+(e.uid?'<code>'+esc(e.uid)+'</code>':'aucune puce')+'</p>'
+    +'<label class="fld" for="uid-in">Code de la puce</label><div class="uidrow"><input class="uid" id="uid-in" type="text" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="04:A2:3B:91:7C:5E:80" value="'+esc(e.uid)+'"><button class="btn" data-act="save-uid">Enregistrer</button></div>'
+    +'<p class="err" id="uid-err" hidden></p>'
+    +'<button class="btn" data-act="scan-tag">'+ICON.nfc+'Scanner la puce</button>'
+    +(e.uid?'<button class="btn danger" data-act="clear-tag">Retirer la puce</button>':'')
+    +'<button class="btn soft" data-act="close-sheet">Fermer</button>');
+  sheet.style.height='84%';
+}
+/* Accepte 04A23B917C5E80, 04:a2:3b…, 04 A2 3B… : 4, 7 ou 10 octets hexadécimaux. */
+function normUid(v){
+  var h=String(v).replace(/[^0-9a-fA-F]/g,'').toUpperCase();
+  if(/[^0-9a-fA-F\s:.\-]/.test(String(v))||[8,14,20].indexOf(h.length)<0)return null;
+  return h.match(/../g).join(':');
+}
+function saveUid(){
+  var u=normUid($('uid-in').value),err=$('uid-err');
+  if(!u){err.textContent='Code non reconnu. Saisissez 4, 7 ou 10 octets en hexadécimal, par exemple 04:A2:3B:91:7C:5E:80.';err.hidden=false;return;}
+  assignUid(byId(tagId),u);
 }
 function openState(st){
   var it=equip.filter(function(e){return e.st===st;});
@@ -655,9 +710,17 @@ function act(a,e){
   renderDetail();
 }
 document.addEventListener('click',function(x){
-  var t=x.target.closest('[data-tab],[data-open],[data-act],[data-filter],[data-pick],[data-link],[data-place],[data-mode],[data-state]');if(!t)return;
+  var t=x.target.closest('[data-tab],[data-open],[data-act],[data-filter],[data-pick],[data-link],[data-place],[data-mode],[data-state],[data-tag]');if(!t)return;
   var d=t.dataset;
-  if(d.state){openState(d.state);}
+  if(d.tag){openTag(d.tag);}
+  else if(d.act==='settings')openSettings();
+  else if(d.act==='close-settings')closeSettings();
+  else if(d.act==='save-uid')saveUid();
+  else if(d.act==='scan-tag'){var tg=tagId;closeSheet();programTag(tg);}
+  else if(d.act==='clear-tag'){var ce=byId(tagId);ce.uid='';ce.h.push(ev(0,'Puce NFC retirée'));saveUids();closeSheet();renderSettings();toast('Puce retirée de '+ce.ref);}
+  else if(d.act==='clear-all'){equip.forEach(function(e){e.uid='';});saveUids();renderSettings();toast('Toutes les puces sont effacées');}
+  else if(d.act==='restore-all'){equip.forEach(function(e){e.uid=ORIG[e.id];});saveUids();renderSettings();toast('Puces de démonstration rétablies');}
+  else if(d.state){openState(d.state);}
   else if(d.place){var same=S.tab==='parc'&&S.mode==='plan';S.place=d.place;S.tab='parc';S.mode='plan';render(same);}
   else if(d.mode){S.mode=d.mode;S.tab='parc';render();}
   else if(d.tab){S.tab=d.tab;render();}
@@ -671,11 +734,11 @@ document.addEventListener('click',function(x){
   else if(d.act==='back')closeDetail();
   else if(d.act==='copy'){var r=byId(S.cur).ref;try{navigator.clipboard.writeText(r).then(function(){toast('Référence '+r+' copiée');},function(){toast('Référence : '+r);});}catch(z){toast('Référence : '+r);}}
   else if(d.act==='assign')pickPatient();
-  else if(d.act==='program')programTag();
+  else if(d.act==='program')programTag(S.cur);
   else if(S.cur)act(d.act,byId(S.cur));
 });
 document.addEventListener('input',function(x){if(x.target.id==='q'){S.q=x.target.value;$('parc-list').innerHTML=parcRows();}});
-document.addEventListener('keydown',function(x){if(x.key==='Escape'){if(sheet.classList.contains('open'))closeSheet();else if(S.cur)closeDetail();}});
+document.addEventListener('keydown',function(x){if(x.key==='Enter'&&x.target.id==='uid-in'){saveUid();return;}if(x.key==='Escape'){if(sheet.classList.contains('open'))closeSheet();else if(S.cur)closeDetail();else if(setOpen)closeSettings();}});
 render();
 })();
 </script>

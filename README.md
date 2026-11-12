@@ -23,6 +23,10 @@ La lecture NFC demande un compte Apple Developer payant (la capacité « NFC Tag
 - Puce inconnue : l'app propose de l'associer à un équipement ; l'association est mémorisée sur l'appareil.
 - Paramétrer une puce : dans une fiche, « Associer / Remplacer la puce NFC » lit la puce présentée et l'attribue à cet équipement (une puce déjà utilisée ailleurs est réattribuée).
 
+## Paramètres : associer de vraies puces
+
+Bouton « Paramètres » en haut à droite. La liste montre chaque équipement et sa puce. Touchez un équipement pour scanner sa puce avec l'iPhone ou saisir son code à la main (4, 7 ou 10 octets hexadécimaux, ex. `04:A2:3B:91:7C:5E:80`). « Effacer toutes les puces » retire les codes fictifs avant d'associer les vraies ; « Tester une puce » vérifie qu'une puce ouvre la bonne fiche. Les associations sont mémorisées sur l'appareil.
+
 ## Plan
 
 Le plan est un contour simplifié de Tahiti dessiné dans la page ; chaque équipement est placé au dépôt ou au domicile du bénéficiaire (adresses fictives). Le bouton « Plans » d'une fiche ouvre l'endroit dans Apple Plans.
