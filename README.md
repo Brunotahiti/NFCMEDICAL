@@ -17,6 +17,10 @@ Démo d'application iPhone pour gérer un parc de matériel médical en location
 
 La lecture NFC demande un compte Apple Developer payant (la capacité « NFC Tag Reading » n'est pas proposée aux comptes gratuits) et un vrai iPhone. Avec un compte gratuit, retirez la capacité NFC dans Signing & Capabilities : l'app se lance quand même et simule le scan, comme dans le simulateur.
 
+## Catalogue
+
+Le parc reprend les 24 produits du catalogue de location (lits, porte-sérum, lève-personnes, déambulateurs et rollators, fauteuil roulant, TENS, aérosols, concentrateur d'O2, aspirateur, tire-lait). Le « prix catalogue » de chaque fiche vient de cette liste ; les loyers hebdomadaires, les bénéficiaires et les dates sont des valeurs de démonstration. Les photos sont des illustrations libres par type de matériel, pas les modèles exacts ; trois produits n'ont pas encore de photo et affichent une icône.
+
 ## Durée des locations
 
 Chaque fiche en location affiche depuis combien de temps le matériel est loué, combien de temps il reste, la durée prévue et une barre de progression ; « + 1 semaine » repousse le retour. La durée prévue se choisit à la mise en location (1, 2, 4 semaines ou 3 mois). L'écran Locations et les cartes du Parc reprennent ces durées.

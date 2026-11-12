@@ -3,6 +3,7 @@
 set -e
 cd "$(dirname "$0")/.."
 OUT=ios/MediParcNFC/Web
+rm -rf "$OUT/photos"
 mkdir -p "$OUT/photos"
 {
   printf '%s\n' '<!doctype html>' '<html lang="fr">' '<head>' '<meta charset="utf-8">' \
