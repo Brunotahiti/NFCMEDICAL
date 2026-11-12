@@ -27,17 +27,17 @@ Chaque fiche en location affiche depuis combien de temps le matériel est loué,
 
 ## Puces NFC : un lien par équipement
 
-Chaque puce contient un lien (enregistrement NDEF de type URI), par exemple `https://votre-site.pf/materiel/LIT-0142`. À la lecture, l'app retrouve l'équipement dont le lien est identique, ou dont la référence termine le lien.
+Chaque puce contient un lien (enregistrement NDEF de type URI), par exemple `https://manaprocess.cloud/materiel/LIT-0101`. À la lecture, l'app retrouve l'équipement dont le lien est identique, ou dont la référence termine le lien.
 
 Bouton « Paramètres » en haut à droite :
 
 - Écrire le lien sur une puce : l'app programme une puce vierge ou réinscriptible avec le lien de l'équipement.
 - Lire une puce déjà programmée : le lien présent sur la puce est associé à l'équipement.
 - Saisir le lien à la main, le copier, ou retirer la puce.
-- Adresse des liens : le début commun des liens (par défaut l'adresse de la démo en ligne ; à remplacer par votre propre site).
+- Adresse des liens : le début commun des liens (par défaut `https://manaprocess.cloud/materiel/`, modifiable).
 - Tester une puce, effacer toutes les puces, rétablir les liens par défaut.
 
-Les associations sont mémorisées sur l'appareil. Une puce lue hors de l'app ouvre son lien dans Safari ; avec l'adresse par défaut, la démo en ligne s'ouvre sur la fiche de l'équipement.
+Les associations sont mémorisées sur l'appareil. Une puce lue hors de l'app ouvre son lien dans Safari : il faut donc qu'une page existe à cette adresse sur manaprocess.cloud.
 
 ## Plan
 

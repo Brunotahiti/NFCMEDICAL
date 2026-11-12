@@ -667,12 +667,13 @@ function closeDetail(){detail.classList.remove('open');detail.setAttribute('aria
 function openSheet(html){sheet.innerHTML='<div class="grab"></div>'+html;sheet.classList.add('open');scrim.classList.add('open');}
 function closeSheet(){sheet.style.height='';timers.forEach(clearTimeout);timers=[];sheet.classList.remove('open');scrim.classList.remove('open');}
 /* ---------- Puces NFC : chaque puce porte un lien (enregistrement NDEF de type URI) ---------- */
-var LKEY='mediparc-liens',BKEY='mediparc-base',DEFBASE='https://claude.ai/artifact/GzLtKdSYdmEHSFtsnMWLQ2#';
+var LKEY='mediparc-liens',BKEY='mediparc-base',DEFBASE='https://manaprocess.cloud/materiel/',OLDBASE='https://claude.ai/artifact/GzLtKdSYdmEHSFtsnMWLQ2#';
 var base=DEFBASE,settingsEl=$('settings'),setOpen=false,tagId=null,pendingLink=null,linkTarget=null;
 try{base=localStorage.getItem(BKEY)||DEFBASE;}catch(x){}
+if(base===OLDBASE)base=DEFBASE; /* ancienne adresse par défaut */
 function defLink(e){return base+e.ref;}
 equip.forEach(function(e){e.link=defLink(e);});
-try{var saved=JSON.parse(localStorage.getItem(LKEY)||'{}');equip.forEach(function(e){if(e.id in saved)e.link=saved[e.id];});}catch(x){}
+try{var saved=JSON.parse(localStorage.getItem(LKEY)||'{}');equip.forEach(function(e){if(e.id in saved)e.link=saved[e.id]===OLDBASE+e.ref?defLink(e):saved[e.id];});}catch(x){}
 function saveLinks(){try{var m={};equip.forEach(function(e){m[e.id]=e.link;});localStorage.setItem(LKEY,JSON.stringify(m));localStorage.setItem(BKEY,base);}catch(x){}}
 function shortLink(u){return u.replace(/^https?:\/\//,'');}
 /* Affichage compact : on garde le début et la fin, là où se trouve la référence. */
@@ -787,7 +788,7 @@ function saveUid(){
 }
 function saveBase(){
   var u=normUrl($('base-in').value),err=$('base-err');
-  if(!u){err.textContent='Adresse non reconnue. Exemple : https://votre-site.pf/materiel/';err.hidden=false;return;}
+  if(!u){err.textContent='Adresse non reconnue. Exemple : https://manaprocess.cloud/materiel/';err.hidden=false;return;}
   if(!/[\/#=]$/.test(u))u+='/';
   equip.forEach(function(e){if(e.link&&sameLink(e.link,defLink(e)))e.link=u+e.ref;});
   base=u;saveLinks();renderSettings();toast('Adresse des liens mise à jour');
