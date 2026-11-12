@@ -57,11 +57,9 @@ Le plan dessiné montre où se trouve le matériel (dépôt ou domicile du bén�
 
 ## Mise en ligne sur manaprocess.cloud
 
-Pour qu'une puce scannée sans l'app ouvre la fiche dans Safari, la démo doit être servie à `https://manaprocess.cloud/materiel/`. Le dossier `deploy/` contient :
+La démo est en ligne sur `https://manaprocess.cloud/materiel/` : une puce scannée sans l'app ouvre la fiche de l'équipement dans Safari (par exemple `…/materiel/LIT-0101`).
 
-- `build.sh` : génère le site dans `deploy/site/materiel` ;
-- `nginx.conf` : sert la page pour toute adresse `/materiel/…` ;
-- `docker-compose.yml` : conteneur nginx avec des étiquettes Traefik, à adapter au serveur (réseau, point d'entrée, résolveur de certificat).
+Sur le VPS, le projet Docker `mediparc-nfc` (fichier `deploy/docker-compose.yml`) lance un conteneur nginx derrière Traefik. À chaque démarrage, il télécharge ce dépôt (qui doit rester public), génère le site avec `deploy/build.sh` et le sert. Pour publier une nouvelle version : pousser sur la branche, puis redémarrer le projet `mediparc-nfc`.
 
 ## Modifier l'interface
 

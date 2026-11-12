@@ -1,14 +1,25 @@
 # Sert la démo MédiParc sur https://manaprocess.cloud/materiel/ derrière le Traefik du VPS.
-# L'image est construite sur le serveur, directement depuis le dépôt GitHub (qui doit être public).
+# Au démarrage, le conteneur télécharge le site depuis le dépôt GitHub public :
+# redémarrer le projet « mediparc-nfc » suffit pour mettre le site à jour.
 services:
   site:
-    build:
-      context: https://github.com/Brunotahiti/NFCMEDICAL.git#claude/bold-gates-7zd8o7
-      dockerfile: deploy/Dockerfile
-    image: mediparc-nfc:latest
+    image: nginx:1.27-alpine
     container_name: mediparc-nfc
     restart: unless-stopped
     mem_limit: 64m
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        cd /tmp
+        wget -qO src.tgz https://codeload.github.com/Brunotahiti/NFCMEDICAL/tar.gz/refs/heads/claude/bold-gates-7zd8o7
+        rm -rf src && mkdir src && tar xzf src.tgz -C src --strip-components=1
+        sh src/deploy/build.sh
+        rm -rf /usr/share/nginx/html/materiel
+        cp -r src/deploy/site/materiel /usr/share/nginx/html/materiel
+        cp src/deploy/nginx.conf /etc/nginx/conf.d/default.conf
+        exec nginx -g 'daemon off;'
     networks:
       - traefik
     labels:
