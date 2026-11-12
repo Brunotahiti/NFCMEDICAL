@@ -806,8 +806,8 @@ function openState(st){
   openSheet('<h2>'+STATUS[st].l+' · '+it.length+'</h2><div class="list">'+(it.map(function(e){return rowEq(e);}).join('')||'<div class="empty">Aucun équipement dans cet état.</div>')
     +'</div><button class="btn soft" data-filter="'+st+'">Voir dans le parc</button>');
 }
-/* Lien ouvert directement (puce scannée hors de l'app) : …#LIT-0142 ouvre la fiche. */
-function openFromHash(){var r=decodeURIComponent(location.hash.slice(1)).toUpperCase();var e=equip.filter(function(x){return x.ref===r;})[0];if(e)openDetail(e.id);}
+/* Lien ouvert directement (puce scannée hors de l'app) : …/materiel/LIT-0101 ou …#LIT-0101 ouvre la fiche. */
+function openFromHash(){var r=decodeURIComponent(location.hash.slice(1)||location.pathname.replace(/\/+$/,'').split('/').pop()).toUpperCase();var e=equip.filter(function(x){return x.ref===r;})[0];if(e)openDetail(e.id);}
 window.addEventListener('hashchange',openFromHash);
 var DURS=[[7,'1 semaine'],[14,'2 semaines'],[28,'4 semaines'],[90,'3 mois']],rentDur=28;
 function pickPatient(){
