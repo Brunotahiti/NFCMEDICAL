@@ -17,6 +17,14 @@ Démo d'application iPhone pour gérer un parc de matériel médical en location
 
 La lecture NFC demande un compte Apple Developer payant (la capacité « NFC Tag Reading » n'est pas proposée aux comptes gratuits) et un vrai iPhone. Avec un compte gratuit, retirez la capacité NFC dans Signing & Capabilities : l'app se lance quand même et simule le scan, comme dans le simulateur.
 
+## Tableau de bord et rapports
+
+L'accueil reprend la maquette « ManaProcess » : barre d'application (recherche, alertes, menu), taux d'occupation, quatre tuiles, liste « À traiter », courbe d'occupation et répartition du parc. La barre d'onglets donne accès à Accueil, Parc, Locations, Entretien, Rapports et Plus ; le bouton central ouvre les actions rapides (dont le scan NFC). L'historique d'occupation et la tendance « +5 % » sont des valeurs de démonstration.
+
+## Rentabilité
+
+Chaque fiche compare les loyers encaissés depuis l'achat au prix d'achat (pourcentage amorti, semaines restantes ou bénéfice). L'onglet Rapports donne la synthèse du parc et le classement par équipement. Les prix d'achat viennent du catalogue quand il en donne un plausible, sinon ils sont estimés (indiqué « estimé ») ; les jours de location passés sont des valeurs de démonstration.
+
 ## Catalogue
 
 Le parc reprend les 24 produits du catalogue de location (lits, porte-sérum, lève-personnes, déambulateurs et rollators, fauteuil roulant, TENS, aérosols, concentrateur d'O2, aspirateur, tire-lait). Le « prix catalogue » de chaque fiche vient de cette liste ; les loyers hebdomadaires, les bénéficiaires et les dates sont des valeurs de démonstration. Les photos sont des illustrations libres par type de matériel, pas les modèles exacts ; trois produits n'ont pas encore de photo et affichent une icône.
