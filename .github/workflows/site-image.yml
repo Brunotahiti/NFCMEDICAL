@@ -1,0 +1,31 @@
+name: Image du site
+
+# Construit l'image du site (manaprocess.cloud/materiel) et la publie sur ghcr.io.
+on:
+  push:
+    branches: [main, claude/bold-gates-7zd8o7]
+    paths:
+      - index.html
+      - photos/**
+      - deploy/**
+      - .github/workflows/site-image.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Générer le site
+        run: deploy/build.sh
+      - name: Construire et publier l'image
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$GITHUB_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker build -f deploy/Dockerfile -t ghcr.io/brunotahiti/nfcmedical:site .
+          docker push ghcr.io/brunotahiti/nfcmedical:site

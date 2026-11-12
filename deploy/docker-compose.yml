@@ -1,25 +1,24 @@
-# Sert la démo MédiParc sur https://manaprocess.cloud/materiel/
-# Prévu pour un VPS où Traefik publie déjà manaprocess.cloud (modèle n8n de Hostinger).
-# À ADAPTER avant usage : le nom du réseau, du point d'entrée et du résolveur de certificat
-# doivent être ceux du docker-compose déjà en place sur le serveur.
+# Sert la démo MédiParc sur https://manaprocess.cloud/materiel/ derrière le Traefik du VPS.
+# L'image est construite par GitHub Actions (.github/workflows/site-image.yml).
 services:
-  mediparc:
-    image: nginx:1.27-alpine
+  site:
+    image: ghcr.io/brunotahiti/nfcmedical:site
+    container_name: mediparc-nfc
     restart: unless-stopped
-    volumes:
-      - ./site:/usr/share/nginx/html:ro
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.mediparc.rule=Host(`manaprocess.cloud`) && PathPrefix(`/materiel`)
-      - traefik.http.routers.mediparc.entrypoints=websecure
-      - traefik.http.routers.mediparc.tls=true
-      - traefik.http.routers.mediparc.tls.certresolver=mytlschallenge
-      - traefik.http.services.mediparc.loadbalancer.server.port=80
+    mem_limit: 64m
     networks:
-      - web
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      - "traefik.http.routers.mediparc-nfc.rule=Host(`manaprocess.cloud`) && PathPrefix(`/materiel`)"
+      - "traefik.http.routers.mediparc-nfc.entrypoints=websecure"
+      - "traefik.http.routers.mediparc-nfc.tls=true"
+      - "traefik.http.routers.mediparc-nfc.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.mediparc-nfc.priority=100"
+      - "traefik.http.services.mediparc-nfc.loadbalancer.server.port=80"
 
 networks:
-  web:
+  traefik:
     external: true
-    name: root_default
+    name: traefik
