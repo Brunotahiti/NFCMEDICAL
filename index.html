@@ -75,17 +75,37 @@ section{display:flex;flex-direction:column;gap:10px}
 
 /* Lignes */
 .list{background:var(--surface);border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
-.row{display:flex;align-items:center;gap:12px;padding:12px 14px;width:100%;min-height:64px}
+.row{display:flex;align-items:center;gap:12px;padding:10px 12px;width:100%;min-height:72px}
+.row:active,.mini:active,.pick:active{background:var(--surface-2)}
 .row + .row{border-top:1px solid var(--line)}
 .row .body{flex:1;min-width:0}
 .row .t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row .s{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row .t.wrap{white-space:normal;font-weight:500;font-size:14px}
 .row .chev{color:var(--muted);flex:none;opacity:.6}
-.ico{width:42px;height:42px;border-radius:13px;background:var(--surface-2);color:var(--ink);display:grid;place-items:center;flex:none}
+.ico{width:52px;height:52px;border-radius:14px;background:var(--surface-2);color:var(--ink);display:grid;place-items:center;flex:none}
 .ico svg,.tab svg,.btn svg,.chev svg,.back svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .ico.a-crit{background:var(--crit-soft);color:var(--crit)} .ico.a-warn{background:var(--warn-soft);color:var(--warn)}
 .ico.a-info{background:var(--info-soft);color:var(--info)} .ico.a-ok{background:var(--ok-soft);color:var(--ok)}
+.ph{width:52px;height:52px;border-radius:14px;overflow:hidden;flex:none;background:var(--surface-2);display:block}
+.ph img,.pic img{width:100%;height:100%;object-fit:cover;display:block}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{background:var(--surface);border-radius:20px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;min-width:0;transition:transform .15s}
+.card:active{transform:scale(.97)}
+.card .pic{position:relative;display:block;aspect-ratio:4/3;background:var(--surface-2)}
+.card .pic img{position:absolute;inset:0}
+main>*{flex:none}
+.card .pic .pill{position:absolute;left:8px;top:8px;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.card .meta{display:flex;flex-direction:column;gap:2px;padding:10px 12px 12px;min-width:0}
+.card .t{font-weight:600;font-size:14px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.5em}
+.card .s{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .px{font-family:var(--f-display);font-weight:600;font-size:13px;color:var(--accent);margin-top:2px}
+.hscroll{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity;scroll-padding-left:var(--gl);margin-left:calc(-1 * var(--gl));margin-right:calc(-1 * var(--gr));padding:2px var(--gr) 14px var(--gl);margin-bottom:-14px}
+.hscroll::-webkit-scrollbar{display:none}
+.hscroll .card{flex:none;width:156px;scroll-snap-align:start}
+.credits{align-self:center;font-size:13px;color:var(--muted);text-decoration:underline;padding:8px}
+.cred{font-size:13px;padding:8px 0;border-top:1px solid var(--line)}
+.cred b{display:block;font-weight:600}.cred span{color:var(--muted)}
 .pill{font-size:12px;font-weight:600;padding:4px 9px;border-radius:99px;white-space:nowrap;flex:none}
 .p-loc{background:var(--info-soft);color:var(--info)} .p-dispo{background:var(--ok-soft);color:var(--ok)}
 .p-desinf{background:var(--warn-soft);color:var(--warn)} .p-maint{background:var(--crit-soft);color:var(--crit)}
@@ -107,8 +127,9 @@ section{display:flex;flex-direction:column;gap:10px}
 .avatar{width:42px;height:42px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-family:var(--f-display);font-weight:600;font-size:14px;flex:none}
 .pcard .amt{margin-left:auto;text-align:right;font-family:var(--f-display);font-weight:600;font-size:16px}
 .pcard .amt small{display:block;font-family:var(--f-text);font-weight:400;font-size:12px;color:var(--muted)}
-.mini{display:flex;align-items:center;gap:8px;width:100%;padding:9px 11px;border-radius:12px;background:var(--bg);font-size:14px}
-.mini span:first-child{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.mini .ph{width:36px;height:36px;border-radius:10px}
+.mini{display:flex;align-items:center;gap:10px;width:100%;padding:7px 11px 7px 7px;border-radius:12px;background:var(--bg);font-size:14px}
+.mini .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
 .mini .when{font-size:12px;color:var(--muted);flex:none}
 .stat2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .stat2 div{background:var(--surface);border-radius:18px;box-shadow:var(--shadow);padding:14px}
@@ -126,14 +147,15 @@ section{display:flex;flex-direction:column;gap:10px}
 /* Fiche équipement */
 .detail{position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.2,.8,.2,1);z-index:20;visibility:hidden}
 .detail.open{transform:none;visibility:visible}
-.dbar{display:flex;align-items:center;justify-content:space-between;padding-block:10px}
-.back{display:flex;align-items:center;gap:2px;color:var(--accent);font-weight:600;font-size:16px;padding:8px 8px 8px 0}
-.dscroll{flex:1;min-height:0;overflow-y:auto;padding-block:4px 16px;display:flex;flex-direction:column;gap:18px}
-.dhead{display:flex;gap:14px;align-items:center}
-.dhead .ico{width:64px;height:64px;border-radius:20px;background:var(--surface);box-shadow:var(--shadow)}
-.dhead .ico svg{width:32px;height:32px}
-.dhead h2{font-family:var(--f-display);font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.2;text-wrap:balance}
-.dhead p{color:var(--muted);font-size:14px}
+.back{position:absolute;top:12px;left:var(--gl);z-index:3;width:42px;height:42px;border-radius:50%;background:var(--surface);color:var(--ink);display:grid;place-items:center;box-shadow:var(--shadow)}
+.dhero{position:relative;height:280px;flex:none;overflow:hidden;background:var(--hero)}
+.dhero .bg{position:absolute;inset:-30px;background-size:cover;background-position:center;filter:blur(24px) brightness(.75)}
+.dhero img{position:relative;width:100%;height:100%;object-fit:contain;display:block}
+.dhero .pill{position:absolute;right:var(--gr);top:20px;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.dbody{display:flex;flex-direction:column;gap:18px;padding-block:18px 16px;background:var(--bg);border-radius:26px 26px 0 0;margin-top:-24px;position:relative}
+.dscroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column}
+.dhead h2{font-family:var(--f-display);font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:1.2;text-wrap:balance}
+.dhead p{color:var(--muted);font-size:14px;margin-top:2px}
 .tagcard{background:var(--hero);color:var(--hero-fg);border-radius:20px;padding:14px 16px;display:flex;align-items:center;gap:12px}
 .tagcard svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;flex:none}
 .tagcard small{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--hero-muted);font-weight:600}
@@ -167,10 +189,11 @@ section{display:flex;flex-direction:column;gap:10px}
 .radar{position:relative;width:190px;height:190px;align-self:center;display:grid;place-items:center;margin:6px 0}
 .radar span{position:absolute;inset:0;border-radius:50%;border:2px solid var(--accent);opacity:0;animation:ping 2.1s ease-out infinite}
 .radar span:nth-child(2){animation-delay:.7s}.radar span:nth-child(3){animation-delay:1.4s}
-.radar .core{width:92px;height:92px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;transition:background .25s,transform .25s}
+.radar .core{box-sizing:border-box;width:92px;height:92px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;transition:background .25s,transform .25s}
 .radar .core svg{width:42px;height:42px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .radar.found span{animation:none}
-.radar.found .core{background:var(--ok);color:var(--surface);transform:scale(1.1)}
+.radar.found .core{background:var(--ok);color:var(--surface);transform:scale(1.35);padding:4px;overflow:hidden}
+.radar .core img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
 @keyframes ping{0%{transform:scale(.48);opacity:.75}100%{transform:scale(1);opacity:0}}
 .sheet .plist{overflow-y:auto;display:flex;flex-direction:column;gap:8px}
 .pick{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border-radius:16px;background:var(--bg)}
@@ -236,19 +259,20 @@ var seq=0;
 function ev(d,txt){return {d:d,txt:txt,q:seq++};}
 /* d = décalage en jours par rapport à aujourd'hui ; prix = tarif de location hebdomadaire en € */
 var equip=[
-  {id:'e1',k:'lit',n:'Lit médicalisé 3 fonctions',m:'Alto Confort 90',ref:'LIT-0142',uid:'04:A2:3B:91:7C:5E:80',st:'loc',pt:'p1',since:-38,end:22,chk:64,px:14,h:[ev(-38,'Livré et installé chez Jeanne Morel'),ev(-40,'Désinfection validée'),ev(-120,'Contrôle annuel conforme')]},
-  {id:'e2',k:'matelas',n:'Matelas à air anti-escarres',m:'AirSoft Classe II',ref:'MAT-0077',uid:'04:5F:19:C2:8A:6D:81',st:'loc',pt:'p1',since:-38,end:22,chk:-3,px:11,h:[ev(-38,'Livré chez Jeanne Morel'),ev(-41,'Désinfection validée')]},
-  {id:'e3',k:'oxy',n:'Concentrateur d\'oxygène 5 L',m:'OxyFlow 5',ref:'OXY-0031',uid:'04:D8:72:0B:4E:A1:80',st:'loc',pt:'p3',since:-12,end:0,chk:18,px:23,h:[ev(-12,'Livré chez Lucie Bernard'),ev(-13,'Filtre remplacé, débit vérifié à 5 L/min'),ev(-14,'Désinfection validée')]},
-  {id:'e4',k:'fauteuil',n:'Fauteuil roulant manuel',m:'Léger Pliant 43 cm',ref:'FRM-0208',uid:'04:1C:E4:55:9B:3F:80',st:'loc',pt:'p4',since:-21,end:9,chk:140,px:9,h:[ev(-21,'Livré chez Henri Girard'),ev(-22,'Désinfection validée')]},
-  {id:'e5',k:'leve',n:'Lève-personne électrique',m:'Transfert 150 kg',ref:'LEV-0019',uid:'04:7A:0D:B6:21:C8:81',st:'loc',pt:'p5',since:-64,end:30,chk:6,px:19,h:[ev(-64,'Livré à la Résidence Les Tilleuls'),ev(-66,'Sangles contrôlées')]},
-  {id:'e6',k:'lit',n:'Lit médicalisé Alzheimer',m:'Alto Bas 20 cm',ref:'LIT-0156',uid:'04:93:6E:F0:3D:17:80',st:'loc',pt:'p2',since:-6,end:50,chk:200,px:17,h:[ev(-6,'Livré chez André Lefèvre'),ev(-7,'Désinfection validée')]},
-  {id:'e7',k:'pompe',n:'Pompe à perfusion',m:'VoluMed P2',ref:'PMP-0044',uid:'04:E1:58:2A:C7:90:80',st:'desinf',pt:null,since:-1,end:null,chk:45,px:21,h:[ev(-1,'Retour de location, en attente de désinfection'),ev(-30,'Livré chez un patient')]},
-  {id:'e8',k:'fauteuil',n:'Fauteuil roulant confort',m:'Relax Inclinable 45 cm',ref:'FRC-0063',uid:'04:2B:A9:74:10:DE:81',st:'desinf',pt:null,since:0,end:null,chk:88,px:16,h:[ev(0,'Retour de location, en attente de désinfection')]},
-  {id:'e9',k:'oxy',n:'Concentrateur d\'oxygène portable',m:'OxyGo Mobile',ref:'OXY-0038',uid:'04:6C:33:8F:E2:4B:80',st:'maint',pt:null,since:-4,end:null,chk:-9,px:29,h:[ev(-4,'Panne signalée : alarme batterie'),ev(-5,'Retour de location')]},
-  {id:'e10',k:'deamb',n:'Déambulateur 4 roues',m:'Rollator Alu',ref:'DEA-0112',uid:'04:F4:07:D1:5A:26:80',st:'dispo',pt:null,since:-9,end:null,chk:120,px:5,h:[ev(-9,'Désinfection validée, remis en stock')]},
-  {id:'e11',k:'lit',n:'Lit médicalisé 3 fonctions',m:'Alto Confort 90',ref:'LIT-0149',uid:'04:38:C5:6B:92:0A:81',st:'dispo',pt:null,since:-3,end:null,chk:75,px:14,h:[ev(-3,'Désinfection validée, remis en stock'),ev(-4,'Retour de location')]},
-  {id:'e12',k:'matelas',n:'Matelas mousse viscoélastique',m:'ViscoPrév Classe IB',ref:'MAT-0081',uid:'04:8D:21:AE:F6:73:80',st:'dispo',pt:null,since:-15,end:null,chk:12,px:7,h:[ev(-15,'Désinfection validée, remis en stock')]}
+  {id:'e1',ph:'lit',k:'lit',n:'Lit médicalisé 3 fonctions',m:'Alto Confort 90',ref:'LIT-0142',uid:'04:A2:3B:91:7C:5E:80',st:'loc',pt:'p1',since:-38,end:22,chk:64,px:14,h:[ev(-38,'Livré et installé chez Jeanne Morel'),ev(-40,'Désinfection validée'),ev(-120,'Contrôle annuel conforme')]},
+  {id:'e2',ph:'matelas-air',k:'matelas',n:'Matelas à air anti-escarres',m:'AirSoft Classe II',ref:'MAT-0077',uid:'04:5F:19:C2:8A:6D:81',st:'loc',pt:'p1',since:-38,end:22,chk:-3,px:11,h:[ev(-38,'Livré chez Jeanne Morel'),ev(-41,'Désinfection validée')]},
+  {id:'e3',ph:'oxy',k:'oxy',n:'Concentrateur d\'oxygène 5 L',m:'OxyFlow 5',ref:'OXY-0031',uid:'04:D8:72:0B:4E:A1:80',st:'loc',pt:'p3',since:-12,end:0,chk:18,px:23,h:[ev(-12,'Livré chez Lucie Bernard'),ev(-13,'Filtre remplacé, débit vérifié à 5 L/min'),ev(-14,'Désinfection validée')]},
+  {id:'e4',ph:'fauteuil',k:'fauteuil',n:'Fauteuil roulant manuel',m:'Léger Pliant 43 cm',ref:'FRM-0208',uid:'04:1C:E4:55:9B:3F:80',st:'loc',pt:'p4',since:-21,end:9,chk:140,px:9,h:[ev(-21,'Livré chez Henri Girard'),ev(-22,'Désinfection validée')]},
+  {id:'e5',ph:'leve',k:'leve',n:'Lève-personne électrique',m:'Transfert 150 kg',ref:'LEV-0019',uid:'04:7A:0D:B6:21:C8:81',st:'loc',pt:'p5',since:-64,end:30,chk:6,px:19,h:[ev(-64,'Livré à la Résidence Les Tilleuls'),ev(-66,'Sangles contrôlées')]},
+  {id:'e6',ph:'lit-bas',k:'lit',n:'Lit médicalisé Alzheimer',m:'Alto Bas 20 cm',ref:'LIT-0156',uid:'04:93:6E:F0:3D:17:80',st:'loc',pt:'p2',since:-6,end:50,chk:200,px:17,h:[ev(-6,'Livré chez André Lefèvre'),ev(-7,'Désinfection validée')]},
+  {id:'e7',ph:'pompe',k:'pompe',n:'Pompe à perfusion',m:'VoluMed P2',ref:'PMP-0044',uid:'04:E1:58:2A:C7:90:80',st:'desinf',pt:null,since:-1,end:null,chk:45,px:21,h:[ev(-1,'Retour de location, en attente de désinfection'),ev(-30,'Livré chez un patient')]},
+  {id:'e8',ph:'fauteuil-transfert',k:'fauteuil',n:'Fauteuil de transfert',m:'Transit Confort 48 cm',ref:'FRT-0063',uid:'04:2B:A9:74:10:DE:81',st:'desinf',pt:null,since:0,end:null,chk:88,px:16,h:[ev(0,'Retour de location, en attente de désinfection')]},
+  {id:'e9',ph:'oxy-portable',k:'oxy',n:'Concentrateur d\'oxygène portable',m:'OxyGo Mobile',ref:'OXY-0038',uid:'04:6C:33:8F:E2:4B:80',st:'maint',pt:null,since:-4,end:null,chk:-9,px:29,h:[ev(-4,'Panne signalée : alarme batterie'),ev(-5,'Retour de location')]},
+  {id:'e10',ph:'deamb',k:'deamb',n:'Déambulateur 4 roues',m:'Rollator Alu',ref:'DEA-0112',uid:'04:F4:07:D1:5A:26:80',st:'dispo',pt:null,since:-9,end:null,chk:120,px:5,h:[ev(-9,'Désinfection validée, remis en stock')]},
+  {id:'e11',ph:'lit',k:'lit',n:'Lit médicalisé 3 fonctions',m:'Alto Confort 90',ref:'LIT-0149',uid:'04:38:C5:6B:92:0A:81',st:'dispo',pt:null,since:-3,end:null,chk:75,px:14,h:[ev(-3,'Désinfection validée, remis en stock'),ev(-4,'Retour de location')]},
+  {id:'e12',ph:'surmatelas',k:'matelas',n:'Surmatelas à air à bulles',m:'AirBulle Classe IA',ref:'MAT-0081',uid:'04:8D:21:AE:F6:73:80',st:'dispo',pt:null,since:-15,end:null,chk:12,px:7,h:[ev(-15,'Désinfection validée, remis en stock')]}
 ];
+var CREDITS=[['Lit médicalisé','Blogotron','CC0'],['Lit bas','Tiia Monto','CC BY-SA 4.0'],['Matelas à air','BrokenSphere','CC BY-SA 3.0'],['Surmatelas à bulles','Jorgebarrios','CC BY-SA 3.0'],['Concentrateur d\'oxygène','BrokenSphere','CC BY-SA 3.0'],['Concentrateur portable','Oxystore','CC BY-SA 4.0'],['Fauteuil roulant manuel','Davronov Alexander','CC BY-SA 4.0'],['Fauteuil de transfert','SuddenFrost','CC BY-SA 4.0'],['Lève-personne','Solmarsol','CC BY-SA 3.0'],['Pompe à perfusion','Fatimah Bello','CC0'],['Déambulateur','sani-aktiv.de','CC BY-SA 2.0']];
 var scanOrder=['e3','e8','e11','e9','e1','e7','e5','e10'], scanIdx=0;
 
 var S={tab:'home',filter:'all',q:'',cur:null};
@@ -271,8 +295,11 @@ function where(e){
   if(e.st==='desinf')return 'Dépôt · zone de lavage';
   return 'Atelier technique';
 }
+function src(e){return 'photos/'+e.ph+'.jpg';}
+function ph(e){return '<span class="ph"><img src="'+src(e)+'" alt="" loading="lazy"></span>';}
+function card(e,sub){return '<button class="card" data-open="'+e.id+'"><span class="pic"><img src="'+src(e)+'" alt="" loading="lazy">'+pill(e)+'</span><span class="meta"><span class="t">'+esc(e.n)+'</span><span class="s">'+esc(sub||(e.ref+' · '+where(e)))+'</span></span></button>';}
 function rowEq(e,sub){
-  return '<button class="row" data-open="'+e.id+'"><span class="ico">'+svg(e.k)+'</span><span class="body"><div class="t">'+esc(e.n)+'</div><div class="s">'+esc(sub||(e.ref+' · '+where(e)))+'</div></span>'+pill(e)+'</button>';
+  return '<button class="row" data-open="'+e.id+'">'+ph(e)+'<span class="body"><div class="t">'+esc(e.n)+'</div><div class="s">'+esc(sub||(e.ref+' · '+where(e)))+'</div></span>'+pill(e)+'</button>';
 }
 
 /* ---------- Vues ---------- */
@@ -290,13 +317,15 @@ function viewHome(){
   });
   var nd=count('desinf');
   if(nd)al.push('<button class="row" data-tab="ent"><span class="ico a-warn"><svg viewBox="0 0 24 24">'+ICON.drop+'</svg></span><span class="body"><div class="t">'+nd+' désinfection'+(nd>1?'s':'')+' en attente</div><div class="s">À valider avant remise en stock</div></span><span class="chev">'+ICON.chev+'</span></button>');
+  var dispo=equip.filter(function(e){return e.st==='dispo';});
   var acts=[];
   equip.forEach(function(e){e.h.forEach(function(h){acts.push({e:e,h:h});});});
   acts.sort(function(a,b){return b.h.d-a.h.d||b.h.q-a.h.q;});
-  var act=acts.slice(0,5).map(function(a){return '<button class="row" data-open="'+a.e.id+'"><span class="ico">'+svg(a.e.k)+'</span><span class="body"><div class="t wrap">'+esc(a.h.txt)+'</div><div class="s">'+a.e.ref+' · '+rel(a.h.d)+'</div></span></button>';}).join('');
+  var act=acts.slice(0,5).map(function(a){return '<button class="row" data-open="'+a.e.id+'">'+ph(a.e)+'<span class="body"><div class="t wrap">'+esc(a.h.txt)+'</div><div class="s">'+a.e.ref+' · '+rel(a.h.d)+'</div></span></button>';}).join('');
   return '<div class="hero"><div class="hero-top"><div><div class="lbl">Taux d\'occupation du parc</div><div class="big num">'+occ+'<small>%</small></div></div>'
     +'<div class="side"><b class="num">'+rev+' €</b>par semaine</div></div><div class="segbar">'+seg+'</div><div class="legend">'+leg+'</div></div>'
     +'<section><div class="sec-h"><h2>À traiter</h2><span>'+al.length+'</span></div><div class="list">'+(al.join('')||'<div class="empty">Rien à signaler, le parc est à jour.</div>')+'</div></section>'
+    +(dispo.length?'<section><div class="sec-h"><h2>Prêt à louer</h2><button data-filter="dispo">Tout voir</button></div><div class="hscroll">'+dispo.map(function(e){return card(e,e.ref+' · '+e.px+' € / sem.');}).join('')+'</div></section>':'')
     +'<section><div class="sec-h"><h2>Activité récente</h2></div><div class="list">'+act+'</div></section>';
 }
 function viewParc(){
@@ -304,7 +333,7 @@ function viewParc(){
     var n=c[0]==='all'?equip.length:count(c[0]);
     return '<button class="chip" data-filter="'+c[0]+'" aria-pressed="'+(S.filter===c[0])+'">'+c[1]+' · '+n+'</button>';}).join('');
   return '<label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.500"/><path d="m16 16 4 4"/></svg><input id="q" type="search" placeholder="Nom, référence ou patient" value="'+esc(S.q)+'" autocomplete="off" aria-label="Rechercher un équipement"></label>'
-    +'<div class="chips">'+chips+'</div><div class="list" id="parc-list">'+parcRows()+'</div>';
+    +'<div class="chips">'+chips+'</div><div class="grid" id="parc-list">'+parcRows()+'</div><button class="credits" data-act="credits">Crédits photos</button>';
 }
 function parcRows(){
   var q=S.q.trim().toLowerCase();
@@ -312,8 +341,8 @@ function parcRows(){
     if(S.filter!=='all'&&e.st!==S.filter)return false;
     if(!q)return true;
     return (e.n+' '+e.ref+' '+e.m+' '+(e.pt?pat(e.pt).n:'')).toLowerCase().indexOf(q)>=0;
-  }).map(function(e){return rowEq(e);}).join('');
-  return r||'<div class="empty">Aucun équipement ne correspond.</div>';
+  }).map(function(e){return card(e);}).join('');
+  return r||'<div class="empty" style="grid-column:1/-1">Aucun équipement ne correspond.</div>';
 }
 function viewLoc(){
   var rented=equip.filter(function(e){return e.st==='loc';});
@@ -323,7 +352,7 @@ function viewLoc(){
     if(!it.length)return '';
     var sum=it.reduce(function(a,e){return a+e.px;},0);
     return '<article class="pcard"><header><span class="avatar">'+initials(p.n)+'</span><div style="min-width:0"><div class="t" style="font-weight:600">'+esc(p.n)+'</div><div class="s" style="font-size:13px;color:var(--muted)">'+esc(p.z)+'</div></div><div class="amt num">'+sum+' €<small>/ semaine</small></div></header>'
-      +it.map(function(e){return '<button class="mini" data-open="'+e.id+'"><span>'+esc(e.n)+'</span><span class="when">'+(e.end===0?'retour aujourd\'hui':'depuis le '+fmt(e.since))+'</span></button>';}).join('')+'</article>';
+      +it.map(function(e){return '<button class="mini" data-open="'+e.id+'">'+ph(e)+'<span class="nm">'+esc(e.n)+'</span><span class="when">'+(e.end===0?'retour aujourd\'hui':'depuis le '+fmt(e.since))+'</span></button>';}).join('')+'</article>';
   }).join('');
   var np=patients.filter(function(p){return rented.some(function(e){return e.pt===p.id;});}).length;
   return '<div class="stat2"><div><b class="num">'+rev+' €</b><span>Loyers par semaine</span></div><div><b class="num">'+np+'</b><span>Bénéficiaires équipés</span></div></div>'
@@ -337,7 +366,7 @@ function viewEnt(){
     +block('En maintenance',ma,'Aucun matériel à l\'atelier.',function(e){return e.ref+' · depuis le '+fmt(e.since);})
     +'<section><div class="sec-h"><h2>Prochains contrôles</h2></div><div class="list">'+ck.map(function(e){
       var c=e.chk<0?['p-maint','Retard '+(-e.chk)+' j']:e.chk<=14?['p-desinf','Dans '+e.chk+' j']:['p-mute',fmt(e.chk)];
-      return '<button class="row" data-open="'+e.id+'"><span class="ico">'+svg(e.k)+'</span><span class="body"><div class="t">'+esc(e.n)+'</div><div class="s">'+e.ref+' · contrôle de sécurité</div></span><span class="pill '+c[0]+'">'+c[1]+'</span></button>';}).join('')+'</div></section>';
+      return '<button class="row" data-open="'+e.id+'">'+ph(e)+'<span class="body"><div class="t">'+esc(e.n)+'</div><div class="s">'+e.ref+' · contrôle de sécurité</div></span><span class="pill '+c[0]+'">'+c[1]+'</span></button>';}).join('')+'</div></section>';
 }
 var VIEWS={home:['',"Aujourd'hui",viewHome],parc:['Inventaire','Parc matériel',viewParc],loc:['Patients','Locations',viewLoc],ent:['Atelier','Entretien',viewEnt]};
 function render(keepScroll){
@@ -361,15 +390,16 @@ function renderDetail(){
   if(e.st!=='maint')acts+='<button class="btn ghost" data-act="fault">Signaler une panne</button>';
   var chk=e.chk<0?'<dd class="late">En retard de '+(-e.chk)+' j</dd>':'<dd>'+dateOf(e.chk).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})+'</dd>';
   var hist=e.h.slice().sort(function(a,b){return b.d-a.d||b.q-a.q;}).map(function(h){return '<li><time>'+rel(h.d)+'</time>'+esc(h.txt)+'</li>';}).join('');
-  detail.innerHTML='<div class="dbar pad"><button class="back" data-act="back"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg>Retour</button>'+pill(e)+'</div>'
-    +'<div class="dscroll pad"><div class="dhead"><span class="ico">'+svg(e.k)+'</span><div style="min-width:0"><h2>'+esc(e.n)+'</h2><p>'+esc(e.m)+'</p></div></div>'
+  detail.innerHTML='<button class="back" data-act="back" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button>'
+    +'<div class="dscroll"><div class="dhero"><div class="bg" style="background-image:url('+src(e)+')"></div><img src="'+src(e)+'" alt="'+esc(e.n)+'">'+pill(e)+'</div>'
+    +'<div class="dbody pad"><div class="dhead"><h2>'+esc(e.n)+'</h2><p>'+esc(e.m)+'</p></div>'
     +'<div class="tagcard">'+ICON.nfc+'<div><small>Puce NFC · NTAG 216</small><code>'+e.uid+'</code></div><div class="ref"><small>Réf.</small><code>'+e.ref+'</code></div></div>'
     +'<dl class="kv" style="margin:0">'
     +'<div><dt>Emplacement</dt><dd>'+esc(where(e))+'</dd></div>'
     +(p?'<div><dt>Prise en charge</dt><dd>'+esc(p.z.split(' · ')[1]||p.z)+'</dd></div><div><dt>En location depuis</dt><dd>'+fmt(e.since)+' ('+(-e.since)+' j)</dd></div>'+(e.end!==null?'<div><dt>Retour prévu</dt><dd>'+rel(e.end)+'</dd></div>':''):'')
     +'<div><dt>Tarif de location</dt><dd class="num">'+e.px+' € / semaine</dd></div>'
     +'<div><dt>Prochain contrôle</dt>'+chk+'</div></dl>'
-    +'<section><div class="sec-h"><h2>Historique</h2><span>'+e.h.length+' événements</span></div><ol class="tl">'+hist+'</ol></section></div>'
+    +'<section><div class="sec-h"><h2>Historique</h2><span>'+e.h.length+' événements</span></div><ol class="tl">'+hist+'</ol></section></div></div>'
     +'<div class="actions pad">'+acts+'</div>';
 }
 function openDetail(id){S.cur=id;renderDetail();detail.classList.add('open');detail.setAttribute('aria-hidden','false');}
@@ -384,7 +414,7 @@ function startScan(){
     +'<button class="btn soft" data-act="close-sheet">Annuler</button>');
   timers.push(setTimeout(function(){
     var e=byId(scanOrder[scanIdx++%scanOrder.length]);
-    $('radar').classList.add('found');$('core').innerHTML=ICON.check;
+    $('radar').classList.add('found');$('core').innerHTML='<img src="'+src(e)+'" alt="">';
     $('scan-t').textContent='Puce reconnue';$('scan-s').textContent=e.n+' · '+e.ref;
     if(navigator.vibrate){try{navigator.vibrate(40);}catch(x){}}
     timers.push(setTimeout(function(){closeSheet();openDetail(e.id);},850));
@@ -415,6 +445,7 @@ document.addEventListener('click',function(x){
   else if(d.pick){var e=byId(S.cur),p=pat(d.pick);e.st='loc';e.pt=p.id;e.since=0;e.end=28;e.h.push(ev(0,'Livré chez '+p.n));closeSheet();renderDetail();toast('Location démarrée');}
   else if(d.act==='scan')startScan();
   else if(d.act==='close-sheet')closeSheet();
+  else if(d.act==='credits')openSheet('<h2>Crédits photos</h2><p class="sub">Photos issues de Wikimedia Commons, redimensionnées.</p><div class="plist">'+CREDITS.map(function(c){return '<div class="cred"><b>'+c[0]+'</b><span>'+c[1]+' · '+c[2]+'</span></div>';}).join('')+'</div><button class="btn soft" data-act="close-sheet">Fermer</button>');
   else if(d.act==='back')closeDetail();
   else if(d.act==='assign')pickPatient();
   else if(S.cur)act(d.act,byId(S.cur));
