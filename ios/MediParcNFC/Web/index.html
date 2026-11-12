@@ -146,6 +146,7 @@ main>*{flex:none}
 .seg button[aria-pressed="true"] svg{color:var(--accent)}
 .mapcard{display:block;width:100%;background:var(--map-sea);border-radius:22px;box-shadow:var(--shadow);overflow:hidden}
 .mapcard svg.map{display:block;width:100%;height:auto}
+.mapfoot>div{min-width:0}
 .mapfoot{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);padding:12px 14px;text-align:left}
 .mapfoot b{display:block;font-family:var(--f-display);font-weight:600;font-size:15px}
 .mapfoot span{font-size:13px;color:var(--muted)}
@@ -232,6 +233,10 @@ main>*{flex:none}
 .tagcard .cp{width:36px;height:36px;display:grid;place-items:center;border-radius:10px;margin-right:-6px}
 .tagcard .cp svg{width:20px;height:20px}
 .tagcard svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;flex:none}
+.tagcard>div{flex:1;min-width:0}
+.tagcard .lnk{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .s.lk{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.note code{font-family:var(--f-mono);font-size:11.5px;overflow-wrap:anywhere}
 .tagcard small{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--hero-muted);font-weight:600}
 .tagcard code{font-family:var(--f-mono);font-size:14px;letter-spacing:.02em}
 .tagcard .ref{margin-left:auto;text-align:right}
@@ -270,7 +275,7 @@ main>*{flex:none}
 .fld{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:-8px}
 .uidrow{display:flex;gap:8px}
 .uidrow .btn{width:auto;flex:none;padding:0 16px;min-height:52px}
-input.uid{flex:1;min-width:0;height:52px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font-family:var(--f-mono);font-size:16px;padding:0 12px;text-transform:uppercase}
+input.uid{flex:1;min-width:0;height:52px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font-family:var(--f-mono);font-size:16px;padding:0 12px}
 input.uid::placeholder{color:var(--muted);opacity:.6}
 .err{font-size:13px;color:var(--crit);margin-top:-6px}
 .stack{display:flex;flex-direction:column;gap:10px}
@@ -388,29 +393,29 @@ var STATUS={loc:{l:'En location',c:'p-loc',seg:'--seg-loc'},dispo:{l:'Disponible
   desinf:{l:'Désinfection',c:'p-desinf',seg:'--seg-desinf'},maint:{l:'Maintenance',c:'p-maint',seg:'--seg-maint'}};
 
 var patients=[
-  {id:'p1',c:'Punaauia',lat:-17.635,lon:-149.607,n:'Jeanne Morel',z:'Punaauia · Maintien à domicile'},
-  {id:'p2',c:'Mahina',lat:-17.508,lon:-149.482,n:'André Lefèvre',z:'Mahina · Sortie d\'hospitalisation'},
-  {id:'p3',c:'Paea',lat:-17.718,lon:-149.588,n:'Lucie Bernard',z:'Paea · Soins palliatifs'},
-  {id:'p4',c:'Taravao',lat:-17.737,lon:-149.303,n:'Henri Girard',z:'Taravao · Rééducation'},
-  {id:'p5',c:'Papara',lat:-17.752,lon:-149.512,n:'Résidence Les Tilleuls',z:'Papara · EHPAD, chambre 14'}
+  {id:'p1',a:'PK 15 côté mer, Punaauia',c:'Punaauia',lat:-17.635,lon:-149.607,n:'Jeanne Morel',z:'Punaauia · Maintien à domicile'},
+  {id:'p2',a:'PK 10,5 côté montagne, Mahina',c:'Mahina',lat:-17.508,lon:-149.482,n:'André Lefèvre',z:'Mahina · Sortie d\'hospitalisation'},
+  {id:'p3',a:'PK 22 côté mer, Paea',c:'Paea',lat:-17.718,lon:-149.588,n:'Lucie Bernard',z:'Paea · Soins palliatifs'},
+  {id:'p4',a:'Centre-ville, Taravao',c:'Taravao',lat:-17.737,lon:-149.303,n:'Henri Girard',z:'Taravao · Rééducation'},
+  {id:'p5',a:'PK 36 côté montagne, Papara',c:'Papara',lat:-17.752,lon:-149.512,n:'Résidence Les Tilleuls',z:'Papara · EHPAD, chambre 14'}
 ];
-var DEPOT={id:'depot',n:'Dépôt MédiParc',c:'Papeete',lat:-17.532,lon:-149.572};
+var DEPOT={id:'depot',n:'Dépôt MédiParc',a:'Fare Ute, Papeete',c:'Papeete',lat:-17.532,lon:-149.572};
 var seq=0;
 function ev(d,txt){return {d:d,txt:txt,q:seq++};}
 /* d = décalage en jours par rapport à aujourd'hui ; px = tarif de location hebdomadaire en francs pacifiques (XPF) */
 var equip=[
-  {id:'e1',ph:'lit',k:'lit',n:'Lit médicalisé 3 fonctions',m:'Alto Confort 90',ref:'LIT-0142',uid:'04:A2:3B:91:7C:5E:80',st:'loc',pt:'p1',since:-38,end:22,chk:64,px:1700,h:[ev(-38,'Livré et installé chez Jeanne Morel'),ev(-40,'Désinfection validée'),ev(-120,'Contrôle annuel conforme')]},
-  {id:'e2',ph:'matelas-air',k:'matelas',n:'Matelas à air anti-escarres',m:'AirSoft Classe II',ref:'MAT-0077',uid:'04:5F:19:C2:8A:6D:81',st:'loc',pt:'p1',since:-38,end:22,chk:-3,px:1300,h:[ev(-38,'Livré chez Jeanne Morel'),ev(-41,'Désinfection validée')]},
-  {id:'e3',ph:'oxy',k:'oxy',n:'Concentrateur d\'oxygène 5 L',m:'OxyFlow 5',ref:'OXY-0031',uid:'04:D8:72:0B:4E:A1:80',st:'loc',pt:'p3',since:-12,end:0,chk:18,px:2750,h:[ev(-12,'Livré chez Lucie Bernard'),ev(-13,'Filtre remplacé, débit vérifié à 5 L/min'),ev(-14,'Désinfection validée')]},
-  {id:'e4',ph:'fauteuil',k:'fauteuil',n:'Fauteuil roulant manuel',m:'Léger Pliant 43 cm',ref:'FRM-0208',uid:'04:1C:E4:55:9B:3F:80',st:'loc',pt:'p4',since:-21,end:9,chk:140,px:1100,h:[ev(-21,'Livré chez Henri Girard'),ev(-22,'Désinfection validée')]},
-  {id:'e5',ph:'leve',k:'leve',n:'Lève-personne électrique',m:'Transfert 150 kg',ref:'LEV-0019',uid:'04:7A:0D:B6:21:C8:81',st:'loc',pt:'p5',since:-64,end:30,chk:6,px:2300,h:[ev(-64,'Livré à la Résidence Les Tilleuls'),ev(-66,'Sangles contrôlées')]},
-  {id:'e6',ph:'lit-bas',k:'lit',n:'Lit médicalisé Alzheimer',m:'Alto Bas 20 cm',ref:'LIT-0156',uid:'04:93:6E:F0:3D:17:80',st:'loc',pt:'p2',since:-6,end:50,chk:200,px:2000,h:[ev(-6,'Livré chez André Lefèvre'),ev(-7,'Désinfection validée')]},
-  {id:'e7',ph:'pompe',k:'pompe',n:'Pompe à perfusion',m:'VoluMed P2',ref:'PMP-0044',uid:'04:E1:58:2A:C7:90:80',st:'desinf',pt:null,since:-1,end:null,chk:45,px:2500,h:[ev(-1,'Retour de location, en attente de désinfection'),ev(-30,'Livré chez un patient')]},
-  {id:'e8',ph:'fauteuil-transfert',k:'fauteuil',n:'Fauteuil de transfert',m:'Transit Confort 48 cm',ref:'FRT-0063',uid:'04:2B:A9:74:10:DE:81',st:'desinf',pt:null,since:0,end:null,chk:88,px:1900,h:[ev(0,'Retour de location, en attente de désinfection')]},
-  {id:'e9',ph:'oxy-portable',k:'oxy',n:'Concentrateur d\'oxygène portable',m:'OxyGo Mobile',ref:'OXY-0038',uid:'04:6C:33:8F:E2:4B:80',st:'maint',pt:null,since:-4,end:null,chk:-9,px:3500,h:[ev(-4,'Panne signalée : alarme batterie'),ev(-5,'Retour de location')]},
-  {id:'e10',ph:'deamb',k:'deamb',n:'Déambulateur 4 roues',m:'Rollator Alu',ref:'DEA-0112',uid:'04:F4:07:D1:5A:26:80',st:'dispo',pt:null,since:-9,end:null,chk:120,px:600,h:[ev(-9,'Désinfection validée, remis en stock')]},
-  {id:'e11',ph:'lit',k:'lit',n:'Lit médicalisé 3 fonctions',m:'Alto Confort 90',ref:'LIT-0149',uid:'04:38:C5:6B:92:0A:81',st:'dispo',pt:null,since:-3,end:null,chk:75,px:1700,h:[ev(-3,'Désinfection validée, remis en stock'),ev(-4,'Retour de location')]},
-  {id:'e12',ph:'surmatelas',k:'matelas',n:'Surmatelas à air à bulles',m:'AirBulle Classe IA',ref:'MAT-0081',uid:'04:8D:21:AE:F6:73:80',st:'dispo',pt:null,since:-15,end:null,chk:12,px:850,h:[ev(-15,'Désinfection validée, remis en stock')]}
+  {id:'e1',ph:'lit',k:'lit',n:'Lit médicalisé 3 fonctions',m:'Alto Confort 90',ref:'LIT-0142',st:'loc',pt:'p1',since:-38,end:22,chk:64,px:1700,h:[ev(-38,'Livré et installé chez Jeanne Morel'),ev(-40,'Désinfection validée'),ev(-120,'Contrôle annuel conforme')]},
+  {id:'e2',ph:'matelas-air',k:'matelas',n:'Matelas à air anti-escarres',m:'AirSoft Classe II',ref:'MAT-0077',st:'loc',pt:'p1',since:-38,end:22,chk:-3,px:1300,h:[ev(-38,'Livré chez Jeanne Morel'),ev(-41,'Désinfection validée')]},
+  {id:'e3',ph:'oxy',k:'oxy',n:'Concentrateur d\'oxygène 5 L',m:'OxyFlow 5',ref:'OXY-0031',st:'loc',pt:'p3',since:-12,end:0,chk:18,px:2750,h:[ev(-12,'Livré chez Lucie Bernard'),ev(-13,'Filtre remplacé, débit vérifié à 5 L/min'),ev(-14,'Désinfection validée')]},
+  {id:'e4',ph:'fauteuil',k:'fauteuil',n:'Fauteuil roulant manuel',m:'Léger Pliant 43 cm',ref:'FRM-0208',st:'loc',pt:'p4',since:-21,end:9,chk:140,px:1100,h:[ev(-21,'Livré chez Henri Girard'),ev(-22,'Désinfection validée')]},
+  {id:'e5',ph:'leve',k:'leve',n:'Lève-personne électrique',m:'Transfert 150 kg',ref:'LEV-0019',st:'loc',pt:'p5',since:-64,end:30,chk:6,px:2300,h:[ev(-64,'Livré à la Résidence Les Tilleuls'),ev(-66,'Sangles contrôlées')]},
+  {id:'e6',ph:'lit-bas',k:'lit',n:'Lit médicalisé Alzheimer',m:'Alto Bas 20 cm',ref:'LIT-0156',st:'loc',pt:'p2',since:-6,end:50,chk:200,px:2000,h:[ev(-6,'Livré chez André Lefèvre'),ev(-7,'Désinfection validée')]},
+  {id:'e7',ph:'pompe',k:'pompe',n:'Pompe à perfusion',m:'VoluMed P2',ref:'PMP-0044',st:'desinf',pt:null,since:-1,end:null,chk:45,px:2500,h:[ev(-1,'Retour de location, en attente de désinfection'),ev(-30,'Livré chez un patient')]},
+  {id:'e8',ph:'fauteuil-transfert',k:'fauteuil',n:'Fauteuil de transfert',m:'Transit Confort 48 cm',ref:'FRT-0063',st:'desinf',pt:null,since:0,end:null,chk:88,px:1900,h:[ev(0,'Retour de location, en attente de désinfection')]},
+  {id:'e9',ph:'oxy-portable',k:'oxy',n:'Concentrateur d\'oxygène portable',m:'OxyGo Mobile',ref:'OXY-0038',st:'maint',pt:null,since:-4,end:null,chk:-9,px:3500,h:[ev(-4,'Panne signalée : alarme batterie'),ev(-5,'Retour de location')]},
+  {id:'e10',ph:'deamb',k:'deamb',n:'Déambulateur 4 roues',m:'Rollator Alu',ref:'DEA-0112',st:'dispo',pt:null,since:-9,end:null,chk:120,px:600,h:[ev(-9,'Désinfection validée, remis en stock')]},
+  {id:'e11',ph:'lit',k:'lit',n:'Lit médicalisé 3 fonctions',m:'Alto Confort 90',ref:'LIT-0149',st:'dispo',pt:null,since:-3,end:null,chk:75,px:1700,h:[ev(-3,'Désinfection validée, remis en stock'),ev(-4,'Retour de location')]},
+  {id:'e12',ph:'surmatelas',k:'matelas',n:'Surmatelas à air à bulles',m:'AirBulle Classe IA',ref:'MAT-0081',st:'dispo',pt:null,since:-15,end:null,chk:12,px:850,h:[ev(-15,'Désinfection validée, remis en stock')]}
 ];
 var CREDITS=[['Lit médicalisé','Blogotron','CC0'],['Lit bas','Tiia Monto','CC BY-SA 4.0'],['Matelas à air','BrokenSphere','CC BY-SA 3.0'],['Surmatelas à bulles','Jorgebarrios','CC BY-SA 3.0'],['Concentrateur d\'oxygène','BrokenSphere','CC BY-SA 3.0'],['Concentrateur portable','Oxystore','CC BY-SA 4.0'],['Fauteuil roulant manuel','Davronov Alexander','CC BY-SA 4.0'],['Fauteuil de transfert','SuddenFrost','CC BY-SA 4.0'],['Lève-personne','Solmarsol','CC BY-SA 3.0'],['Pompe à perfusion','Fatimah Bello','CC0'],['Déambulateur','sani-aktiv.de','CC BY-SA 2.0']];
 var scanOrder=['e3','e8','e11','e9','e1','e7','e5','e10'], scanIdx=0;
@@ -472,6 +477,17 @@ function mapSvg(pins,sel,tap){
   });
   return h+'</svg>';
 }
+/* Vraie carte : Apple Plans natif dans l'app iOS (zoom jusqu'à l'adresse), lien Apple Plans ailleurs. */
+function nativeMap(){return window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.map;}
+function openMap(focus){
+  var n=nativeMap();if(!n)return;
+  n.postMessage({focus:focus,pins:allPins().map(function(x){var pl=place(x.id);return {id:pl.id,title:pl.n,subtitle:pl.a+' · '+x.n+' équipement'+(x.n>1?'s':''),lat:pl.lat,lon:pl.lon};})});
+}
+function mapBtn(id){
+  var pl=place(id);
+  return nativeMap()?'<button class="more" data-map="'+id+'">Zoomer'+ic('arrow')+'</button>'
+    :'<a class="more" target="_blank" rel="noopener" href="https://maps.apple.com/?ll='+pl.lat+','+pl.lon+'&amp;z=18&amp;q='+encodeURIComponent(pl.n)+'">Zoomer'+ic('arrow')+'</a>';
+}
 function allPins(){return [DEPOT].concat(patients).map(function(pl){return {id:pl.id,n:atPlace(pl.id).length};}).filter(function(x){return x.n>0;});}
 
 /* ---------- Vues ---------- */
@@ -510,8 +526,8 @@ function viewParc(){
   if(S.mode==='plan'){
     if(!atPlace(S.place).length)S.place=allPins()[0].id;
     var pl=place(S.place),here=atPlace(S.place);
-    return seg+'<div class="mapcard">'+mapSvg(allPins(),S.place,true)+'<div class="mapfoot"><div><b>'+esc(pl.n)+'</b><span>'+esc(pl.c)+' · Tahiti</span></div>'+badge(here.length)+'</div></div>'
-      +'<section>'+secH('lit','Matériel sur place')+'<div class="list">'+here.map(function(e){return rowEq(e,e.ref+' · '+e.m);}).join('')+'</div></section>';
+    return seg+'<div class="mapcard">'+mapSvg(allPins(),S.place,true)+'<div class="mapfoot"><div><b>'+esc(pl.n)+'</b><span>'+esc(pl.a)+'</span></div>'+mapBtn(S.place)+'</div></div>'
+      +'<section>'+secH('lit','Matériel sur place',badge(here.length))+'<div class="list">'+here.map(function(e){return rowEq(e,e.ref+' · '+e.m);}).join('')+'</div></section>';
   }
   return seg+'<div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.500"/><path d="m16 16 4 4"/></svg><input id="q" type="search" placeholder="Nom, référence ou patient" value="'+esc(S.q)+'" autocomplete="off" aria-label="Rechercher un équipement"><button class="sbtn" data-act="scan" aria-label="Scanner une puce">'+ic('frame')+'</button></div>'
     +'<div class="chips">'+chips+'</div><div class="grid" id="parc-list">'+parcRows()+'</div><button class="credits" data-act="credits">Crédits photos</button>';
@@ -586,15 +602,15 @@ function renderDetail(){
   var hist=e.h.slice().sort(function(a,b){return b.d-a.d||b.q-a.q;}).map(function(h,i){return '<li'+(i?'':' class="first"')+'><time>'+rel(h.d)+'</time><div class="evt">'+ic(hIcon(h.txt))+'<span>'+esc(h.txt)+'</span>'+(i?'':OKC)+'</div></li>';}).join('');
   detail.innerHTML='<button class="back" data-act="back" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button>'
     +'<div class="dscroll"><div class="dhero"><div class="bg" style="background-image:url('+src(e)+')"></div><img src="'+src(e)+'" alt="'+esc(e.n)+'">'+pill(e)+'</div>'
-    +'<div class="dbody pad"><div class="dhead"><h2>'+esc(e.n)+'</h2><p>'+esc(e.m)+'</p></div>'
-    +'<div class="tagcard">'+ICON.nfc+'<div><small>Puce NFC · NTAG 216</small><code>'+(e.uid||'Aucune puce associée')+'</code></div><div class="ref"><small>Réf.</small><code>'+e.ref+'</code></div><button class="cp" data-act="copy" aria-label="Copier la référence">'+ic('copy')+'</button></div>'
-    +'<button class="btn soft prog" data-act="program">'+ICON.nfc+(e.uid?'Remplacer la puce NFC':'Associer une puce NFC')+'</button>'
+    +'<div class="dbody pad"><div class="dhead"><h2>'+esc(e.n)+'</h2><p>'+esc(e.m)+' · '+e.ref+'</p></div>'
+    +'<div class="tagcard">'+ICON.nfc+'<div><small>Lien de la puce NFC</small><code class="lnk">'+(e.link?esc(midLink(e.link)):'Aucune puce associée')+'</code></div><button class="cp" data-act="copy" aria-label="Copier le lien">'+ic('copy')+'</button></div>'
+    +'<button class="btn soft prog" data-act="program">'+ICON.nfc+'Écrire le lien sur une puce'+'</button>'
     +'<dl class="kv" style="margin:0">'
     +'<div><dt>'+ic('pin')+'Emplacement</dt><dd>'+esc(where(e))+'</dd></div>'
     +(p?'<div><dt>'+ic('heart')+'Prise en charge</dt><dd>'+esc(p.z.split(' · ')[1]||p.z)+'</dd></div><div><dt>'+ic('cal')+'En location depuis</dt><dd>'+fmt(e.since)+' ('+(-e.since)+' j)</dd></div>'+(e.end!==null?'<div><dt>'+ic('ret')+'Retour prévu</dt><dd>'+(e.end===0?'<span class="pill p-dispo">Aujourd\'hui</span>':rel(e.end))+'</dd></div>':''):'')
     +'<div><dt>'+ic('coins')+'Tarif de location</dt><dd class="num">'+xpf(e.px)+' / semaine</dd></div>'
     +'<div><dt>'+ic('tool')+'Prochain contrôle</dt>'+chk+'</div></dl>'
-    +'<section>'+secH('pin','Localisation')+'<div class="mapcard">'+mapSvg([{id:placeOf(e),n:null}],placeOf(e),false)+'<div class="mapfoot"><div><b>'+esc(place(placeOf(e)).n)+'</b><span>'+esc(place(placeOf(e)).c)+' · Tahiti</span></div><a class="more" target="_blank" rel="noopener" href="https://maps.apple.com/?ll='+place(placeOf(e)).lat+','+place(placeOf(e)).lon+'&amp;q='+encodeURIComponent(place(placeOf(e)).n)+'">Plans'+ic('arrow')+'</a></div></div></section>'
+    +'<section>'+secH('pin','Localisation')+'<div class="mapcard">'+mapSvg([{id:placeOf(e),n:null}],placeOf(e),false)+'<div class="mapfoot"><div><b>'+esc(place(placeOf(e)).n)+'</b><span>'+esc(place(placeOf(e)).a)+'</span></div>'+mapBtn(placeOf(e))+'</div></div></section>'
     +'<section>'+secH('hist','Historique','<span>'+e.h.length+' événements</span>')+'<ol class="tl">'+hist+'</ol></section></div></div>'
     +'<div class="actions pad">'+acts+'</div>';
 }
@@ -604,95 +620,140 @@ function closeDetail(){detail.classList.remove('open');detail.setAttribute('aria
 /* ---------- Feuilles ---------- */
 function openSheet(html){sheet.innerHTML='<div class="grab"></div>'+html;sheet.classList.add('open');scrim.classList.add('open');}
 function closeSheet(){sheet.style.height='';timers.forEach(clearTimeout);timers=[];sheet.classList.remove('open');scrim.classList.remove('open');}
-var UIDKEY='mediparc-puces',ORIG={};equip.forEach(function(e){ORIG[e.id]=e.uid;});
-var settingsEl=$('settings'),setOpen=false,tagId=null;
-function saveUids(){try{var m={};equip.forEach(function(e){m[e.id]=e.uid;});localStorage.setItem(UIDKEY,JSON.stringify(m));}catch(x){}}
-try{var saved=JSON.parse(localStorage.getItem(UIDKEY)||'{}');equip.forEach(function(e){if(e.id in saved)e.uid=saved[e.id];});}catch(x){}
+/* ---------- Puces NFC : chaque puce porte un lien (enregistrement NDEF de type URI) ---------- */
+var LKEY='mediparc-liens',BKEY='mediparc-base',DEFBASE='https://claude.ai/artifact/GzLtKdSYdmEHSFtsnMWLQ2#';
+var base=DEFBASE,settingsEl=$('settings'),setOpen=false,tagId=null,pendingLink=null,linkTarget=null;
+try{base=localStorage.getItem(BKEY)||DEFBASE;}catch(x){}
+function defLink(e){return base+e.ref;}
+equip.forEach(function(e){e.link=defLink(e);});
+try{var saved=JSON.parse(localStorage.getItem(LKEY)||'{}');equip.forEach(function(e){if(e.id in saved)e.link=saved[e.id];});}catch(x){}
+function saveLinks(){try{var m={};equip.forEach(function(e){m[e.id]=e.link;});localStorage.setItem(LKEY,JSON.stringify(m));localStorage.setItem(BKEY,base);}catch(x){}}
+function shortLink(u){return u.replace(/^https?:\/\//,'');}
+/* Affichage compact : on garde le début et la fin, là où se trouve la référence. */
+function midLink(u){u=shortLink(u);return u.length>36?u.slice(0,17)+'…'+u.slice(-17):u;}
+function normUrl(v){
+  v=String(v).trim();if(!v||/\s/.test(v))return null;
+  if(!/^[a-z][a-z0-9+.\-]*:/i.test(v))v='https://'+v;
+  try{var u=new URL(v);return /^https?:$/.test(u.protocol)&&u.hostname.indexOf('.')>0?v:null;}catch(x){return null;}
+}
+function sameLink(a,b){var k=function(u){return String(u).trim().replace(/\/+$/,'').toLowerCase();};return k(a)===k(b);}
+/* Retrouve l'équipement d'un lien : lien identique, sinon lien qui se termine par la référence (…/LIT-0142, …#LIT-0142). */
+function findByLink(u){
+  var e=equip.filter(function(x){return x.link&&sameLink(x.link,u);})[0];
+  if(e)return e;
+  var m=String(u).trim().match(/[#\/=]([A-Za-z]{3}-\d{4})\/?$/);
+  return m?equip.filter(function(x){return x.link&&x.ref===m[1].toUpperCase();})[0]:null;
+}
 function nativeNfc(){return window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.nfc;}
-/* Dans l'app iOS, le scan passe par Core NFC ; ailleurs (navigateur, simulateur) la lecture est simulée. */
-function startScan(){var n=nativeNfc();if(n){n.postMessage('scan');}else simScan();}
-function simScan(){
-  openSheet('<h2 id="scan-t">Prêt à scanner</h2><p class="sub" id="scan-s">Approchez le haut de l\'iPhone de la puce collée sur l\'équipement.</p>'
+function radarSheet(t,sub){
+  openSheet('<h2 id="scan-t">'+t+'</h2><p class="sub" id="scan-s">'+sub+'</p>'
     +'<div class="radar" id="radar"><span></span><span></span><span></span><div class="core" id="core">'+ICON.nfc+'</div></div>'
     +'<button class="btn soft" data-act="close-sheet">Annuler</button>');
+}
+/* Dans l'app iOS, lecture et écriture passent par Core NFC ; ailleurs (navigateur, simulateur) elles sont simulées. */
+function startScan(){linkTarget=null;var n=nativeNfc();if(n){n.postMessage({action:'read'});}else simScan();}
+function simScan(){
+  radarSheet('Prêt à scanner','Approchez le haut de l\'iPhone de la puce collée sur l\'équipement.');
   timers.push(setTimeout(function(){
-    var e=byId(scanOrder[scanIdx++%scanOrder.length]);
+    var withTag=equip.filter(function(x){return x.link;});
+    if(!withTag.length){closeSheet();toast('Aucun équipement n\'a encore de puce');return;}
+    var e=byId(scanOrder[scanIdx++%scanOrder.length]);if(!e.link)e=withTag[0];
     $('radar').classList.add('found');$('core').innerHTML='<img src="'+src(e)+'" alt="">';
     $('scan-t').textContent='Puce reconnue';$('scan-s').textContent=e.n+' · '+e.ref;
     timers.push(setTimeout(function(){closeSheet();openDetail(e.id);},850));
   },1900));
 }
-var pendingUid=null,linkTarget=null;
-function assignUid(e,uid){
-  equip.forEach(function(o){if(o!==e&&o.uid.toUpperCase()===uid){o.uid='';o.h.push(ev(0,'Puce NFC réattribuée à '+e.ref));}});
-  e.uid=uid;e.h.push(ev(0,'Puce NFC associée ('+uid+')'));saveUids();closeSheet();if(setOpen)renderSettings();else openDetail(e.id);toast('Puce associée à '+e.ref);
+function assignLink(e,u){
+  equip.forEach(function(o){if(o!==e&&o.link&&sameLink(o.link,u)){o.link='';o.h.push(ev(0,'Puce NFC réattribuée à '+e.ref));}});
+  e.link=u;e.h.push(ev(0,'Puce NFC associée'));saveLinks();closeSheet();if(setOpen)renderSettings();else openDetail(e.id);toast('Puce associée à '+e.ref);
 }
-function programTag(id){
-  linkTarget=id;var n=nativeNfc();if(n){n.postMessage('scan');return;}
-  var e=byId(linkTarget);
-  openSheet('<h2 id="scan-t">Associer une puce</h2><p class="sub" id="scan-s">Approchez l\'iPhone de la puce à coller sur : '+esc(e.n)+'.</p>'
-    +'<div class="radar" id="radar"><span></span><span></span><span></span><div class="core" id="core">'+ICON.nfc+'</div></div>'
-    +'<button class="btn soft" data-act="close-sheet">Annuler</button>');
-  timers.push(setTimeout(function(){
-    var uid='04';for(var i=0;i<6;i++)uid+=':'+('0'+Math.floor(Math.random()*256).toString(16)).slice(-2).toUpperCase();
-    $('radar').classList.add('found');$('core').innerHTML=ICON.check;$('scan-t').textContent='Puce lue';$('scan-s').textContent=uid;
-    timers.push(setTimeout(function(){linkTarget=null;assignUid(e,uid);},850));
-  },1900));
+/* Lire le lien déjà présent sur une puce et l'associer à l'équipement. */
+function readTagFor(id){
+  linkTarget=id;var n=nativeNfc();if(n){n.postMessage({action:'read'});return;}
+  var e=byId(id);radarSheet('Lire une puce','Approchez la puce à associer à : '+esc(e.n)+'.');
+  timers.push(setTimeout(function(){linkTarget=null;$('radar').classList.add('found');$('core').innerHTML=ICON.check;$('scan-t').textContent='Lien lu';$('scan-s').textContent=shortLink(defLink(e));
+    timers.push(setTimeout(function(){assignLink(e,defLink(e));},850));},1900));
 }
+/* Écrire le lien de l'équipement sur une puce. */
+function writeTagFor(id){
+  var e=byId(id),u=e.link||defLink(e),n=nativeNfc();linkTarget=id;
+  if(n){n.postMessage({action:'write',url:u});return;}
+  radarSheet('Écrire la puce','Approchez la puce à coller sur : '+esc(e.n)+'.');
+  timers.push(setTimeout(function(){linkTarget=null;$('radar').classList.add('found');$('core').innerHTML=ICON.check;$('scan-t').textContent='Lien écrit';$('scan-s').textContent=shortLink(u);
+    timers.push(setTimeout(function(){assignLink(e,u);},850));},1900));
+}
+window.onNfcUnavailable=function(){var t=linkTarget;linkTarget=null;if(t)toast('NFC indisponible sur cet appareil');else simScan();};
+window.onNfcCancelled=function(){linkTarget=null;};
+window.onNfcError=function(msg){linkTarget=null;toast(msg||'Lecture impossible');};
+window.onNfcWritten=function(u){var e=byId(linkTarget);linkTarget=null;if(e)assignLink(e,u);};
+window.onNfcLink=function(u){
+  var t=linkTarget?byId(linkTarget):null;linkTarget=null;
+  if(t){
+    if(u){assignLink(t,u);return;}
+    tagId=t.id;
+    openSheet('<h2>Puce vierge</h2><p class="sub">Cette puce ne contient pas encore de lien. Écrire celui de '+esc(t.n)+' ?</p><button class="btn" data-act="write-tag">'+ICON.nfc+'Écrire le lien sur la puce</button><button class="btn soft" data-act="close-sheet">Annuler</button>');
+    return;
+  }
+  if(!u){toast('Cette puce ne contient pas de lien');return;}
+  var e=findByLink(u);
+  if(e){closeSheet();openDetail(e.id);toast('Puce reconnue · '+e.ref);return;}
+  pendingLink=u;
+  openSheet('<h2>Lien inconnu</h2><p class="sub"><code>'+esc(shortLink(u))+'</code><br>Choisissez l\'équipement auquel associer cette puce.</p><div class="plist">'+equip.map(function(x){
+    return '<button class="pick" data-link="'+x.id+'">'+ph(x)+'<span class="body"><div class="t">'+esc(x.n)+'</div><div class="s">'+x.ref+'</div></span></button>';}).join('')
+    +'</div><button class="btn soft" data-act="close-sheet">Annuler</button>');
+};
+function copyText(t,ok){try{navigator.clipboard.writeText(t).then(function(){toast(ok);},function(){toast(t);});}catch(z){toast(t);}}
+
 /* ---------- Paramètres : association des puces réelles ---------- */
 function renderSettings(){
-  var n=equip.filter(function(e){return e.uid;}).length;
+  var n=equip.filter(function(e){return e.link;}).length;
   settingsEl.innerHTML='<div class="sbar pad"><button class="back" data-act="close-settings" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><h2>Paramètres</h2></div>'
     +'<div class="dscroll"><div class="sbody pad">'
     +'<div class="banner"><div>'+ic('tag')+'<div><b class="num">'+n+' / '+equip.length+'</b><span>Équipements avec puce</span></div></div><div>'+ic('warn')+'<div><b class="num">'+(equip.length-n)+'</b><span>Sans puce</span></div></div></div>'
-    +'<p class="note">Touchez un équipement pour lui associer une vraie puce : scannez-la avec l\'iPhone ou saisissez son code. Les associations restent enregistrées sur cet appareil.</p>'
+    +'<p class="note">Chaque puce contient un lien propre à son équipement. Touchez un équipement pour écrire son lien sur une vraie puce, lire une puce déjà programmée ou saisir le lien à la main.</p>'
     +'<section>'+secH('tag','Puces NFC')+'<div class="list">'+equip.map(function(e){
-      return '<button class="row" data-tag="'+e.id+'">'+ph(e)+'<span class="body"><div class="t">'+esc(e.n)+'</div><div class="s">'+e.ref+(e.uid?' · <code>'+esc(e.uid)+'</code>':'')+'</div></span>'
-        +(e.uid?'':'<span class="pill p-desinf">À associer</span>')+'<span class="chev">'+ICON.chev+'</span></button>';}).join('')+'</div></section>'
+      return '<button class="row" data-tag="'+e.id+'">'+ph(e)+'<span class="body"><div class="t">'+esc(e.n)+'</div><div class="s lk">'+(e.link?'<code>'+esc(midLink(e.link))+'</code>':e.ref)+'</div></span>'
+        +(e.link?'':'<span class="pill p-desinf">À associer</span>')+'<span class="chev">'+ICON.chev+'</span></button>';}).join('')+'</div></section>'
+    +'<section>'+secH('arrow','Adresse des liens')+'<p class="note">Début commun des liens. La référence de l\'équipement est ajoutée à la fin, par exemple <code>'+esc(shortLink(base))+'LIT-0142</code>.</p>'
+    +'<div class="uidrow"><input class="uid" id="base-in" type="url" inputmode="url" autocapitalize="none" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Adresse de base des liens" value="'+esc(base)+'"><button class="btn" data-act="save-base">Appliquer</button></div><p class="err" id="base-err" hidden></p></section>'
     +'<section>'+secH('gear','Démonstration')+'<div class="stack"><button class="btn" data-act="scan">'+ICON.nfc+'Tester une puce</button>'
-    +'<button class="btn soft" data-act="clear-all">Effacer toutes les puces</button><button class="btn soft" data-act="restore-all">Rétablir les puces de démonstration</button></div>'
+    +'<button class="btn soft" data-act="clear-all">Effacer toutes les puces</button><button class="btn soft" data-act="restore-all">Rétablir les liens par défaut</button></div>'
     +'<p class="note">Patients, tarifs, adresses et historique sont des données de démonstration.</p></section></div></div>';
 }
 function openSettings(){setOpen=true;renderSettings();settingsEl.classList.add('open');settingsEl.setAttribute('aria-hidden','false');}
 function closeSettings(){setOpen=false;settingsEl.classList.remove('open');settingsEl.setAttribute('aria-hidden','true');render(true);}
 function openTag(id){
   tagId=id;var e=byId(id);
-  openSheet('<h2>'+esc(e.n)+'</h2><p class="sub">'+e.ref+' · '+(e.uid?'<code>'+esc(e.uid)+'</code>':'aucune puce')+'</p>'
-    +'<label class="fld" for="uid-in">Code de la puce</label><div class="uidrow"><input class="uid" id="uid-in" type="text" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="04:A2:3B:91:7C:5E:80" value="'+esc(e.uid)+'"><button class="btn" data-act="save-uid">Enregistrer</button></div>'
+  openSheet('<h2>'+esc(e.n)+'</h2><p class="sub">'+e.ref+(e.link?'':' · aucune puce')+'</p>'
+    +'<label class="fld" for="uid-in">Lien de la puce</label><div class="uidrow"><input class="uid" id="uid-in" type="url" inputmode="url" autocapitalize="none" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="'+esc(defLink(e))+'" value="'+esc(e.link)+'"><button class="btn" data-act="save-uid">Enregistrer</button></div>'
     +'<p class="err" id="uid-err" hidden></p>'
-    +'<button class="btn" data-act="scan-tag">'+ICON.nfc+'Scanner la puce</button>'
-    +(e.uid?'<button class="btn danger" data-act="clear-tag">Retirer la puce</button>':'')
+    +'<button class="btn" data-act="write-tag">'+ICON.nfc+'Écrire le lien sur une puce</button>'
+    +'<button class="btn soft" data-act="scan-tag">Lire une puce déjà programmée</button>'
+    +'<button class="btn soft" data-act="copy-link">Copier le lien</button>'
+    +(e.link?'<button class="btn danger" data-act="clear-tag">Retirer la puce</button>':'')
     +'<button class="btn soft" data-act="close-sheet">Fermer</button>');
-  sheet.style.height='84%';
-}
-/* Accepte 04A23B917C5E80, 04:a2:3b…, 04 A2 3B… : 4, 7 ou 10 octets hexadécimaux. */
-function normUid(v){
-  var h=String(v).replace(/[^0-9a-fA-F]/g,'').toUpperCase();
-  if(/[^0-9a-fA-F\s:.\-]/.test(String(v))||[8,14,20].indexOf(h.length)<0)return null;
-  return h.match(/../g).join(':');
+  sheet.style.height='88%';
 }
 function saveUid(){
-  var u=normUid($('uid-in').value),err=$('uid-err');
-  if(!u){err.textContent='Code non reconnu. Saisissez 4, 7 ou 10 octets en hexadécimal, par exemple 04:A2:3B:91:7C:5E:80.';err.hidden=false;return;}
-  assignUid(byId(tagId),u);
+  var u=normUrl($('uid-in').value),err=$('uid-err');
+  if(!u){err.textContent='Lien non reconnu. Saisissez une adresse web complète, par exemple '+defLink(byId(tagId))+'.';err.hidden=false;return;}
+  assignLink(byId(tagId),u);
+}
+function saveBase(){
+  var u=normUrl($('base-in').value),err=$('base-err');
+  if(!u){err.textContent='Adresse non reconnue. Exemple : https://votre-site.pf/materiel/';err.hidden=false;return;}
+  if(!/[\/#=]$/.test(u))u+='/';
+  equip.forEach(function(e){if(e.link&&sameLink(e.link,defLink(e)))e.link=u+e.ref;});
+  base=u;saveLinks();renderSettings();toast('Adresse des liens mise à jour');
 }
 function openState(st){
   var it=equip.filter(function(e){return e.st===st;});
   openSheet('<h2>'+STATUS[st].l+' · '+it.length+'</h2><div class="list">'+(it.map(function(e){return rowEq(e);}).join('')||'<div class="empty">Aucun équipement dans cet état.</div>')
     +'</div><button class="btn soft" data-filter="'+st+'">Voir dans le parc</button>');
 }
-window.onNfcUnavailable=simScan;
-window.onNfcCancelled=function(){linkTarget=null;};
-window.onNfcTag=function(uid){
-  uid=String(uid).toUpperCase();
-  if(linkTarget){var lt=byId(linkTarget);linkTarget=null;if(lt){assignUid(lt,uid);return;}}
-  var e=equip.filter(function(x){return x.uid&&x.uid.toUpperCase()===uid;})[0];
-  if(e){closeSheet();openDetail(e.id);toast('Puce reconnue · '+e.ref);return;}
-  pendingUid=uid;
-  openSheet('<h2>Puce inconnue</h2><p class="sub">'+esc(uid)+'<br>Choisissez l\'équipement auquel associer cette puce.</p><div class="plist">'+equip.map(function(x){
-    return '<button class="pick" data-link="'+x.id+'">'+ph(x)+'<span class="body"><div class="t">'+esc(x.n)+'</div><div class="s">'+x.ref+'</div></span></button>';}).join('')
-    +'</div><button class="btn soft" data-act="close-sheet">Annuler</button>');
-};
+/* Lien ouvert directement (puce scannée hors de l'app) : …#LIT-0142 ouvre la fiche. */
+function openFromHash(){var r=decodeURIComponent(location.hash.slice(1)).toUpperCase();var e=equip.filter(function(x){return x.ref===r;})[0];if(e)openDetail(e.id);}
+window.addEventListener('hashchange',openFromHash);
 function pickPatient(){
   openSheet('<h2>Attribuer à un bénéficiaire</h2><div class="plist">'+patients.map(function(p){
     return '<button class="pick" data-pick="'+p.id+'"><span class="avatar">'+initials(p.n)+'</span><span class="body"><div class="t">'+esc(p.n)+'</div><div class="s">'+esc(p.z)+'</div></span></button>';}).join('')
@@ -710,21 +771,25 @@ function act(a,e){
   renderDetail();
 }
 document.addEventListener('click',function(x){
-  var t=x.target.closest('[data-tab],[data-open],[data-act],[data-filter],[data-pick],[data-link],[data-place],[data-mode],[data-state],[data-tag]');if(!t)return;
+  var t=x.target.closest('[data-tab],[data-open],[data-act],[data-filter],[data-pick],[data-link],[data-place],[data-mode],[data-state],[data-tag],[data-map]');if(!t)return;
   var d=t.dataset;
-  if(d.tag){openTag(d.tag);}
+  if(d.map){openMap(d.map);}
+  else if(d.tag){openTag(d.tag);}
   else if(d.act==='settings')openSettings();
   else if(d.act==='close-settings')closeSettings();
   else if(d.act==='save-uid')saveUid();
-  else if(d.act==='scan-tag'){var tg=tagId;closeSheet();programTag(tg);}
-  else if(d.act==='clear-tag'){var ce=byId(tagId);ce.uid='';ce.h.push(ev(0,'Puce NFC retirée'));saveUids();closeSheet();renderSettings();toast('Puce retirée de '+ce.ref);}
-  else if(d.act==='clear-all'){equip.forEach(function(e){e.uid='';});saveUids();renderSettings();toast('Toutes les puces sont effacées');}
-  else if(d.act==='restore-all'){equip.forEach(function(e){e.uid=ORIG[e.id];});saveUids();renderSettings();toast('Puces de démonstration rétablies');}
+  else if(d.act==='scan-tag'){var tg=tagId;closeSheet();readTagFor(tg);}
+  else if(d.act==='write-tag'){var tw=tagId;closeSheet();writeTagFor(tw);}
+  else if(d.act==='copy-link'){var ke=byId(tagId);copyText(ke.link||defLink(ke),'Lien copié');}
+  else if(d.act==='save-base')saveBase();
+  else if(d.act==='clear-tag'){var ce=byId(tagId);ce.link='';ce.h.push(ev(0,'Puce NFC retirée'));saveLinks();closeSheet();renderSettings();toast('Puce retirée de '+ce.ref);}
+  else if(d.act==='clear-all'){equip.forEach(function(e){e.link='';});saveLinks();renderSettings();toast('Toutes les puces sont effacées');}
+  else if(d.act==='restore-all'){equip.forEach(function(e){e.link=defLink(e);});saveLinks();renderSettings();toast('Liens par défaut rétablis');}
   else if(d.state){openState(d.state);}
   else if(d.place){var same=S.tab==='parc'&&S.mode==='plan';S.place=d.place;S.tab='parc';S.mode='plan';render(same);}
   else if(d.mode){S.mode=d.mode;S.tab='parc';render();}
   else if(d.tab){S.tab=d.tab;render();}
-  else if(d.link){var lu=pendingUid;pendingUid=null;assignUid(byId(d.link),lu);}
+  else if(d.link){var lu=pendingLink;pendingLink=null;assignLink(byId(d.link),lu);}
   else if(d.open){closeSheet();openDetail(d.open);}
   else if(d.filter){closeSheet();S.filter=d.filter;S.mode='grid';S.tab='parc';render();}
   else if(d.pick){var e=byId(S.cur),p=pat(d.pick);e.st='loc';e.pt=p.id;e.since=0;e.end=28;e.h.push(ev(0,'Livré chez '+p.n));closeSheet();renderDetail();toast('Location démarrée');}
@@ -732,14 +797,15 @@ document.addEventListener('click',function(x){
   else if(d.act==='close-sheet')closeSheet();
   else if(d.act==='credits')openSheet('<h2>Crédits photos</h2><p class="sub">Photos issues de Wikimedia Commons, redimensionnées.</p><div class="plist">'+CREDITS.map(function(c){return '<div class="cred"><b>'+c[0]+'</b><span>'+c[1]+' · '+c[2]+'</span></div>';}).join('')+'</div><button class="btn soft" data-act="close-sheet">Fermer</button>');
   else if(d.act==='back')closeDetail();
-  else if(d.act==='copy'){var r=byId(S.cur).ref;try{navigator.clipboard.writeText(r).then(function(){toast('Référence '+r+' copiée');},function(){toast('Référence : '+r);});}catch(z){toast('Référence : '+r);}}
+  else if(d.act==='copy'){var cl=byId(S.cur).link;if(cl)copyText(cl,'Lien copié');else toast('Aucune puce associée');}
   else if(d.act==='assign')pickPatient();
-  else if(d.act==='program')programTag(S.cur);
+  else if(d.act==='program')writeTagFor(S.cur);
   else if(S.cur)act(d.act,byId(S.cur));
 });
 document.addEventListener('input',function(x){if(x.target.id==='q'){S.q=x.target.value;$('parc-list').innerHTML=parcRows();}});
-document.addEventListener('keydown',function(x){if(x.key==='Enter'&&x.target.id==='uid-in'){saveUid();return;}if(x.key==='Escape'){if(sheet.classList.contains('open'))closeSheet();else if(S.cur)closeDetail();else if(setOpen)closeSettings();}});
+document.addEventListener('keydown',function(x){if(x.key==='Enter'&&x.target.id==='uid-in'){saveUid();return;}if(x.key==='Enter'&&x.target.id==='base-in'){saveBase();return;}if(x.key==='Escape'){if(sheet.classList.contains('open'))closeSheet();else if(S.cur)closeDetail();else if(setOpen)closeSettings();}});
 render();
+openFromHash();
 })();
 </script>
 </body>

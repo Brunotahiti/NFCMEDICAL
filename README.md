@@ -17,19 +17,23 @@ Démo d'application iPhone pour gérer un parc de matériel médical en location
 
 La lecture NFC demande un compte Apple Developer payant (la capacité « NFC Tag Reading » n'est pas proposée aux comptes gratuits) et un vrai iPhone. Avec un compte gratuit, retirez la capacité NFC dans Signing & Capabilities : l'app se lance quand même et simule le scan, comme dans le simulateur.
 
-## Scan NFC
+## Puces NFC : un lien par équipement
 
-- Puce connue : la fiche de l'équipement s'ouvre.
-- Puce inconnue : l'app propose de l'associer à un équipement ; l'association est mémorisée sur l'appareil.
-- Paramétrer une puce : dans une fiche, « Associer / Remplacer la puce NFC » lit la puce présentée et l'attribue à cet équipement (une puce déjà utilisée ailleurs est réattribuée).
+Chaque puce contient un lien (enregistrement NDEF de type URI), par exemple `https://votre-site.pf/materiel/LIT-0142`. À la lecture, l'app retrouve l'équipement dont le lien est identique, ou dont la référence termine le lien.
 
-## Paramètres : associer de vraies puces
+Bouton « Paramètres » en haut à droite :
 
-Bouton « Paramètres » en haut à droite. La liste montre chaque équipement et sa puce. Touchez un équipement pour scanner sa puce avec l'iPhone ou saisir son code à la main (4, 7 ou 10 octets hexadécimaux, ex. `04:A2:3B:91:7C:5E:80`). « Effacer toutes les puces » retire les codes fictifs avant d'associer les vraies ; « Tester une puce » vérifie qu'une puce ouvre la bonne fiche. Les associations sont mémorisées sur l'appareil.
+- Écrire le lien sur une puce : l'app programme une puce vierge ou réinscriptible avec le lien de l'équipement.
+- Lire une puce déjà programmée : le lien présent sur la puce est associé à l'équipement.
+- Saisir le lien à la main, le copier, ou retirer la puce.
+- Adresse des liens : le début commun des liens (par défaut l'adresse de la démo en ligne ; à remplacer par votre propre site).
+- Tester une puce, effacer toutes les puces, rétablir les liens par défaut.
+
+Les associations sont mémorisées sur l'appareil. Une puce lue hors de l'app ouvre son lien dans Safari ; avec l'adresse par défaut, la démo en ligne s'ouvre sur la fiche de l'équipement.
 
 ## Plan
 
-Le plan est un contour simplifié de Tahiti dessiné dans la page ; chaque équipement est placé au dépôt ou au domicile du bénéficiaire (adresses fictives). Le bouton « Plans » d'une fiche ouvre l'endroit dans Apple Plans.
+Le plan dessiné montre où se trouve le matériel (dépôt ou domicile du bénéficiaire, adresses fictives). Dans l'app iPhone, « Zoomer » ouvre la vraie carte Apple Plans, zoomable jusqu'à l'adresse, avec l'itinéraire. Dans la démo en ligne, « Zoomer » ouvre Apple Plans dans le navigateur.
 
 ## Modifier l'interface
 

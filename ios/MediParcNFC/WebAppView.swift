@@ -1,3 +1,4 @@
+import MapKit
 import SwiftUI
 import WebKit
 
@@ -9,6 +10,7 @@ struct WebAppView: UIViewRepresentable {
         let config = WKWebViewConfiguration()
         config.setURLSchemeHandler(BundleSchemeHandler(), forURLScheme: "mediparc")
         config.userContentController.add(context.coordinator, name: "nfc")
+        config.userContentController.add(context.coordinator, name: "map")
 
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.scrollView.contentInsetAdjustmentBehavior = .never
@@ -33,19 +35,67 @@ struct WebAppView: UIViewRepresentable {
 
         func userContentController(_ userContentController: WKUserContentController,
                                    didReceive message: WKScriptMessage) {
-            guard message.name == "nfc" else { return }
-            reader.scan { [weak self] result in
+            let body = message.body as? [String: Any] ?? [:]
+            switch message.name {
+            case "nfc": handleNFC(body)
+            case "map": showMap(body)
+            default: break
+            }
+        }
+
+        /// {action: "read"} lit le lien d'une puce ; {action: "write", url: "…"} écrit un lien.
+        private func handleNFC(_ body: [String: Any]) {
+            var mode = NFCMode.read
+            if body["action"] as? String == "write" {
+                guard let text = body["url"] as? String, let url = URL(string: text) else {
+                    run("window.onNfcError(\(literal("Lien invalide.")))")
+                    return
+                }
+                mode = .write(url)
+            }
+            reader.start(mode) { [weak self] result in
                 DispatchQueue.main.async {
+                    guard let self else { return }
                     switch result {
-                    case .tag(let uid):
-                        self?.run("window.onNfcTag('\(uid)')")
+                    case .link(let url):
+                        self.run("window.onNfcLink(\(self.literal(url)))")
+                    case .written(let url):
+                        self.run("window.onNfcWritten(\(self.literal(url)))")
+                    case .failed(let message):
+                        self.run("window.onNfcError(\(self.literal(message)))")
                     case .unavailable:
-                        self?.run("window.onNfcUnavailable()")
+                        self.run("window.onNfcUnavailable()")
                     case .cancelled:
-                        self?.run("window.onNfcCancelled()")
+                        self.run("window.onNfcCancelled()")
                     }
                 }
             }
+        }
+
+        /// {focus: "id", pins: [{id, title, subtitle, lat, lon}]} ouvre la carte Apple Plans.
+        private func showMap(_ body: [String: Any]) {
+            let rows = body["pins"] as? [[String: Any]] ?? []
+            let pins: [MapPin] = rows.compactMap { row in
+                guard let id = row["id"] as? String,
+                      let lat = (row["lat"] as? NSNumber)?.doubleValue,
+                      let lon = (row["lon"] as? NSNumber)?.doubleValue else { return nil }
+                return MapPin(id: id,
+                              title: row["title"] as? String ?? "",
+                              subtitle: row["subtitle"] as? String ?? "",
+                              coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
+            }
+            guard !pins.isEmpty, let root = webView?.window?.rootViewController else { return }
+            let host = UIHostingController(rootView: MapScreen(pins: pins, focus: body["focus"] as? String))
+            host.modalPresentationStyle = .fullScreen
+            root.present(host, animated: true)
+        }
+
+        /// Encode un texte en littéral JavaScript sûr (ou null).
+        private func literal(_ text: String?) -> String {
+            guard let text,
+                  let data = try? JSONSerialization.data(withJSONObject: [text]),
+                  let json = String(data: data, encoding: .utf8) else { return "null" }
+            return String(json.dropFirst().dropLast())
         }
 
         /// Les liens externes (ex. « Plans ») s'ouvrent hors de l'app.
