@@ -216,6 +216,9 @@ main>*{flex:none}
 .stat2 .tr i{font-style:normal;display:inline-flex;align-items:center;gap:2px;background:var(--seg-dispo);color:#0B3B2A;font-weight:700;font-size:11px;padding:2px 7px;border-radius:99px}
 .stat2 .tr svg{width:10px;height:10px;stroke-width:3}
 .row .s.w2{white-space:normal}
+.kv dd .dsub{display:block;font-weight:400;font-size:12.5px;color:var(--muted)}
+.mini .when.fa{color:var(--accent);font-weight:600}
+.mini .when.fa svg{width:13px;height:13px}
 .tools{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
 .tbtn{width:38px;height:38px;border-radius:50%;background:var(--surface);box-shadow:var(--shadow);display:grid;place-items:center;color:var(--ink)}
 .tbtn.on{background:var(--hero);color:var(--hero-fg)}
@@ -515,6 +518,7 @@ var ICON={
   up:'<path d="M12 19V5M6 11l6-6 6 6"/>',
   tag:'<path d="M7 15.500a5 5 0 0 0 0-7M11 18a9 9 0 0 0 0-12M15 20.500a13 13 0 0 0 0-17"/>',
   bars:'<path d="M5 20v-6M10 20V9M15 20v-9M20 20V5"/>',
+  cross:'<path d="M9.500 3.500h5v6h6v5h-6v6h-5v-6h-6v-5h6z"/>',
   ret:'<path d="M9 7 4 12l5 5M4 12h11a5 5 0 0 1 0 10h-2"/>'
 };
 function ic(k){return '<svg class="i" viewBox="0 0 24 24">'+ICON[k]+'</svg>';}
@@ -536,6 +540,10 @@ var patients=[
   {id:'p5',a:'PK 36 côté montagne, Papara',c:'Papara',lat:-17.752,lon:-149.512,n:'Résidence Les Tilleuls',z:'Papara · EHPAD, chambre 14'}
 ];
 var DEPOT={id:'depot',n:'Dépôt MédiParc',a:'Fare Ute, Papeete',c:'Papeete',lat:-17.532,lon:-149.572};
+/* Pharmacies qui délivrent les locations (noms de démonstration). */
+var PHARM=[{id:'f1',n:'Pharmacie du Lagon',c:'Punaauia'},{id:'f2',n:'Pharmacie Moana',c:'Papeete'},{id:'f3',n:'Pharmacie de la Presqu\'île',c:'Taravao'}];
+var FA_OF={p1:'f1',p2:'f2',p3:'f1',p4:'f3',p5:'f2'};
+function phar(id){for(var i=0;i<PHARM.length;i++)if(PHARM[i].id===id)return PHARM[i];return null;}
 var seq=0;
 function ev(d,txt){return {d:d,txt:txt,q:seq++};}
 /* d = décalage en jours par rapport à aujourd'hui ; px = tarif de location hebdomadaire en francs pacifiques (XPF) */
@@ -570,7 +578,8 @@ var RAW=[
 ];
 var equip=RAW.map(function(r,i){
   var e={id:'e'+(i+1),ref:r[0],ph:r[1],k:r[2],n:r[3],m:r[4],cat:r[5],st:r[6],pt:r[7],since:r[8],end:r[9],chk:r[10],px:r[11],buy:r[12],days:r[13],est:r[14]};
-  e.h=e.st==='loc'?[ev(e.since,'Livré chez '+patients.filter(function(p){return p.id===e.pt;})[0].n),ev(e.since-1,'Désinfection validée')]
+  e.fa=e.st==='loc'?(e.ref==='TNS-0115'?'f1':FA_OF[e.pt]):null;
+  e.h=e.st==='loc'?[ev(e.since,'Livré chez '+patients.filter(function(p){return p.id===e.pt;})[0].n+' par la '+phar(e.fa).n),ev(e.since-1,'Désinfection validée')]
     :e.st==='dispo'?[ev(e.since,'Désinfection validée, remis en stock')]
     :e.st==='desinf'?[ev(e.since,'Retour de location, en attente de désinfection')]
     :[ev(e.since,'Panne signalée : batterie à remplacer')];
@@ -579,7 +588,7 @@ var equip=RAW.map(function(r,i){
 var CREDITS=[['Lit Mantovani','Blogotron','CC0'],['Lit X5','Tiia Monto','CC BY-SA 4.0'],['Lit Allura','BrokenSphere','CC BY-SA 3.0'],['Porte sérum','North Coast Outfitters, Ltd. (Flickr)','CC BY 2.0'],['Lève-personnes','Solmarsol','CC BY-SA 3.0'],['Déambulateurs fixes','Wikimedia Commons, « Walker. frame.jpg »','domaine public'],['Rollator 286i','sani-aktiv.de','CC BY-SA 2.0'],['Rollator 4 roues Simply','DirkvdM','CC BY 3.0'],['Fauteuil roulant','Davronov Alexander','CC BY-SA 4.0'],['TENS','Wikimedia Commons, « Tens.jpg »','licence libre'],['Aérosols','Per Ljungvall','CC BY-SA 3.0'],['Concentrateur d\'O2','BrokenSphere','CC BY-SA 3.0'],['Aspirateur','BlankeVla','CC0'],['Tire-lait','Flups','CC BY-SA 3.0']];
 var scanOrder=['e21','e10','e3','e7','e1','e18','e5','e9'], scanIdx=0;
 
-var S={tab:'home',filter:'all',q:'',cur:null,mode:'grid',place:'depot',ltab:'cur',lsort:0,lzone:null,cdays:7,rtab:'vue'};
+var S={tab:'home',filter:'all',q:'',cur:null,mode:'grid',place:'depot',ltab:'cur',lsort:0,lzone:null,lfa:null,cdays:7,rtab:'vue'};
 var $=function(id){return document.getElementById(id);};
 var main=$('main'),detail=$('detail'),sheet=$('sheet'),scrim=$('scrim'),toastEl=$('toast');
 var timers=[];
@@ -747,7 +756,7 @@ function actRows(n){
 function csvRows(kind){
   var q=function(v){return '"'+String(v).replace(/"/g,'""')+'"';},L=[];
   if(kind==='parc'){L.push(['Référence','Produit','Marque','État','Emplacement','Loyer hebdo XPF','Lien NFC']);equip.forEach(function(e){L.push([e.ref,e.n,e.m,STATUS[e.st].l,where(e),e.px,e.link]);});}
-  else if(kind==='loc'){L.push(['Référence','Produit','Bénéficiaire','Commune','Début','Retour prévu','Loyer hebdo XPF']);equip.filter(function(e){return e.st==='loc';}).forEach(function(e){var p=pat(e.pt);L.push([e.ref,e.n,p.n,p.c,dateOf(e.since).toLocaleDateString('fr-FR'),dateOf(e.end).toLocaleDateString('fr-FR'),e.px]);});}
+  else if(kind==='loc'){L.push(['Référence','Produit','Bénéficiaire','Commune','Pharmacie','Début','Retour prévu','Loyer hebdo XPF']);equip.filter(function(e){return e.st==='loc';}).forEach(function(e){var p=pat(e.pt);L.push([e.ref,e.n,p.n,p.c,phar(e.fa).n,dateOf(e.since).toLocaleDateString('fr-FR'),dateOf(e.end).toLocaleDateString('fr-FR'),e.px]);});}
   else{L.push(['Référence','Produit','Prix d\'achat XPF','Loyers encaissés XPF','Amorti %','Jours loués']);equip.forEach(function(e){var r=profit(e);L.push([e.ref,e.n,e.buy,r.rev,r.pct,r.days]);});}
   return L.map(function(r){return r.map(q).join(';');}).join('\n');
 }
@@ -780,6 +789,8 @@ function viewRap(){
     +'<button class="kpi" data-state="desinf"><span class="c-desinf ki">'+ic('drop')+'</span><b class="num">'+count('desinf')+'</b><span>À désinfecter</span></button></div>'
     +'<section>'+secH('bars','Occupation',histSeg(true))+'<div class="vizc">'+occChart(occ,true)+'</div></section>'
     +'<section>'+secH('hist','Répartition du parc')+'<div class="vizc dz">'+donut()+'</div></section>'
+    +'<section>'+secH('cross','Locations par pharmacie')+'<div class="list">'+PHARM.map(function(f){var it=equip.filter(function(e){return e.st==='loc'&&e.fa===f.id;}),np=it.map(function(e){return e.pt;}).filter(function(x,i,a){return a.indexOf(x)===i;}).length;
+      return '<button class="row" data-fa="'+f.id+'"><span class="ico a-ok"><svg viewBox="0 0 24 24">'+ICON.cross+'</svg></span><span class="body"><div class="t">'+esc(f.n)+'</div><div class="s w2">'+esc(f.c)+' · '+it.length+' équipement'+(it.length>1?'s':'')+' · '+np+' bénéficiaire'+(np>1?'s':'')+'</div></span><b class="pct num">'+xpf(it.reduce(function(a,e){return a+e.px;},0))+'</b></button>';}).join('')+'</div><p class="note">Loyers par semaine des locations en cours.</p></section>'
     +'<section>'+secH('clock','Activité récente','<button class="more" data-rtab="act">Tout voir'+ic('arrow')+'</button>')+'<div class="list">'+actRows(3)+'</div></section>';
 }
 function viewParc(){
@@ -839,7 +850,7 @@ function parcProfit(){
     +'<details class="more-d"><summary>Détail par équipement</summary><div class="list">'+profitRows()+'</div></details>';
 }
 /* Contrats terminés : historique de démonstration. */
-var DONE=(function(){var a=[];for(var i=0;i<28;i++){var e=equip[(i*5)%equip.length],p=patients[i%patients.length],dur=[14,28,21,42,7][i%5],end=-(3+i*6);a.push({e:e,p:p,end:end,start:end-dur,dur:dur,sum:Math.round(e.px*dur/7)});}return a;})();
+var DONE=(function(){var a=[];for(var i=0;i<28;i++){var e=equip[(i*5)%equip.length],p=patients[i%patients.length],dur=[14,28,21,42,7][i%5],end=-(3+i*6);a.push({e:e,p:p,fa:PHARM[i%PHARM.length],end:end,start:end-dur,dur:dur,sum:Math.round(e.px*dur/7)});}return a;})();
 var LSORT=[['ben','Bénéficiaire'],['px','Loyer le plus élevé'],['end','Retour le plus proche']];
 function viewLoc(){
   var rented=equip.filter(function(e){return e.st==='loc';});
@@ -853,11 +864,12 @@ function viewLoc(){
   if(S.ltab==='renew')return head+'<section>'+secH('cal','À renouveler','<span>retour dans 14 jours ou moins</span>')+'<div class="list">'+(renew.map(function(e){
       return '<div class="row"><button class="rowin" data-open="'+e.id+'">'+ph(e)+'<span class="body"><div class="t">'+esc(e.n)+'</div><div class="s">'+esc(pat(e.pt).n)+' · '+leftTxt(rent(e))+'</div></span></button><button class="more" data-extend="'+e.id+'">+ 1 sem.</button></div>';}).join('')||'<div class="empty">Aucun contrat à renouveler.</div>')+'</div></section>';
   if(S.ltab==='done')return head+'<section>'+secH('okc','Contrats terminés','<span>'+DONE.length+' contrats</span>')+'<div class="list">'+DONE.map(function(c){
-      return '<button class="row" data-open="'+c.e.id+'">'+ph(c.e)+'<span class="body"><div class="t">'+esc(c.e.n)+'</div><div class="s">'+esc(c.p.n)+' · du '+fmt(c.start)+' au '+fmt(c.end)+'</div></span><b class="pct num">'+xpf(c.sum)+'</b></button>';}).join('')+'</div></section>';
+      return '<button class="row" data-open="'+c.e.id+'">'+ph(c.e)+'<span class="body"><div class="t">'+esc(c.e.n)+'</div><div class="s w2">'+esc(c.p.n)+' · '+esc(c.fa.n)+'<br>du '+fmt(c.start)+' au '+fmt(c.end)+'</div></span><b class="pct num">'+xpf(c.sum)+'</b></button>';}).join('')+'</div></section>';
   var groups=patients.map(function(p,i){
-    var it=rented.filter(function(e){return e.pt===p.id;});
+    var it=rented.filter(function(e){return e.pt===p.id&&(!S.lfa||e.fa===S.lfa);});
     return {p:p,i:i,it:it,sum:it.reduce(function(a,e){return a+e.px;},0),end:Math.min.apply(null,it.map(function(e){return e.end;}))};
   }).filter(function(g){return g.it.length&&(!S.lzone||g.p.c===S.lzone);});
+  var noMatch=S.lzone||S.lfa;
   var so=LSORT[S.lsort][0];
   groups.sort(function(a,b){return so==='px'?b.sum-a.sum:so==='end'?a.end-b.end:a.i-b.i;});
   var cards=groups.map(function(g){
@@ -865,12 +877,12 @@ function viewLoc(){
     return '<article class="pcard" style="--pc:var('+PC[g.i%PC.length]+')"><header><span class="avatar">'+initials(p.n)+'</span><div class="who"><div class="t">'+esc(p.n)+'</div></div>'
       +'<div class="amt num">'+xpf(g.sum)+'<small>/ semaine</small></div><button class="keb2" data-pkeb="'+p.id+'" aria-label="Actions pour '+esc(p.n)+'"><svg viewBox="0 0 24 24"><circle cx="12" cy="5.500" r="1.700"/><circle cx="12" cy="12" r="1.700"/><circle cx="12" cy="18.500" r="1.700"/></svg></button></header>'
       +'<div class="psub"><span>'+ic('pin')+esc(p.z)+'</span>'+(back?'<span class="pill p-loc">'+ic('ret')+'Retour aujourd\'hui</span>':'<span class="pill p-dispo">'+ic('okc')+'Actif</span>')+'</div>'
-      +g.it.map(function(e){return '<button class="mini" data-open="'+e.id+'">'+ph(e)+'<span class="nm"><b>'+esc(e.n)+'</b><span class="when">'+ic('cal')+'Depuis '+(rent(e).el===0?'aujourd\'hui':sem(rent(e).el))+' · '+leftTxt(rent(e))+'</span><span class="bar'+(rent(e).left<0?' over':'')+'"><i style="width:'+rent(e).pct+'%"></i></span></span><span class="chev">'+ICON.chev+'</span></button>';}).join('')+'</article>';
+      +g.it.map(function(e){return '<button class="mini" data-open="'+e.id+'">'+ph(e)+'<span class="nm"><b>'+esc(e.n)+'</b><span class="when">'+ic('cal')+'Depuis '+(rent(e).el===0?'aujourd\'hui':sem(rent(e).el))+' · '+leftTxt(rent(e))+'</span><span class="when fa">'+ic('cross')+esc(phar(e.fa).n)+'</span><span class="bar'+(rent(e).left<0?' over':'')+'"><i style="width:'+rent(e).pct+'%"></i></span></span><span class="chev">'+ICON.chev+'</span></button>';}).join('')+'</article>';
   }).join('');
   return head+'<section>'+secH('clip','Contrats en cours','<span class="tools">'
-    +'<button class="tbtn'+(S.lzone?' on':'')+'" data-act="lfilter" aria-label="Filtrer par commune"><svg class="i" viewBox="0 0 24 24"><path d="M4 5h16l-6 7.500V19l-4-2v-4.500z"/></svg></button>'
+    +'<button class="tbtn'+(S.lzone||S.lfa?' on':'')+'" data-act="lfilter" aria-label="Filtrer par commune ou pharmacie"><svg class="i" viewBox="0 0 24 24"><path d="M4 5h16l-6 7.500V19l-4-2v-4.500z"/></svg></button>'
     +'<button class="tbtn" data-act="lsort" aria-label="Changer le tri"><svg class="i" viewBox="0 0 24 24"><path d="M8 4v16M8 4 4.500 7.500M8 4l3.500 3.500M16 20V4M16 20l-3.500-3.500M16 20l3.500-3.500"/></svg></button></span>')
-    +(cards||'<div class="list"><div class="empty">Aucune location'+(S.lzone?' à '+esc(S.lzone):' en cours')+'.</div></div>')+'</section>';
+    +(cards||'<div class="list"><div class="empty">Aucune location'+(noMatch?' ne correspond au filtre':' en cours')+'.</div></div>')+'</section>';
 }
 function rowE(e,sub,right){
   return '<button class="row" data-open="'+e.id+'">'+ph(e)+'<span class="body"><div class="t">'+esc(e.n)+'</div><div class="s w2">'+esc(sub)+'</div></span>'+right+'<span class="chev">'+ICON.chev+'</span></button>';
@@ -924,7 +936,7 @@ function renderDetail(){
     +(e.st==='loc'?rentCard(e):'')
     +'<dl class="kv" style="margin:0">'
     +'<div><dt>'+ic('pin')+'Emplacement</dt><dd>'+esc(where(e))+'</dd></div>'
-    +(p?'<div><dt>'+ic('heart')+'Prise en charge</dt><dd>'+esc(p.z.split(' · ')[1]||p.z)+'</dd></div>':'')
+    +(p?'<div><dt>'+ic('heart')+'Prise en charge</dt><dd>'+esc(p.z.split(' · ')[1]||p.z)+'</dd></div>'+(e.fa?'<div><dt>'+ic('cross')+'Pharmacie</dt><dd>'+esc(phar(e.fa).n)+'<small class="dsub">'+esc(phar(e.fa).c)+'</small></dd></div>':''):'')
     +'<div><dt>'+ic('clip')+'Prix catalogue</dt><dd class="num">'+esc(e.cat)+'</dd></div>'
     +'<div><dt>'+ic('coins')+'Tarif de location</dt><dd class="num">'+xpf(e.px)+' / semaine</dd></div>'
     +'<div><dt>'+ic('tool')+'Prochain contrôle</dt>'+chk+'</div></dl>'
@@ -1082,10 +1094,12 @@ function openState(st){
 /* Lien ouvert directement (puce scannée hors de l'app) : …/materiel/LIT-0101 ou …#LIT-0101 ouvre la fiche. */
 function openFromHash(){var r=decodeURIComponent(location.hash.slice(1)||location.pathname.replace(/\/+$/,'').split('/').pop()).toUpperCase();var e=equip.filter(function(x){return x.ref===r;})[0];if(e)openDetail(e.id);}
 window.addEventListener('hashchange',openFromHash);
+var rentFa='f1';
 var DURS=[[7,'1 semaine'],[14,'2 semaines'],[28,'4 semaines'],[90,'3 mois']],rentDur=28;
 function pickPatient(){
   openSheet('<h2>Mettre en location</h2><label class="fld" style="text-align:center">Durée prévue</label><div class="durs">'+DURS.map(function(d){
       return '<button class="chip" data-dur="'+d[0]+'" aria-pressed="'+(rentDur===d[0])+'">'+d[1]+'</button>';}).join('')+'</div>'
+    +'<label class="fld" style="text-align:center">Pharmacie</label><div class="durs">'+PHARM.map(function(f){return '<button class="chip" data-rfa="'+f.id+'" aria-pressed="'+(rentFa===f.id)+'">'+esc(f.n)+'</button>';}).join('')+'</div>'
     +'<label class="fld" style="text-align:center">Bénéficiaire</label><div class="plist">'+patients.map(function(p){
     return '<button class="pick" data-pick="'+p.id+'"><span class="avatar">'+initials(p.n)+'</span><span class="body"><div class="t">'+esc(p.n)+'</div><div class="s">'+esc(p.z)+'</div></span></button>';}).join('')
     +'</div><button class="btn soft" data-act="close-sheet">Annuler</button>');
@@ -1096,14 +1110,14 @@ function toast(t){toastEl.textContent=t;toastEl.classList.add('show');clearTimeo
 
 /* ---------- Actions ---------- */
 function act(a,e){
-  if(a==='return'){var n=pat(e.pt).n;e.st='desinf';e.pt=null;e.end=null;e.since=0;e.h.push(ev(0,'Retour de location ('+n+'), en attente de désinfection'));toast('Retour enregistré');}
+  if(a==='return'){var n=pat(e.pt).n;e.st='desinf';e.pt=null;e.fa=null;e.end=null;e.since=0;e.h.push(ev(0,'Retour de location ('+n+'), en attente de désinfection'));toast('Retour enregistré');}
   else if(a==='clean'){e.st='dispo';e.since=0;e.h.push(ev(0,'Désinfection validée, remis en stock'));toast('Désinfection validée');}
   else if(a==='repair'){e.st='dispo';e.since=0;if(e.chk<0)e.chk=365;e.h.push(ev(0,'Maintenance clôturée, contrôle conforme'));toast('Matériel remis en stock');}
-  else if(a==='fault'){e.st='maint';e.pt=null;e.end=null;e.since=0;e.h.push(ev(0,'Panne signalée, envoyé à l\'atelier'));toast('Panne signalée');}
+  else if(a==='fault'){e.st='maint';e.pt=null;e.fa=null;e.end=null;e.since=0;e.h.push(ev(0,'Panne signalée, envoyé à l\'atelier'));toast('Panne signalée');}
   renderDetail();
 }
 document.addEventListener('click',function(x){
-  var t=x.target.closest('[data-tab],[data-open],[data-act],[data-filter],[data-pick],[data-link],[data-place],[data-mode],[data-state],[data-tag],[data-map],[data-dur],[data-hist],[data-fav],[data-keb],[data-progid],[data-ltab],[data-extend],[data-pkeb],[data-zone],[data-pext],[data-cdays],[data-scroll],[data-rtab],[data-export]');if(!t)return;
+  var t=x.target.closest('[data-tab],[data-open],[data-act],[data-filter],[data-pick],[data-link],[data-place],[data-mode],[data-state],[data-tag],[data-map],[data-dur],[data-hist],[data-fav],[data-keb],[data-progid],[data-ltab],[data-extend],[data-pkeb],[data-zone],[data-pext],[data-cdays],[data-scroll],[data-rtab],[data-export],[data-fa],[data-rfa]');if(!t)return;
   var d=t.dataset;
   if(d.rtab){closeSheet();S.rtab=d.rtab;S.tab='rap';render();}
   else if(d.export){copyText(csvRows(d.export),'Export copié dans le presse-papiers');}
@@ -1113,7 +1127,9 @@ document.addEventListener('click',function(x){
   else if(d.extend){var ee=byId(d.extend);ee.end+=7;ee.h.push(ev(0,'Location prolongée d\'une semaine'));render(true);toast(ee.n+' : retour repoussé au '+fmt(ee.end));}
   else if(d.zone!==undefined){S.lzone=d.zone||null;closeSheet();render();}
   else if(d.act==='lsort'){S.lsort=(S.lsort+1)%LSORT.length;render(true);toast('Tri : '+LSORT[S.lsort][1]);}
-  else if(d.act==='lfilter'){var zs=patients.map(function(p){return p.c;}).filter(function(c,i,a){return a.indexOf(c)===i;});openSheet('<h2>Filtrer par commune</h2><div class="durs"><button class="chip" data-zone="" aria-pressed="'+(!S.lzone)+'">Toutes</button>'+zs.map(function(z){return '<button class="chip" data-zone="'+esc(z)+'" aria-pressed="'+(S.lzone===z)+'">'+esc(z)+'</button>';}).join('')+'</div><button class="btn soft" data-act="close-sheet">Fermer</button>');}
+  else if(d.act==='lfilter'){var zs=patients.map(function(p){return p.c;}).filter(function(c,i,a){return a.indexOf(c)===i;});openSheet('<h2>Filtrer les contrats</h2><label class="fld" style="text-align:center">Pharmacie</label><div class="durs"><button class="chip" data-fa="" aria-pressed="'+(!S.lfa)+'">Toutes</button>'+PHARM.map(function(f){return '<button class="chip" data-fa="'+f.id+'" aria-pressed="'+(S.lfa===f.id)+'">'+esc(f.n)+'</button>';}).join('')+'</div><label class="fld" style="text-align:center">Commune du bénéficiaire</label><div class="durs"><button class="chip" data-zone="" aria-pressed="'+(!S.lzone)+'">Toutes</button>'+zs.map(function(z){return '<button class="chip" data-zone="'+esc(z)+'" aria-pressed="'+(S.lzone===z)+'">'+esc(z)+'</button>';}).join('')+'</div><button class="btn soft" data-act="close-sheet">Fermer</button>');}
+  else if(d.fa!==undefined){S.lfa=d.fa||null;closeSheet();S.tab='loc';S.ltab='cur';render();}
+  else if(d.rfa){rentFa=d.rfa;pickPatient();}
   else if(d.pkeb){var pp=pat(d.pkeb);menuSheet(esc(pp.n),[['data-place="'+pp.id+'"','pin','Voir sur le plan',esc(pp.a)],['data-pext="'+pp.id+'"','cal','Prolonger d\'une semaine','Tous les équipements de ce bénéficiaire']]);}
   else if(d.pext){equip.forEach(function(e){if(e.st==='loc'&&e.pt===d.pext){e.end+=7;e.h.push(ev(0,'Location prolongée d\'une semaine'));}});closeSheet();render(true);toast('Locations prolongées d\'une semaine');}
   else if(d.fav){var fe=byId(d.fav);fe.fav=!fe.fav;saveFavs();closeSheet();render(true);toast(fe.fav?'Ajouté aux favoris':'Retiré des favoris');}
@@ -1145,7 +1161,7 @@ document.addEventListener('click',function(x){
   else if(d.link){var lu=pendingLink;pendingLink=null;assignLink(byId(d.link),lu);}
   else if(d.open){closeSheet();openDetail(d.open);}
   else if(d.filter){closeSheet();S.filter=d.filter;S.mode='grid';S.tab='parc';render();}
-  else if(d.pick){var e=byId(S.cur),p=pat(d.pick);e.st='loc';e.pt=p.id;e.since=0;e.end=rentDur;e.h.push(ev(0,'Livré chez '+p.n+' pour '+DURS.filter(function(x){return x[0]===rentDur;})[0][1]));closeSheet();renderDetail();toast('Location démarrée');}
+  else if(d.pick){var e=byId(S.cur),p=pat(d.pick);e.st='loc';e.pt=p.id;e.since=0;e.end=rentDur;e.fa=rentFa;e.h.push(ev(0,'Livré chez '+p.n+' par la '+phar(rentFa).n+' pour '+DURS.filter(function(x){return x[0]===rentDur;})[0][1]));closeSheet();renderDetail();toast('Location démarrée');}
   else if(d.act==='scan'){closeSheet();startScan();}
   else if(d.act==='close-sheet')closeSheet();
   else if(d.act==='credits')openSheet('<h2>Crédits photos</h2><p class="sub">Photos d\'illustration libres (Wikimedia Commons, Flickr), redimensionnées. Elles ne montrent pas les modèles exacts.</p><div class="plist">'+CREDITS.map(function(c){return '<div class="cred"><b>'+c[0]+'</b><span>'+c[1]+' · '+c[2]+'</span></div>';}).join('')+'</div><button class="btn soft" data-act="close-sheet">Fermer</button>');

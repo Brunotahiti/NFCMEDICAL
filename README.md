@@ -33,6 +33,10 @@ Chaque fiche compare les loyers encaissés depuis l'achat au prix d'achat (pourc
 
 Le parc reprend les 24 produits du catalogue de location (lits, porte-sérum, lève-personnes, déambulateurs et rollators, fauteuil roulant, TENS, aérosols, concentrateur d'O2, aspirateur, tire-lait). Le « prix catalogue » de chaque fiche vient de cette liste ; les loyers hebdomadaires, les bénéficiaires et les dates sont des valeurs de démonstration. Les photos sont des illustrations libres par type de matériel, pas les modèles exacts ; trois produits n'ont pas encore de photo et affichent une icône.
 
+## Pharmacies
+
+Chaque location est rattachée à la pharmacie qui l'a délivrée. Elle apparaît dans la fiche de l'équipement, sous chaque ligne de l'écran Locations, dans les contrats terminés, dans l'export des contrats et dans Rapports (« Locations par pharmacie »). L'entonnoir de l'écran Locations filtre par pharmacie ; elle se choisit à la mise en location. Les trois pharmacies de la démo sont fictives.
+
 ## Durée des locations
 
 Chaque fiche en location affiche depuis combien de temps le matériel est loué, combien de temps il reste, la durée prévue et une barre de progression ; « + 1 semaine » repousse le retour. La durée prévue se choisit à la mise en location (1, 2, 4 semaines ou 3 mois). L'écran Locations et les cartes du Parc reprennent ces durées.
