@@ -65,6 +65,10 @@ La démo est en ligne sur `https://manaprocess.cloud/materiel/` : une puce scann
 
 Sur le VPS, le projet Docker `mediparc-nfc` (fichier `deploy/docker-compose.yml`) lance un conteneur nginx derrière Traefik. À chaque démarrage, il télécharge ce dépôt (qui doit rester public), génère le site avec `deploy/build.sh` et le sert. Pour publier une nouvelle version : pousser sur la branche, puis redémarrer le projet `mediparc-nfc`.
 
+## Icône
+
+`icons/` contient l'icône (1024 px et tailles web) et sa source `icon-source.html`. Elle sert d'icône à l'app iPhone (Assets.xcassets) et à l'ajout sur l'écran d'accueil depuis Safari (nom « MédiParc »).
+
 ## Modifier l'interface
 
 Modifier `index.html` à la racine, puis recopier dans le projet Xcode :

@@ -1,0 +1,13 @@
+{
+  "name": "MédiParc NFC · ManaProcess",
+  "short_name": "MédiParc",
+  "start_url": "/materiel/",
+  "scope": "/materiel/",
+  "display": "standalone",
+  "background_color": "#0B5361",
+  "theme_color": "#0B5361",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
