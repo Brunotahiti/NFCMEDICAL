@@ -293,6 +293,8 @@ a.btn{text-decoration:none}
 .infobox>svg{width:22px;height:22px;flex:none;color:var(--ok);margin-top:1px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .infobox b{display:block;font-weight:700;margin-bottom:2px}
 .sheet .infobox{text-align:left}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.duo .btn{padding:0 8px;font-size:15px}
 .scanprev{display:flex;gap:12px;align-items:center;background:var(--bg);border-radius:16px;padding:12px 14px;text-align:left}
 .scanprev>svg{width:30px;height:30px;flex:none;color:var(--accent);fill:none;stroke:currentColor;stroke-width:1.8}
 .scanprev b{display:block;font-size:13.5px;overflow-wrap:anywhere}.scanprev span{font-size:12.5px;color:var(--muted)}
@@ -522,7 +524,8 @@ input.uid::placeholder{color:var(--muted);opacity:.6}
   <div class="toast" id="toast" role="status"></div>
   <div class="gate" id="gate" hidden></div>
   <input type="file" id="doc-in" accept="image/*,application/pdf" hidden>
-  <input type="file" id="scan-in" accept="image/*,application/pdf" capture="environment" hidden>
+  <input type="file" id="scan-in" accept="image/*" capture="environment" hidden>
+  <input type="file" id="import-in" hidden>
 </div>
 
 <script>
@@ -1281,7 +1284,7 @@ function docsSection(e){
     :'<div class="empty">Ordonnance pas encore vérifiée pour cette location.</div>';
   var files=DOCS_ON&&e.docs.length?e.docs.map(function(d){return '<div class="row doc"><a class="rowin" href="api/documents/'+d.id+'" target="_blank" rel="noopener"><span class="ico a-info">'+svg(d.mime==='application/pdf'?'clip':'cam')+'</span><span class="body"><div class="t">'+esc(d.name)+'</div><div class="s">'+stamp(d.at)+' · '+esc(d.by)+'</div></span></a><button class="keb2 del" data-deldoc="'+d.id+'" aria-label="Retirer '+esc(d.name)+'">'+svg('close')+'</button></div>';}).join(''):'';
   return '<section>'+secH('clip','Ordonnance',pr?'<span class="pill p-dispo">'+ic('okc')+'Vérifiée</span>':'<span class="pill p-desinf">À confirmer</span>')+'<div class="infobox">'+svg('cross')+'<div><b>L\'ordonnance reste uniquement à la pharmacie.</b><span>Elle n\'est jamais envoyée ni conservée dans cette application : seule sa vérification (date, numéro interne, auteur) est enregistrée.</span></div></div>'+'<div class="list">'+body+files+'</div>'
-    +'<button class="btn prog" data-act="scan-presc">'+svg('cam')+'Scanner l\'ordonnance</button>'
+    +'<div class="duo"><button class="btn prog" data-act="scan-presc">'+svg('cam')+'Scanner</button><button class="btn prog" data-act="import-presc">'+svg('up2')+'Importer un fichier</button></div>'
     +'<button class="btn soft prog" data-act="presc">'+svg('okc')+(pr?'Modifier la vérification':'Confirmer l\'ordonnance')+'</button>'
     +(DOCS_ON?'<button class="btn soft prog" data-act="add-doc">'+svg('up2')+'Joindre un fichier</button>':'')
     +'</section>';
@@ -1292,8 +1295,8 @@ function docsSection(e){
    (iPhone, Android, app iPhone) ou téléchargement. Il n'est jamais envoyé au serveur MédiParc. */
 var scanFile=null,scanUrl=null;
 function slug(t){return String(t).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||'patient';}
-function scanName(e){var t=new Date(),d=t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2)+'_'+('0'+t.getHours()).slice(-2)+'h'+('0'+t.getMinutes()).slice(-2);
-  return 'Ordonnance_'+d+'_'+e.ref+'_'+slug(initials(pat(e.pt).n)||'X')+'.pdf';}
+function scanName(e,ext){var t=new Date(),d=t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2)+'_'+('0'+t.getHours()).slice(-2)+'h'+('0'+t.getMinutes()).slice(-2);
+  return 'Ordonnance_'+d+'_'+e.ref+'_'+slug(initials(pat(e.pt).n)||'X')+'.'+(ext||'pdf');}
 function bytesOf(str){var b=new Uint8Array(str.length);for(var i=0;i<str.length;i++)b[i]=str.charCodeAt(i)&255;return b;}
 /* PDF d'une page contenant la photo (JPEG), à la largeur d'une page A4. */
 function jpegToPdf(jpg,w,h){
@@ -1310,6 +1313,12 @@ function jpegToPdf(jpg,w,h){
   var xref=len,x='xref\n0 6\n0000000000 65535 f \n';for(var i=1;i<=5;i++)x+=('000000000'+offs[i]).slice(-10)+' 00000 n \n';
   add(x+'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF\n');
   return new Blob(parts,{type:'application/pdf'});
+}
+function extOf(f){var m=/\.([A-Za-z0-9]{1,6})$/.exec(f.name||'');return m?m[1].toLowerCase():((f.type||'').split('/')[1]||'bin').replace(/[^a-z0-9]/g,'').slice(0,6)||'bin';}
+/* Image lisible par le navigateur : convertie en PDF. PDF ou format non lisible (TIFF, HEIC sur certains navigateurs…) : conservé tel quel. */
+function prepareScan(f){
+  if(f.type==='application/pdf'||extOf(f)==='pdf')return Promise.resolve({blob:f,ext:'pdf',type:'application/pdf'});
+  return makeScanPdf(f).then(function(pdf){return {blob:pdf,ext:'pdf',type:'application/pdf'};},function(){return {blob:f,ext:extOf(f),type:f.type||'application/octet-stream',raw:true};});
 }
 function makeScanPdf(f){
   if(f.type==='application/pdf')return Promise.resolve(f);
@@ -1333,23 +1342,23 @@ function scanSheet(){
   if(canPickDir())opts+='<button class="btn" data-act="scan-save-dir">'+svg('down')+(dirName?'Enregistrer dans « '+esc(dirName)+' »':'Enregistrer dans le dossier de la pharmacie')+'</button>'+(dirName?'<button class="btn soft" data-act="scan-pick-dir">Changer de dossier</button>':'');
   else if(nativeSave()||canShareFile(f))opts+='<button class="btn" data-act="scan-share">'+svg('up2')+'Enregistrer sur le serveur de la pharmacie</button><p class="note">Dans le menu qui s\'ouvre, choisissez « Enregistrer dans Fichiers », puis le serveur et le dossier des ordonnances de la pharmacie.</p>';
   opts+='<a class="btn soft" href="'+scanUrl+'" download="'+esc(f.name)+'">'+svg('down')+'Télécharger le fichier</a>';
-  openSheet('<h2>Ordonnance scannée</h2><p class="sub">'+esc(e.n)+' · '+esc(pat(e.pt).n)+'</p>'
-    +'<div class="scanprev">'+svg('clip')+'<div><b>'+esc(f.name)+'</b><span>PDF · '+Math.max(1,Math.round(f.size/1024))+' Ko · préparé sur cet appareil</span></div></div>'
+  openSheet('<h2>Ordonnance prête</h2><p class="sub">'+esc(e.n)+' · '+esc(pat(e.pt).n)+'</p>'
+    +'<div class="scanprev">'+svg('clip')+'<div><b>'+esc(f.name)+'</b><span>'+(f.raw?'Format d\'origine conservé':'PDF')+' · '+Math.max(1,Math.round(f.size/1024))+' Ko · préparé sur cet appareil</span></div></div>'
     +'<div class="infobox">'+svg('cross')+'<div><b>Ce fichier n\'est pas envoyé à MédiParc.</b><span>Il est enregistré uniquement sur le serveur de la pharmacie.</span></div></div>'
     +opts+'<button class="btn soft" data-act="scan-cancel">Annuler</button>');
   sheet.style.height='88%';
 }
 function onScanFile(f){
-  if(!f)return;if(f.size>25*1024*1024)return toast('Fichier trop volumineux (25 Mo au plus)');
-  var e=byId(S.cur);if(!e)return;toast('Préparation du PDF…');
-  makeScanPdf(f).then(function(pdf){
+  if(!f)return;if(f.size>50*1024*1024)return toast('Fichier trop volumineux (50 Mo au plus)');
+  var e=byId(S.cur);if(!e)return;toast('Préparation du fichier…');
+  prepareScan(f).then(function(r){
     if(scanUrl)URL.revokeObjectURL(scanUrl);
-    scanFile=new File([pdf],scanName(e),{type:'application/pdf'});scanUrl=URL.createObjectURL(scanFile);
+    scanFile=new File([r.blob],scanName(e,r.ext),{type:r.type});scanFile.raw=!!r.raw;scanUrl=URL.createObjectURL(scanFile);
     return idbGet('dir:'+(ME?ME.login:'')).then(function(h){dirHandle=h;scanSheet();});
   }).catch(function(err){toast(err.message);});
 }
 function scanSaved(where){
-  var e=byId(S.cur),name=scanFile?scanFile.name.replace(/\.pdf$/,''):'';closeSheet();toast('Ordonnance enregistrée '+where);
+  var e=byId(S.cur),name=scanFile?scanFile.name.replace(/\.[A-Za-z0-9]+$/,''):'';closeSheet();toast('Ordonnance enregistrée '+where);
   prescSheet(name);
 }
 function saveToDir(pick){
@@ -1357,9 +1366,9 @@ function saveToDir(pick){
   var p=(!dirHandle||pick)?window.showDirectoryPicker({id:'ordonnances',mode:'readwrite'}).then(function(h){dirHandle=h;return idbSet('dir:'+(ME?ME.login:''),h);}):Promise.resolve();
   p.then(function(){return dirHandle.queryPermission({mode:'readwrite'}).then(function(st){return st==='granted'?st:dirHandle.requestPermission({mode:'readwrite'});});})
    .then(function(st){if(st!=='granted')throw new Error('Accès au dossier refusé.');
-     var name=f.name,n=1;function next(){return dirHandle.getFileHandle(name).then(function(){n++;name=f.name.replace(/\.pdf$/,'-'+n+'.pdf');return next();},function(){return name;});}
+     var name=f.name,n=1;function next(){return dirHandle.getFileHandle(name).then(function(){n++;name=f.name.replace(/(\.[A-Za-z0-9]+)$/,'-'+n+'$1');return next();},function(){return name;});}
      return next();})
-   .then(function(name){return dirHandle.getFileHandle(name,{create:true}).then(function(fh){return fh.createWritable();}).then(function(w){return w.write(f).then(function(){return w.close();});}).then(function(){scanFile=new File([f],name,{type:'application/pdf'});});})
+   .then(function(name){return dirHandle.getFileHandle(name,{create:true}).then(function(fh){return fh.createWritable();}).then(function(w){return w.write(f).then(function(){return w.close();});}).then(function(){scanFile=new File([f],name,{type:f.type});});})
    .then(function(){scanSaved('dans « '+dirHandle.name+' »');})
    .catch(function(err){if(err&&err.name==='AbortError')return;toast(err&&err.message?err.message:'Enregistrement impossible');});
 }
@@ -1369,7 +1378,7 @@ function shareScan(){
   navigator.share({files:[f],title:f.name}).then(function(){scanSaved('sur le serveur de la pharmacie');}).catch(function(err){if(err&&err.name!=='AbortError')toast('Partage impossible : '+err.message);});
 }
 window.onNativeSaved=function(ok){if(ok)scanSaved('sur le serveur de la pharmacie');};
-document.addEventListener('change',function(x){if(x.target.id==='scan-in'&&x.target.files&&x.target.files[0])onScanFile(x.target.files[0]);});
+document.addEventListener('change',function(x){if((x.target.id==='scan-in'||x.target.id==='import-in')&&x.target.files&&x.target.files[0])onScanFile(x.target.files[0]);});
 function prescSheet(prefRef){
   var e=byId(S.cur);if(!e)return;var pr=e.prescription||{},refv=typeof prefRef==='string'&&prefRef?prefRef:(pr.ref||''),t=new Date(),iso=t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2);
   openSheet('<h2>Confirmer l\'ordonnance</h2><p class="sub">'+esc(e.n)+' · '+esc(pat(e.pt).n)+'</p>'+'<div class="infobox">'+svg('cross')+'<div><b>L\'ordonnance reste uniquement à la pharmacie.</b><span>Elle n\'est jamais envoyée ni conservée dans cette application : seule sa vérification (date, numéro interne, auteur) est enregistrée.</span></div></div>'+'<form id="f-presc" class="fform" novalidate>'
@@ -1568,6 +1577,7 @@ document.addEventListener('click',function(x){
   if(d.act==='fact-copy'){copyText(factCsv(fData),'Facturation copiée pour un tableur');return;}
   if(d.act==='presc'){prescSheet();return;}
   if(d.act==='scan-presc'){var si=$('scan-in');si.value='';si.click();return;}
+  if(d.act==='import-presc'){var ii=$('import-in');ii.value='';ii.click();return;}
   if(d.act==='scan-save-dir'){saveToDir(false);return;}
   if(d.act==='scan-pick-dir'){saveToDir(true);return;}
   if(d.act==='scan-share'){shareScan();return;}
