@@ -178,6 +178,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "MédiParc";
 				INFOPLIST_KEY_NFCReaderUsageDescription = "MédiParc lit la puce NFC collée sur chaque équipement pour afficher sa fiche.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "MédiParc enregistre la position du téléphone au moment où une puce est scannée, pour localiser le matériel.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "MédiParc utilise l'appareil photo pour photographier les ordonnances.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -206,6 +208,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "MédiParc";
 				INFOPLIST_KEY_NFCReaderUsageDescription = "MédiParc lit la puce NFC collée sur chaque équipement pour afficher sa fiche.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "MédiParc enregistre la position du téléphone au moment où une puce est scannée, pour localiser le matériel.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "MédiParc utilise l'appareil photo pour photographier les ordonnances.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;

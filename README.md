@@ -5,7 +5,8 @@ Démo d'application iPhone pour gérer un parc de matériel médical en location
 ## Contenu
 
 - `index.html` + `photos/` : l'interface (une page web sans dépendance), pensée pour l'iPhone 15 Pro Max, thème clair et sombre.
-- `ios/` : le projet Xcode. L'app affiche cette interface et branche le bouton de scan sur la vraie lecture NFC de l'iPhone (Core NFC).
+- `ios/` : le projet Xcode. L'app affiche l'application en ligne (ou la démonstration embarquée hors connexion) et branche la lecture NFC de l'iPhone (Core NFC).
+- `server/` : le serveur (comptes, base partagée, ordonnances, facturation).
 
 Écrans : tableau de bord, inventaire du parc (liste ou plan de Tahiti), scan NFC, locations par bénéficiaire, entretien (désinfection, maintenance, contrôles). Tarifs en francs pacifiques (XPF). Toutes les données sont fictives et reviennent à zéro à chaque lancement (seules les puces associées sont mémorisées).
 
@@ -59,11 +60,32 @@ Les associations sont mémorisées sur l'appareil. Une puce lue hors de l'app ou
 
 Le plan dessiné montre où se trouve le matériel (dépôt ou domicile du bénéficiaire, adresses fictives). Dans l'app iPhone, « Zoomer » ouvre la vraie carte Apple Plans, zoomable jusqu'à l'adresse, avec l'itinéraire. Dans la démo en ligne, « Zoomer » ouvre Apple Plans dans le navigateur.
 
-## Mise en ligne sur manaprocess.cloud
+## Application en ligne : comptes, base partagée, portail pharmacies
 
-La démo est en ligne sur `https://manaprocess.cloud/materiel/` : une puce scannée sans l'app ouvre la fiche de l'équipement dans Safari (par exemple `…/materiel/LIT-0101`).
+Adresse : `https://manaprocess.cloud/materiel/`. Tout le monde (iPhone, Android, ordinateur) travaille sur la même base de données.
 
-Sur le VPS, le projet Docker `mediparc-nfc` (fichier `deploy/docker-compose.yml`) lance un conteneur nginx derrière Traefik. À chaque démarrage, il télécharge ce dépôt (qui doit rester public), génère le site avec `deploy/build.sh` et le sert. Pour publier une nouvelle version : pousser sur la branche, puis redémarrer le projet `mediparc-nfc`.
+- **Comptes** : rôles administrateur (tout, y compris les comptes), équipe du parc (parc, locations, entretien, puces, facturation) et pharmacie. L'administrateur crée les comptes dans Plus > Comptes et pharmacies ; chaque nouveau compte reçoit un mot de passe provisoire à changer à la première connexion.
+- **Portail pharmacie** : une pharmacie ne voit que ses locations en cours et terminées, ses bénéficiaires, ses ordonnances et sa facturation. Le serveur filtre les données : l'historique d'un équipement ne montre jamais les autres pharmacies.
+- **Ordonnances** : photo ou PDF (12 Mo au plus) importés depuis la fiche d'une location, par la pharmacie ou l'équipe. Les locations sans ordonnance apparaissent dans « À traiter ».
+- **Géolocalisation au scan** : chaque lecture de puce (app iPhone, Chrome sur Android, ou lien ouvert depuis la puce) enregistre la date, la personne et la position du téléphone si elle est autorisée. La fiche affiche le dernier scan avec un lien vers la carte.
+- **Android** : Chrome lit et écrit les puces NFC directement (Web NFC) et propose d'installer l'application sur l'écran d'accueil.
+- **Facturation** : par mois et par pharmacie, jours de location dans le mois × tarif hebdomadaire ÷ 7 (le jour du retour n'est pas facturé). Export CSV pour Excel ou un logiciel de facturation. Le mois en cours est prévisionnel.
+
+### Serveur
+
+`server/server.js` : Node 22 sans dépendance externe (SQLite, http et crypto intégrés). Mots de passe chiffrés (scrypt), sessions par cookie sécurisé, limitation des tentatives de connexion, sauvegarde quotidienne de la base (14 jours conservés).
+
+Essai en local :
+
+```bash
+deploy/build.sh && COOKIE_SECURE=0 ADMIN_PASSWORD=MotDePasse2026 node server/server.js
+```
+
+Puis ouvrir `http://localhost:3000/materiel/` (identifiant `admin`).
+
+### Sur le VPS
+
+Le projet Docker `mediparc-nfc` (`deploy/docker-compose.yml`) télécharge ce dépôt (qui doit rester public) à chaque démarrage, génère le site et lance le serveur derrière Traefik. Les données sont dans le volume `mediparc-data`. Pour publier une nouvelle version : pousser sur la branche, puis redémarrer le projet. Au premier démarrage, la base est remplie avec les données de démonstration.
 
 ## Icône
 

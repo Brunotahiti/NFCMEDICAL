@@ -1,12 +1,23 @@
-# Sert la démo MédiParc sur https://manaprocess.cloud/materiel/ derrière le Traefik du VPS.
-# Au démarrage, le conteneur télécharge le site depuis le dépôt GitHub public :
-# redémarrer le projet « mediparc-nfc » suffit pour mettre le site à jour.
+# MédiParc NFC sur https://manaprocess.cloud/materiel/ (VPS Hostinger, derrière Traefik).
+# Au démarrage, le conteneur télécharge ce dépôt (public), génère le site et lance le serveur.
+# Les données (base SQLite, ordonnances, sauvegardes quotidiennes) sont dans le volume « mediparc-data ».
+# ADMIN_PASSWORD n'est lu qu'au tout premier démarrage (création du compte « admin ») ;
+# il est fourni par les variables du projet sur le VPS, jamais par ce dépôt.
 services:
-  site:
-    image: nginx:1.27-alpine
+  app:
+    image: node:22-alpine
     container_name: mediparc-nfc
     restart: unless-stopped
-    mem_limit: 64m
+    mem_limit: 256m
+    environment:
+      - TZ=Pacific/Tahiti
+      - PORT=3000
+      - DATA_DIR=/data
+      - SITE_DIR=/app/deploy/site/materiel
+      - PUBLIC_URL=https://manaprocess.cloud/materiel/
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+    volumes:
+      - mediparc-data:/data
     command:
       - sh
       - -c
@@ -14,12 +25,15 @@ services:
         set -e
         cd /tmp
         wget -qO src.tgz https://codeload.github.com/Brunotahiti/NFCMEDICAL/tar.gz/refs/heads/claude/bold-gates-7zd8o7
-        rm -rf src && mkdir src && tar xzf src.tgz -C src --strip-components=1
-        sh src/deploy/build.sh
-        rm -rf /usr/share/nginx/html/materiel
-        cp -r src/deploy/site/materiel /usr/share/nginx/html/materiel
-        cp src/deploy/nginx.conf /etc/nginx/conf.d/default.conf
-        exec nginx -g 'daemon off;'
+        rm -rf /app && mkdir -p /app && tar xzf src.tgz -C /app --strip-components=1
+        cd /app && sh deploy/build.sh
+        exec node --disable-warning=ExperimentalWarning server/server.js
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:3000/materiel/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 40s
+      retries: 3
     networks:
       - traefik
     labels:
@@ -30,7 +44,13 @@ services:
       - "traefik.http.routers.mediparc-nfc.tls=true"
       - "traefik.http.routers.mediparc-nfc.tls.certresolver=letsencrypt"
       - "traefik.http.routers.mediparc-nfc.priority=100"
-      - "traefik.http.services.mediparc-nfc.loadbalancer.server.port=80"
+      - "traefik.http.routers.mediparc-nfc.middlewares=mediparc-headers"
+      - "traefik.http.middlewares.mediparc-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.mediparc-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.services.mediparc-nfc.loadbalancer.server.port=3000"
+
+volumes:
+  mediparc-data:
 
 networks:
   traefik:

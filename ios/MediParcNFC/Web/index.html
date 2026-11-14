@@ -269,6 +269,34 @@ main>*{flex:none}
 .vizc.dz .dleg button{font-size:13.5px}
 .dleg i{white-space:nowrap}
 .vizc.dz .dleg i{width:44px}
+/* Connexion */
+.gate{position:fixed;inset:0;z-index:60;background:linear-gradient(160deg,var(--hero),var(--hero2));display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:max(48px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 32px max(16px, env(safe-area-inset-left, 0px))}
+.gcard{width:100%;max-width:420px;background:var(--surface);border-radius:26px;box-shadow:0 20px 40px -12px rgba(0,0,0,.4);padding:24px 20px;display:flex;flex-direction:column;gap:12px;margin-top:4vh}
+.gbrand{display:flex;align-items:center;gap:10px;color:var(--hero);margin-bottom:6px}
+.gbrand .logo{width:44px;height:32px;color:var(--hero)}
+.gbrand b{display:block;font-family:var(--f-display);font-size:22px;font-weight:700;color:var(--accent)}.gbrand b span{color:var(--ink)}
+.gbrand small{font-size:12.5px;color:var(--muted)}
+.gcard h1{font-family:var(--f-display);font-size:26px;font-weight:700;letter-spacing:-.02em}
+.gsub,.gnote{font-size:14px;color:var(--muted);line-height:1.45}.gnote{text-align:center;font-size:13px}
+.gcard form,.fform{display:flex;flex-direction:column;gap:10px}
+.gin{width:100%;height:50px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:16px;padding:0 14px}
+.gin:focus{outline:2px solid var(--accent);outline-offset:1px}
+.fld{margin-bottom:-4px}
+.pwbox{background:var(--bg);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.pwbox small{font-size:12px;color:var(--muted);margin-top:6px}.pwbox code{font-family:var(--f-mono);font-size:16px;font-weight:600;overflow-wrap:anywhere;user-select:all;-webkit-user-select:all}
+/* Portail, facturation, ordonnances */
+.tabs.ph{grid-template-columns:repeat(2,1fr) 70px repeat(2,1fr)}
+.tabs{align-self:stretch;width:100%}
+.hero .hs2{font-size:14px;line-height:1.25;color:var(--hero-muted)}
+.mnav{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mnav b{font-family:var(--f-display);font-size:19px;font-weight:600}
+.mnav .tbtn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+a.btn{text-decoration:none}
+.frow{align-items:flex-start}.frow .pct{font-size:15px;padding-top:2px}
+.row.doc{padding:0 6px 0 0}.row.doc .rowin{padding:10px 12px;text-decoration:none;color:inherit}
+.keb2.del svg{width:18px;height:18px;fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round}
+.kv dd .more.geo{display:inline-flex;margin-top:6px;padding:5px 10px;font-size:12.5px;gap:4px}
+.kv dd .more.geo svg{width:14px;height:14px}
 .kpis{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:8px}
 .kpi{background:var(--surface);border-radius:18px;box-shadow:var(--shadow);padding:11px 9px;display:flex;flex-direction:column;gap:2px;min-width:0;text-align:left}
 .kpi svg.i{width:24px;height:24px;color:var(--accent);margin-bottom:3px}
@@ -489,6 +517,8 @@ input.uid::placeholder{color:var(--muted);opacity:.6}
   <div class="scrim" id="scrim" data-act="close-sheet"></div>
   <div class="sheet pad" id="sheet" role="dialog" aria-modal="true"></div>
   <div class="toast" id="toast" role="status"></div>
+  <div class="gate" id="gate" hidden></div>
+  <input type="file" id="doc-in" accept="image/*,application/pdf" hidden>
 </div>
 
 <script>
@@ -527,6 +557,11 @@ var ICON={
   tag:'<path d="M7 15.500a5 5 0 0 0 0-7M11 18a9 9 0 0 0 0-12M15 20.500a13 13 0 0 0 0-17"/>',
   bars:'<path d="M5 20v-6M10 20V9M15 20v-9M20 20V5"/>',
   cross:'<path d="M9.500 3.500h5v6h6v5h-6v6h-5v-6h-6v-5h6z"/>',
+  cam:'<path d="M4 8.500A1.500 1.500 0 0 1 5.500 7H8l1.500-2.500h5L16 7h2.500A1.500 1.500 0 0 1 20 8.500v9A1.500 1.500 0 0 1 18.500 19h-13A1.500 1.500 0 0 1 4 17.500z"/><circle cx="12" cy="13" r="3.500"/>',
+  close:'<path d="M6.500 6.500l11 11M17.500 6.500l-11 11"/>',
+  up2:'<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>',
+  down:'<path d="M12 4v12M7 11l5 5 5-5M5 20h14"/>',
+  back:'<path d="m15 5-7 7 7 7"/>',
   ret:'<path d="M9 7 4 12l5 5M4 12h11a5 5 0 0 1 0 10h-2"/>'
 };
 function ic(k){return '<svg class="i" viewBox="0 0 24 24">'+ICON[k]+'</svg>';}
@@ -619,7 +654,7 @@ function rentCard(e){
   return '<div class="rent"><div class="cols"><div><small>Loué depuis</small><b class="num">'+(r.el===0?'Aujourd\'hui':sem(r.el))+'</b><small>début le '+fmt(e.since)+'</small></div>'
     +'<div class="'+(late?'late':'')+'"><small>'+(late?'En retard de':r.left===0?'Retour prévu':'Encore')+'</small><b class="num">'+(late?sem(-r.left):r.left===0?'Aujourd\'hui':sem(r.left))+'</b><small>retour le '+fmt(e.end)+'</small></div></div>'
     +'<div class="bar'+(late?' over':'')+'" role="img" aria-label="'+r.pct+' % de la durée prévue écoulée"><i style="width:'+r.pct+'%"></i></div>'
-    +'<div class="foot"><span>Durée prévue : '+jours(r.tot)+(r.tot>=14?' ('+sem(r.tot)+')':'')+'</span><button class="more" data-act="extend">+ 1 semaine</button></div></div>';
+    +'<div class="foot"><span>Durée prévue : '+jours(r.tot)+(r.tot>=14?' ('+sem(r.tot)+')':'')+'</span>'+(STAFF?'<button class="more" data-act="extend">+ 1 semaine</button>':'')+'</div></div>';
 }
 /* Rentabilité : loyers encaissés depuis l'achat rapportés au prix d'achat. */
 function profit(e){
@@ -694,6 +729,7 @@ function allPins(){return [DEPOT].concat(patients).map(function(pl){return {id:p
 
 /* ---------- Vues ---------- */
 function alerts(){
+  if(!STAFF)return phAlerts();
   var al=[];
   equip.forEach(function(e){if(e.chk<0)al.push({o:e.id,k:'clock',c:'a-crit',t:'Contrôle en retard de '+(-e.chk)+' j',s:e.n+' · '+e.ref,g:['Retard','p-maint']});});
   equip.forEach(function(e){if(e.st==='loc'&&e.end===0)al.push({o:e.id,k:'ret',c:'a-info',t:'Retour prévu aujourd\'hui',s:e.n+' · '+pat(e.pt).n,g:['Retour','p-loc']});});
@@ -769,12 +805,13 @@ function csvRows(kind){
   return L.map(function(r){return r.map(q).join(';');}).join('\n');
 }
 function viewRap(){
-  var TABS=[['vue','hist','Vue d\'ensemble'],['renta','coins','Rentabilité'],['util','bars','Utilisation'],['act','clock','Activité'],['exp','arrow','Exports']];
+  var TABS=[['vue','hist','Vue d\'ensemble'],['renta','coins','Rentabilité'],['util','bars','Utilisation'],['act','clock','Activité'],['exp','arrow','Exports'],['fact','clip','Facturation']];
   var tabs='<div class="chips">'+TABS.map(function(t){return '<button class="chip" data-rtab="'+t[0]+'" aria-pressed="'+(S.rtab===t[0])+'">'+ic(t[1])+t[2]+'</button>';}).join('')+'</div>';
   var tot=equip.length,occ=Math.round(count('loc')/tot*100),inv=0,rev=0;
   equip.forEach(function(e){inv+=e.buy;rev+=profit(e).rev;});
   var pct=Math.round(rev/inv*100),done=equip.filter(function(e){return profit(e).pct>=100;}).length;
   var wk=equip.filter(function(e){return e.st==='loc';}).reduce(function(a,e){return a+e.px;},0);
+  if(S.rtab==='fact')return tabs+viewFact();
   if(S.rtab==='renta')return tabs+'<section>'+secH('coins','Rentabilité par équipement','<span>'+done+' amortis sur '+tot+'</span>')+'<div class="list">'+profitRows()+'</div></section>';
   if(S.rtab==='util'){
     var mx=Math.max.apply(null,equip.map(function(e){return profit(e).days;}));
@@ -870,7 +907,7 @@ function viewLoc(){
     +'<div class="chips">'+[['cur','clip','Contrats en cours',rented.length],['renew','cal','À renouveler',renew.length],['done','okc','Terminés',DONE.length]].map(function(t){
       return '<button class="chip" data-ltab="'+t[0]+'" aria-pressed="'+(S.ltab===t[0])+'">'+ic(t[1])+t[2]+'<em class="num">'+t[3]+'</em></button>';}).join('')+'</div>';
   if(S.ltab==='renew')return head+'<section>'+secH('cal','À renouveler','<span>retour dans 14 jours ou moins</span>')+'<div class="list">'+(renew.map(function(e){
-      return '<div class="row"><button class="rowin" data-open="'+e.id+'">'+ph(e)+'<span class="body"><div class="t">'+esc(e.n)+'</div><div class="s">'+esc(pat(e.pt).n)+' · '+leftTxt(rent(e))+'</div></span></button><button class="more" data-extend="'+e.id+'">+ 1 sem.</button></div>';}).join('')||'<div class="empty">Aucun contrat à renouveler.</div>')+'</div></section>';
+      return '<div class="row"><button class="rowin" data-open="'+e.id+'">'+ph(e)+'<span class="body"><div class="t">'+esc(e.n)+'</div><div class="s">'+esc(pat(e.pt).n)+' · '+leftTxt(rent(e))+'</div></span></button>'+(STAFF?'<button class="more" data-extend="'+e.id+'">+ 1 sem.</button>':'')+'</div>';}).join('')||'<div class="empty">Aucun contrat à renouveler.</div>')+'</div></section>';
   if(S.ltab==='done')return head+'<section>'+secH('okc','Contrats terminés','<span>'+DONE.length+' contrats</span>')+'<div class="list">'+DONE.map(function(c){
       return '<button class="row" data-open="'+c.e.id+'">'+ph(c.e)+'<span class="body"><div class="t">'+esc(c.e.n)+'</div><div class="s w2">'+esc(c.p.n)+' · '+esc(c.fa.n)+'<br>du '+fmt(c.start)+' au '+fmt(c.end)+'</div></span><b class="pct num">'+xpf(c.sum)+'</b></button>';}).join('')+'</div></section>';
   var groups=patients.map(function(p,i){
@@ -883,7 +920,7 @@ function viewLoc(){
   var cards=groups.map(function(g){
     var p=g.p,back=g.it.some(function(e){return e.end===0;});
     return '<article class="pcard" style="--pc:var('+PC[g.i%PC.length]+')"><header><span class="avatar">'+initials(p.n)+'</span><div class="who"><div class="t">'+esc(p.n)+'</div></div>'
-      +'<div class="amt num">'+xpf(g.sum)+'<small>/ semaine</small></div><button class="keb2" data-pkeb="'+p.id+'" aria-label="Actions pour '+esc(p.n)+'"><svg viewBox="0 0 24 24"><circle cx="12" cy="5.500" r="1.700"/><circle cx="12" cy="12" r="1.700"/><circle cx="12" cy="18.500" r="1.700"/></svg></button></header>'
+      +'<div class="amt num">'+xpf(g.sum)+'<small>/ semaine</small></div>'+(STAFF?'<button class="keb2" data-pkeb="'+p.id+'" aria-label="Actions pour '+esc(p.n)+'"><svg viewBox="0 0 24 24"><circle cx="12" cy="5.500" r="1.700"/><circle cx="12" cy="12" r="1.700"/><circle cx="12" cy="18.500" r="1.700"/></svg></button>':'')+'</header>'
       +'<div class="psub"><span>'+ic('pin')+esc(p.z)+'</span>'+(back?'<span class="pill p-loc">'+ic('ret')+'Retour aujourd\'hui</span>':'<span class="pill p-dispo">'+ic('okc')+'Actif</span>')+'</div>'
       +g.it.map(function(e){return '<button class="mini" data-open="'+e.id+'">'+ph(e)+'<span class="nm"><b>'+esc(e.n)+'</b><span class="when">'+ic('cal')+'Depuis '+(rent(e).el===0?'aujourd\'hui':sem(rent(e).el))+' · '+leftTxt(rent(e))+'</span><span class="when fa">'+ic('cross')+esc(phar(e.fa).n)+'</span><span class="bar'+(rent(e).left<0?' over':'')+'"><i style="width:'+rent(e).pct+'%"></i></span></span><span class="chev">'+ICON.chev+'</span></button>';}).join('')+'</article>';
   }).join('');
@@ -908,13 +945,14 @@ function viewEnt(){
       var c=e.chk<0?['p-maint','clock','Retard '+(-e.chk)+' j']:['p-acc','cal','Prévu le '+dateOf(e.chk).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})];
       return rowE(e,e.ref+' · '+(e.chk<0?'contrôle de sécurité':'contrôle prévu'),'<span class="pill '+c[0]+'">'+ic(c[1])+c[2]+'</span>');}).join('')||'<div class="empty">Aucun contrôle dans les '+S.cdays+' jours.</div>')+'</div></section>';
 }
-var SUBT={home:'Vue d\'ensemble de votre parc de location',parc:'Suivi, disponibilité et localisation de vos équipements',loc:'Suivi des contrats, équipements et bénéficiaires',ent:'Désinfection, maintenance et contrôles',rap:'Rentabilité, performance et activité du parc'};
-var VIEWS={rap:['Analyse','Rapports',viewRap],home:['','Tableau de bord',viewHome],parc:['Inventaire','Parc matériel',viewParc],loc:['Patients','Locations',viewLoc],ent:['Atelier','Entretien',viewEnt]};
+var SUBT={home:'Vue d\'ensemble de votre parc de location',parc:'Suivi, disponibilité et localisation de vos équipements',loc:'Suivi des contrats, équipements et bénéficiaires',ent:'Désinfection, maintenance et contrôles',rap:'Rentabilité, performance et activité du parc',fact:'Montants de location par mois et par pharmacie'};
+var VIEWS={fact:['Comptabilité','Facturation',viewFact],rap:['Analyse','Rapports',viewRap],home:['','Tableau de bord',function(){return STAFF?viewHome():viewPharmaHome();}],parc:['Inventaire','Parc matériel',viewParc],loc:['Patients','Locations',viewLoc],ent:['Atelier','Entretien',viewEnt]};
 function render(keepScroll){
+  if(!STAFF&&['home','loc','fact'].indexOf(S.tab)<0)S.tab='home';
   var v=VIEWS[S.tab],y=main.scrollTop;
   var dt=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  $('subt').hidden=false;$('subt').textContent=SUBT[S.tab];$('ndot').hidden=!alerts().length;$('ndot').textContent=alerts().length;
-  var EI={parc:'grid',loc:'users',ent:'tool',rap:'bars'};
+  $('subt').hidden=false;$('subt').textContent=S.tab==='home'&&!STAFF?'Vos locations, ordonnances et facturation':SUBT[S.tab];$('ndot').hidden=!alerts().length;$('ndot').textContent=alerts().length;
+  var EI={parc:'grid',loc:'users',ent:'tool',rap:'bars',fact:'clip'};
   if(v[0])$('eyebrow').innerHTML=ic(EI[S.tab])+esc(v[0]);else $('eyebrow').innerHTML=ic('cal')+esc(dt.charAt(0).toUpperCase()+dt.slice(1));
   $('top').className='top pad'+(S.tab==='home'?' home':'');
   $('eyebrow').className='eyebrow'+(v[0]?' up':'');
@@ -929,36 +967,39 @@ function render(keepScroll){
 function renderDetail(){
   var e=byId(S.cur);if(!e)return;
   var p=e.pt?pat(e.pt):null,acts='';
+  if(STAFF){
   if(e.st==='dispo')acts='<button class="btn" data-act="assign">'+svg('cal')+'Mettre en location</button>';
   else if(e.st==='loc')acts='<button class="btn" data-act="return">'+svg('ret')+'Enregistrer le retour</button>';
   else if(e.st==='desinf')acts='<button class="btn" data-act="clean">'+ICON.check+'Valider la désinfection</button>';
   else acts='<button class="btn" data-act="repair">'+ICON.check+'Clôturer la maintenance</button>';
   if(e.st!=='maint')acts+='<button class="btn danger" data-act="fault">'+svg('warn')+'Signaler une panne</button>';
+  }
   var chk=e.chk<0?'<dd class="late">En retard de '+(-e.chk)+' j</dd>':'<dd>'+dateOf(e.chk).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})+'</dd>';
-  var hist=e.h.slice().sort(function(a,b){return b.d-a.d||b.q-a.q;}).map(function(h,i){return '<li'+(i?'':' class="first"')+'><time>'+rel(h.d)+'</time><div class="evt">'+ic(hIcon(h.txt))+'<span>'+esc(h.txt)+'</span>'+(i?'':OKC)+'</div></li>';}).join('');
+  var hist=e.h.slice().sort(function(a,b){return b.d-a.d||b.q-a.q;}).map(function(h,i){return '<li'+(i?'':' class="first"')+'><time>'+rel(h.d)+(h.t?' · '+h.t.replace(':',' h '):'')+(h.by&&ONLINE?' · '+esc(h.by):'')+'</time><div class="evt">'+ic(hIcon(h.txt))+'<span>'+esc(h.txt)+'</span>'+(i?'':OKC)+'</div></li>';}).join('');
   detail.innerHTML='<button class="back" data-act="back" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button>'
     +'<div class="dscroll"><div class="dhero">'+(e.ph?'<div class="bg" style="background-image:url('+src(e)+')"></div>':'')+img(e,e.n)+pill(e)+'</div>'
     +'<div class="dbody pad"><div class="dhead"><h2>'+esc(e.n)+'</h2><p>'+esc(e.m)+' · '+e.ref+'</p></div>'
-    +'<div class="tagcard">'+ICON.nfc+'<div><small>Lien de la puce NFC</small><code class="lnk">'+(e.link?esc(midLink(e.link)):'Aucune puce associée')+'</code></div><button class="cp" data-act="copy" aria-label="Copier le lien">'+ic('copy')+'</button></div>'
-    +'<button class="btn soft prog" data-act="program">'+ICON.nfc+'Écrire le lien sur une puce'+'</button>'
+    +(STAFF?'<div class="tagcard">'+ICON.nfc+'<div><small>Lien de la puce NFC</small><code class="lnk">'+(e.link?esc(midLink(e.link)):'Aucune puce associée')+'</code></div><button class="cp" data-act="copy" aria-label="Copier le lien">'+ic('copy')+'</button></div>'
+    +'<button class="btn soft prog" data-act="program">'+ICON.nfc+'Écrire le lien sur une puce'+'</button>':'')
     +(e.st==='loc'?rentCard(e):'')
     +'<dl class="kv" style="margin:0">'
     +'<div><dt>'+ic('pin')+'Emplacement</dt><dd>'+esc(where(e))+'</dd></div>'
     +(p?'<div><dt>'+ic('heart')+'Prise en charge</dt><dd>'+esc(p.z.split(' · ')[1]||p.z)+'</dd></div>'+(e.fa?'<div><dt>'+ic('cross')+'Pharmacie</dt><dd>'+esc(phar(e.fa).n)+'<small class="dsub">'+esc(phar(e.fa).c)+'</small></dd></div>':''):'')
     +'<div><dt>'+ic('clip')+'Prix catalogue</dt><dd class="num">'+esc(e.cat)+'</dd></div>'
     +'<div><dt>'+ic('coins')+'Tarif de location</dt><dd class="num">'+xpf(e.px)+' / semaine</dd></div>'
-    +'<div><dt>'+ic('tool')+'Prochain contrôle</dt>'+chk+'</div></dl>'
-    +'<section>'+secH('coins','Rentabilité')+profitCard(e)+'</section>'
+    +'<div><dt>'+ic('tool')+'Prochain contrôle</dt>'+chk+'</div>'+scanRow(e)+'</dl>'
+    +docsSection(e)
+    +(STAFF?'<section>'+secH('coins','Rentabilité')+profitCard(e)+'</section>':'')
     +'<section>'+secH('pin','Localisation')+'<div class="mapcard">'+mapSvg([{id:placeOf(e),n:null}],placeOf(e),false)+'<div class="mapfoot"><div><b>'+esc(place(placeOf(e)).n)+'</b><span>'+esc(place(placeOf(e)).a)+'</span></div>'+mapBtn(placeOf(e))+'</div></div></section>'
     +'<section>'+secH('hist','Historique','<span>'+e.h.length+' événements</span>')+'<ol class="tl">'+hist+'</ol></section></div></div>'
-    +'<div class="actions pad">'+acts+'</div>';
+    +(acts?'<div class="actions pad">'+acts+'</div>':'');
 }
-function openDetail(id){S.cur=id;renderDetail();detail.classList.add('open');detail.setAttribute('aria-hidden','false');}
+function openDetail(id){var oe=byId(id);if(!oe||oe.stub){toast('Ce matériel n\'est plus en location chez vous');return;}if(ONLINE)loadHistory(id);S.cur=id;renderDetail();detail.classList.add('open');detail.setAttribute('aria-hidden','false');}
 function closeDetail(){detail.classList.remove('open');detail.setAttribute('aria-hidden','true');S.cur=null;render(true);}
 
 /* ---------- Feuilles ---------- */
 function openSheet(html){sheet.innerHTML='<div class="grab"></div>'+html;sheet.classList.add('open');scrim.classList.add('open');}
-function closeSheet(){sheet.style.height='';timers.forEach(clearTimeout);timers=[];sheet.classList.remove('open');scrim.classList.remove('open');}
+function closeSheet(){if(typeof nfcAbort!=='undefined'&&nfcAbort){nfcAbort.abort();nfcAbort=null;}sheet.style.height='';timers.forEach(clearTimeout);timers=[];sheet.classList.remove('open');scrim.classList.remove('open');}
 /* ---------- Puces NFC : chaque puce porte un lien (enregistrement NDEF de type URI) ---------- */
 var FKEY='mediparc-favoris';
 try{JSON.parse(localStorage.getItem(FKEY)||'[]').forEach(function(id){var fe=byId(id);if(fe)fe.fav=true;});}catch(x){}
@@ -994,7 +1035,7 @@ function radarSheet(t,sub){
     +'<button class="btn soft" data-act="close-sheet">Annuler</button>');
 }
 /* Dans l'app iOS, lecture et écriture passent par Core NFC ; ailleurs (navigateur, simulateur) elles sont simulées. */
-function startScan(){linkTarget=null;var n=nativeNfc();if(n){n.postMessage({action:'read'});}else simScan();}
+function startScan(){linkTarget=null;var n=nativeNfc();if(n){n.postMessage({action:'read'});}else if(webNfc())webRead();else if(ONLINE)manualScan();else simScan();}
 function simScan(){
   radarSheet('Prêt à scanner','Approchez le haut de l\'iPhone de la puce collée sur l\'équipement.');
   timers.push(setTimeout(function(){
@@ -1007,12 +1048,15 @@ function simScan(){
   },1900));
 }
 function assignLink(e,u){
+  if(ONLINE){closeSheet();mut('equipment/'+e.id+'/link',{link:u},'Puce associée à '+e.ref,function(){if(!setOpen)openDetail(e.id);});return;}
   equip.forEach(function(o){if(o!==e&&o.link&&sameLink(o.link,u)){o.link='';o.h.push(ev(0,'Puce NFC réattribuée à '+e.ref));}});
   e.link=u;e.h.push(ev(0,'Puce NFC associée'));saveLinks();closeSheet();if(setOpen)renderSettings();else openDetail(e.id);toast('Puce associée à '+e.ref);
 }
 /* Lire le lien déjà présent sur une puce et l'associer à l'équipement. */
 function readTagFor(id){
   linkTarget=id;var n=nativeNfc();if(n){n.postMessage({action:'read'});return;}
+  if(webNfc()){webRead();return;}
+  if(ONLINE){linkTarget=null;toast('Lecture NFC indisponible ici : utilisez l\'app iPhone ou Chrome sur Android');return;}
   var e=byId(id);radarSheet('Lire une puce','Approchez la puce à associer à : '+esc(e.n)+'.');
   timers.push(setTimeout(function(){linkTarget=null;$('radar').classList.add('found');$('core').innerHTML=ICON.check;$('scan-t').textContent='Lien lu';$('scan-s').textContent=shortLink(defLink(e));
     timers.push(setTimeout(function(){assignLink(e,defLink(e));},850));},1900));
@@ -1021,6 +1065,8 @@ function readTagFor(id){
 function writeTagFor(id){
   var e=byId(id),u=e.link||defLink(e),n=nativeNfc();linkTarget=id;
   if(n){n.postMessage({action:'write',url:u});return;}
+  if(webNfc()){webWrite(u);return;}
+  if(ONLINE){linkTarget=null;toast('Écriture NFC indisponible ici : utilisez l\'app iPhone ou Chrome sur Android');return;}
   radarSheet('Écrire la puce','Approchez la puce à coller sur : '+esc(e.n)+'.');
   timers.push(setTimeout(function(){linkTarget=null;$('radar').classList.add('found');$('core').innerHTML=ICON.check;$('scan-t').textContent='Lien écrit';$('scan-s').textContent=shortLink(u);
     timers.push(setTimeout(function(){assignLink(e,u);},850));},1900));
@@ -1039,7 +1085,8 @@ window.onNfcLink=function(u){
   }
   if(!u){toast('Cette puce ne contient pas de lien');return;}
   var e=findByLink(u);
-  if(e){closeSheet();openDetail(e.id);toast('Puce reconnue · '+e.ref);return;}
+  if(e){closeSheet();openDetail(e.id);recordScan(e,'nfc');toast('Puce reconnue · '+e.ref);return;}
+  if(!STAFF){toast('Cette puce ne correspond à aucune de vos locations');return;}
   pendingLink=u;
   openSheet('<h2>Lien inconnu</h2><p class="sub"><code>'+esc(shortLink(u))+'</code><br>Choisissez l\'équipement auquel associer cette puce.</p><div class="plist">'+equip.map(function(x){
     return '<button class="pick" data-link="'+x.id+'">'+ph(x)+'<span class="body"><div class="t">'+esc(x.n)+'</div><div class="s">'+x.ref+'</div></span></button>';}).join('')
@@ -1057,14 +1104,14 @@ function renderSettings(){
     +'<section>'+secH('tag','Puces NFC')+'<div class="list">'+equip.map(function(e){
       return '<button class="row" data-tag="'+e.id+'">'+ph(e)+'<span class="body"><div class="t">'+esc(e.n)+'</div><div class="s lk">'+(e.link?'<code>'+esc(midLink(e.link))+'</code>':e.ref)+'</div></span>'
         +(e.link?'':'<span class="pill p-desinf">À associer</span>')+'<span class="chev">'+ICON.chev+'</span></button>';}).join('')+'</div></section>'
-    +'<section>'+secH('arrow','Adresse des liens')+'<p class="note">Début commun des liens. La référence de l\'équipement est ajoutée à la fin, par exemple <code>'+esc(shortLink(base))+'LIT-0142</code>.</p>'
-    +'<div class="uidrow"><input class="uid" id="base-in" type="url" inputmode="url" autocapitalize="none" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Adresse de base des liens" value="'+esc(base)+'"><button class="btn" data-act="save-base">Appliquer</button></div><p class="err" id="base-err" hidden></p></section>'
-    +'<section>'+secH('gear','Démonstration')+'<div class="stack"><button class="btn" data-act="scan">'+ICON.nfc+'Tester une puce</button>'
+    +(ROLE==='admin'?'<section>'+secH('arrow','Adresse des liens')+'<p class="note">Début commun des liens. La référence de l\'équipement est ajoutée à la fin, par exemple <code>'+esc(shortLink(base))+'LIT-0142</code>.</p>'
+    +'<div class="uidrow"><input class="uid" id="base-in" type="url" inputmode="url" autocapitalize="none" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Adresse de base des liens" value="'+esc(base)+'"><button class="btn" data-act="save-base">Appliquer</button></div><p class="err" id="base-err" hidden></p></section>':'')
+    +'<section>'+secH('gear',ONLINE?'Outils':'Démonstration')+'<div class="stack"><button class="btn" data-act="scan">'+ICON.nfc+'Tester une puce</button>'
     +'<button class="btn soft" data-act="clear-all">Effacer toutes les puces</button><button class="btn soft" data-act="restore-all">Rétablir les liens par défaut</button></div>'
-    +'<p class="note">Patients, tarifs, adresses et historique sont des données de démonstration.</p></section></div></div>';
+    +(ONLINE?'':'<p class="note">Patients, tarifs, adresses et historique sont des données de démonstration.</p>')+'</section></div></div>';
 }
-function openSettings(){setOpen=true;renderSettings();settingsEl.classList.add('open');settingsEl.setAttribute('aria-hidden','false');}
-function closeSettings(){setOpen=false;settingsEl.classList.remove('open');settingsEl.setAttribute('aria-hidden','true');render(true);}
+function openSettings(){ovMode='settings';setOpen=true;renderSettings();settingsEl.classList.add('open');settingsEl.setAttribute('aria-hidden','false');}
+function closeSettings(){setOpen=false;ovMode='settings';settingsEl.classList.remove('open');settingsEl.setAttribute('aria-hidden','true');render(true);}
 function openTag(id){
   tagId=id;var e=byId(id);
   openSheet('<h2>'+esc(e.n)+'</h2><p class="sub">'+e.ref+(e.link?'':' · aucune puce')+'</p>'
@@ -1086,29 +1133,38 @@ function saveBase(){
   var u=normUrl($('base-in').value),err=$('base-err');
   if(!u){err.textContent='Adresse non reconnue. Exemple : https://manaprocess.cloud/materiel/';err.hidden=false;return;}
   if(!/[\/#=]$/.test(u))u+='/';
+  if(ONLINE){mut('settings',{link_base:u},'Adresse des liens mise à jour');return;}
   equip.forEach(function(e){if(e.link&&sameLink(e.link,defLink(e)))e.link=u+e.ref;});
   base=u;saveLinks();renderSettings();toast('Adresse des liens mise à jour');
 }
 function menuSheet(title,items){
   openSheet('<h2>'+title+'</h2><div class="menu">'+items.map(function(m){return '<button '+m[0]+'><svg viewBox="0 0 24 24">'+ICON[m[1]]+'</svg><span>'+m[2]+'<small>'+m[3]+'</small></span></button>';}).join('')+'</div><button class="btn soft" data-act="close-sheet">Fermer</button>');
 }
-function quickSheet(){menuSheet('Actions rapides',[['data-act="scan"','tag','Scanner une puce NFC','Ouvrir la fiche d\'un équipement'],['data-filter="dispo"','cal','Mettre en location','Choisir un équipement disponible'],['data-tab="loc"','ret','Enregistrer un retour','Depuis les contrats en cours'],['data-tab="ent"','drop','Valider une désinfection','Matériel en attente']]);}
-function moreSheet(){menuSheet('Plus',[['data-act="settings"','gear','Paramètres','Puces NFC et adresse des liens'],['data-mode="plan"','pin','Plan du matériel','Où se trouve chaque équipement'],['data-act="credits"','clip','Crédits photos','Auteurs et licences']]);}
+function quickSheet(){if(!STAFF){menuSheet('Actions rapides',[['data-act="scan"','tag','Scanner une puce NFC','Ouvrir la fiche d\'un équipement'],['data-tab="loc"','clip','Importer une ordonnance','Depuis la fiche de la location']]);return;}menuSheet('Actions rapides',[['data-act="scan"','tag','Scanner une puce NFC','Ouvrir la fiche d\'un équipement'],['data-filter="dispo"','cal','Mettre en location','Choisir un équipement disponible'],['data-tab="loc"','ret','Enregistrer un retour','Depuis les contrats en cours'],['data-tab="ent"','drop','Valider une désinfection','Matériel en attente']]);}
+function moreSheet(){
+  var it=accountSheet();
+  if(STAFF){it.push(['data-act="settings"','gear','Paramètres','Puces NFC et adresse des liens'],['data-mode="plan"','pin','Plan du matériel','Où se trouve chaque équipement'],['data-rtab="fact"','clip','Facturation','Montants par mois et par pharmacie']);
+    if(ONLINE&&ROLE==='admin')it.push(['data-act="accounts"','users','Comptes et pharmacies','Accès des pharmacies et de l\'équipe']);}
+  else it.push(['data-tab="fact"','clip','Facturation','Vos montants par mois']);
+  if(ONLINE)it.push(['data-act="change-pwd"','tag','Changer le mot de passe','Au moins 10 caractères'],['data-act="logout"','ret','Se déconnecter','Fermer la session sur cet appareil']);
+  it.push(['data-act="credits"','clip','Crédits photos','Auteurs et licences']);
+  menuSheet('Plus',it);
+}
 function openState(st){
   var it=equip.filter(function(e){return e.st===st;});
   openSheet('<h2>'+STATUS[st].l+' · '+it.length+'</h2><div class="list">'+(it.map(function(e){return rowEq(e);}).join('')||'<div class="empty">Aucun équipement dans cet état.</div>')
     +'</div><button class="btn soft" data-filter="'+st+'">Voir dans le parc</button>');
 }
 /* Lien ouvert directement (puce scannée hors de l'app) : …/materiel/LIT-0101 ou …#LIT-0101 ouvre la fiche. */
-function openFromHash(){var r=decodeURIComponent(location.hash.slice(1)||location.pathname.replace(/\/+$/,'').split('/').pop()).toUpperCase();var e=equip.filter(function(x){return x.ref===r;})[0];if(e)openDetail(e.id);}
-window.addEventListener('hashchange',openFromHash);
+function openFromHash(first){var r=decodeURIComponent(location.hash.slice(1)||location.pathname.replace(/\/+$/,'').split('/').pop()).toUpperCase();var e=equip.filter(function(x){return x.ref===r;})[0];if(e){openDetail(e.id);if(ONLINE&&first){recordScan(e,'lien');try{history.replaceState(null,'','/materiel/');}catch(x){}}}else if(ONLINE&&first&&/^[A-Z]{3}-\d{4}$/.test(r)){toast('Cet équipement n\'est pas visible avec votre compte');try{history.replaceState(null,'','/materiel/');}catch(x){}}}
+window.addEventListener('hashchange',function(){openFromHash(false);});
 var rentFa='f1';
 var DURS=[[7,'1 semaine'],[14,'2 semaines'],[28,'4 semaines'],[90,'3 mois']],rentDur=28;
 function pickPatient(){
   openSheet('<h2>Mettre en location</h2><label class="fld" style="text-align:center">Durée prévue</label><div class="durs">'+DURS.map(function(d){
       return '<button class="chip" data-dur="'+d[0]+'" aria-pressed="'+(rentDur===d[0])+'">'+d[1]+'</button>';}).join('')+'</div>'
     +'<label class="fld" style="text-align:center">Pharmacie</label><div class="durs">'+PHARM.map(function(f){return '<button class="chip" data-rfa="'+f.id+'" aria-pressed="'+(rentFa===f.id)+'">'+esc(f.n)+'</button>';}).join('')+'</div>'
-    +'<label class="fld" style="text-align:center">Bénéficiaire</label><div class="plist">'+patients.map(function(p){
+    +'<label class="fld" style="text-align:center">Bénéficiaire</label>'+(ONLINE?'<button class="btn soft" data-act="new-pat">'+svg('users')+'Nouveau bénéficiaire</button>':'')+'<div class="plist">'+patients.map(function(p){
     return '<button class="pick" data-pick="'+p.id+'"><span class="avatar">'+initials(p.n)+'</span><span class="body"><div class="t">'+esc(p.n)+'</div><div class="s">'+esc(p.z)+'</div></span></button>';}).join('')
     +'</div><button class="btn soft" data-act="close-sheet">Annuler</button>');
 }
@@ -1116,8 +1172,268 @@ function pickPatient(){
 var toastT;
 function toast(t){toastEl.textContent=t;toastEl.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){toastEl.classList.remove('show');},2200);}
 
+/* ---------- Mode en ligne : serveur, comptes et base partagée ---------- */
+var ONLINE=/^https?:$/.test(location.protocol)&&/^\/materiel(\/|$)/.test(location.pathname);
+var API='/materiel/api/',ME=null,ROLE='admin',STAFF=true,COMMUNES=[],booted=false,ovMode='settings';
+function srv(method,p,body){
+  return fetch(API+p,{method:method,credentials:'same-origin',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined})
+    .then(handleResp);
+}
+function handleResp(r){return r.json().catch(function(){return {};}).then(function(j){if(!r.ok){var e=new Error(j.error||'Erreur '+r.status);e.status=r.status;throw e;}return j;});}
+function errToast(err){if(err&&err.status===401){showLogin();return;}if(err&&err.status===403&&/mot de passe provisoire/.test(err.message)){showPwd(true);return;}toast(err&&err.message?err.message:'Connexion au serveur impossible');}
+function off(s){if(!s)return null;var t=new Date();t.setHours(12,0,0,0);return Math.round((new Date(s.slice(0,10)+'T12:00:00')-t)/864e5);}
+function setRole(me){ME=me;ROLE=me.role;STAFF=ROLE!=='pharmacie';}
+function loadState(){return srv('GET','state').then(applyState);}
+function applyState(st){
+  setRole(st.me);base=st.link_base||DEFBASE;COMMUNES=st.communes||[];
+  PHARM=st.pharmacies.map(function(f){return {id:String(f.id),n:f.name,c:f.commune};});
+  patients=st.patients.map(function(p){return {id:String(p.id),a:p.address||p.commune,c:p.commune,lat:p.lat,lon:p.lon,n:p.name,z:p.commune+(p.care?' · '+p.care:'')};});
+  var favs={};try{JSON.parse(localStorage.getItem(FKEY)||'[]').forEach(function(id){favs[id]=1;});}catch(x){}
+  equip=st.equipment.map(function(e){var id=String(e.id);return {id:id,ref:e.ref,ph:e.photo,k:e.kind,n:e.name,m:e.brand,cat:e.catalog,st:e.status,
+    pt:e.patient_id?String(e.patient_id):null,fa:e.pharmacy_id?String(e.pharmacy_id):null,since:off(e.since),end:e.planned_end?off(e.planned_end):null,chk:off(e.next_check),
+    px:e.week_price,buy:e.buy_price||0,days:e.rented_days||0,est:!!e.buy_estimated,link:e.link||'',rid:e.rental_id,docs:e.documents||[],scan:e.last_scan,fav:!!favs[id],
+    h:e.events.map(function(v){return {d:off(v.at),txt:v.text,q:v.id,t:v.at.slice(11,16),by:v.by};})};});
+  DONE=st.closed.map(function(c){var e=byId(String(c.equipment.id))||{id:String(c.equipment.id),ref:c.equipment.ref,n:c.equipment.name,ph:c.equipment.photo,k:c.equipment.kind,px:c.equipment.week_price,st:'dispo',stub:true};
+    var s=off(c.start),en=off(c.end);return {e:e,p:pat(String(c.patient_id))||{n:'—'},fa:phar(String(c.pharmacy_id))||{n:'—'},start:s,end:en,dur:en-s,sum:c.amount};});
+  if(!phar(rentFa)&&PHARM[0])rentFa=PHARM[0].id;
+}
+function refresh(){
+  render(true);
+  if(S.cur&&detail.classList.contains('open')){if(byId(S.cur))renderDetail();else closeDetail();}
+  if(setOpen){if(ovMode==='accounts')renderAccounts();else renderSettings();}
+}
+function mut(p,body,msg,after){return srv('POST',p,body).then(loadState).then(function(){refresh();if(msg)toast(msg);if(after)after();}).catch(errToast);}
+
+/* Connexion et mot de passe */
+var gate=$('gate');
+function gateShell(inner){gate.innerHTML='<div class="gcard"><div class="gbrand"><svg class="logo" viewBox="0 0 44 32" aria-hidden="true"><path d="M5 26 13 9l8 14 8-12 9 15" fill="none" stroke="currentColor" stroke-width="5.200" stroke-linecap="round" stroke-linejoin="round"/><circle cx="31" cy="5.500" r="3.600" fill="var(--brand)"/></svg><div><b>Mana<span>Process</span></b><small>Gestion du parc matériel</small></div></div>'+inner+'</div>';gate.hidden=false;}
+function showLogin(){
+  gateShell('<h1>Connexion</h1><p class="gsub">Accès réservé à l\'équipe du parc et aux pharmacies clientes.</p><form id="f-login" novalidate><label class="fld" for="lg-login">Identifiant</label><input class="gin" id="lg-login" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>'
+    +'<label class="fld" for="lg-pass">Mot de passe</label><input class="gin" id="lg-pass" type="password" autocomplete="current-password" required><p class="err" id="lg-err" hidden></p><button class="btn" type="submit">Se connecter</button></form><p class="gnote">Mot de passe oublié : demandez à l\'administrateur de le réinitialiser.</p>');
+  setTimeout(function(){var i=$('lg-login');if(i)i.focus();},50);
+}
+function showPwd(forced){
+  gateShell('<h1>'+(forced?'Choisissez votre mot de passe':'Changer le mot de passe')+'</h1><p class="gsub">'+(forced?'Le mot de passe reçu est provisoire. Choisissez le vôtre : 10 caractères au moins, avec des lettres et des chiffres.':'10 caractères au moins, avec des lettres et des chiffres.')+'</p><form id="f-pwd" novalidate>'
+    +'<label class="fld" for="pw-cur">Mot de passe actuel</label><input class="gin" id="pw-cur" type="password" autocomplete="current-password" required>'
+    +'<label class="fld" for="pw-new">Nouveau mot de passe</label><input class="gin" id="pw-new" type="password" autocomplete="new-password" required>'
+    +'<label class="fld" for="pw-new2">Confirmez le nouveau mot de passe</label><input class="gin" id="pw-new2" type="password" autocomplete="new-password" required><p class="err" id="pw-err" hidden></p>'
+    +'<button class="btn" type="submit">Enregistrer</button>'+(forced?'<button class="btn soft" type="button" data-act="logout">Se déconnecter</button>':'<button class="btn soft" type="button" data-act="gate-close">Annuler</button>')+'</form>');
+}
+function gateErr(id,msg){var e=$(id);if(e){e.textContent=msg;e.hidden=false;}}
+function enterApp(){return loadState().then(function(){gate.hidden=true;gate.innerHTML='';buildTabs();if(!booted){booted=true;openFromHash(true);}render();}).catch(errToast);}
+document.addEventListener('submit',function(x){
+  if(x.target.id==='f-login'){x.preventDefault();var l=$('lg-login').value.trim(),p=$('lg-pass').value;if(!l||!p)return gateErr('lg-err','Saisissez votre identifiant et votre mot de passe.');
+    srv('POST','login',{login:l,password:p}).then(function(r){setRole(r.me);if(r.me.must_change)showPwd(true);else enterApp();}).catch(function(e){gateErr('lg-err',e.message);});}
+  else if(x.target.id==='f-pwd'){x.preventDefault();var c=$('pw-cur').value,n=$('pw-new').value,n2=$('pw-new2').value;if(n!==n2)return gateErr('pw-err','Les deux nouveaux mots de passe ne sont pas identiques.');
+    srv('POST','password',{current:c,next:n}).then(function(r){setRole(r.me);toast('Mot de passe enregistré');enterApp();}).catch(function(e){if(e.status===401)return showLogin();gateErr('pw-err',e.message);});}
+  else if(x.target.id==='f-user'||x.target.id==='f-pharm'||x.target.id==='f-pat'){x.preventDefault();submitForm(x.target.id);}
+});
+function logout(){srv('POST','logout',{}).catch(function(){}).then(function(){ME=null;booted=false;closeSheet();if(S.cur)closeDetail();if(setOpen)closeSettings();showLogin();});}
+
+/* Barre d'onglets selon le rôle */
+var TAB_SVG={home:'<path d="M4 11.500 12 4l8 7.500V20a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/>',parc:'<rect x="3.500" y="3.500" width="7" height="7" rx="2"/><rect x="13.500" y="3.500" width="7" height="7" rx="2"/><rect x="3.500" y="13.500" width="7" height="7" rx="2"/><rect x="13.500" y="13.500" width="7" height="7" rx="2"/>',
+  loc:'<rect x="4" y="5.500" width="16" height="14.500" rx="2.500"/><path d="M4 10h16M8.500 3.500v4M15.500 3.500v4"/>',ent:'<path d="M14.500 6.500a4 4 0 0 0 5 5L11 20a2.100 2.100 0 0 1-3-3l8.500-8.500zM14.500 6.500l3-3"/>',
+  rap:'<path d="M5 20v-6h3.500v6zM10.300 20V9h3.500v11zM15.500 20V4H19v16z"/>',fact:'<path d="M7 3.500h10a1.500 1.500 0 0 1 1.500 1.500v15.500l-3-2-3 2-3-2-3 2V5A1.500 1.500 0 0 1 7 3.500zM9 8h6M9 11.500h6M9 15h3.500"/>',
+  more:'<circle cx="5.500" cy="12" r="1.300"/><circle cx="12" cy="12" r="1.300"/><circle cx="18.500" cy="12" r="1.300"/>'};
+function tabBtn(k,l){return '<button class="tab" '+(k==='more'?'data-act="more"':'data-tab="'+k+'"')+'><svg viewBox="0 0 24 24">'+TAB_SVG[k]+'</svg>'+l+'</button>';}
+function buildTabs(){
+  var dt=document.querySelector('.demo-tag');if(dt)dt.hidden=!STAFF;
+  var nav=document.querySelector('.tabs'),plus='<button class="scanbtn" data-act="quick" aria-label="Actions rapides"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>';
+  if(STAFF){nav.className='tabs';nav.innerHTML=tabBtn('home','Accueil')+tabBtn('parc','Parc')+tabBtn('loc','Locations')+plus+tabBtn('ent','Entretien')+tabBtn('rap','Rapports')+tabBtn('more','Plus');}
+  else{nav.className='tabs ph';nav.innerHTML=tabBtn('home','Accueil')+tabBtn('loc','Locations')+plus+tabBtn('fact','Facturation')+tabBtn('more','Plus');}
+}
+
+/* Géolocalisation au moment du scan */
+function getPos(cb){
+  if(!navigator.geolocation)return cb(null);var done=false,t=setTimeout(function(){if(!done){done=true;cb(null);}},9000);
+  navigator.geolocation.getCurrentPosition(function(p){if(done)return;done=true;clearTimeout(t);cb({lat:p.coords.latitude,lon:p.coords.longitude,acc:Math.round(p.coords.accuracy)});},
+    function(){if(done)return;done=true;clearTimeout(t);cb(null);},{enableHighAccuracy:true,timeout:8000,maximumAge:30000});
+}
+function recordScan(e,src){
+  if(!ONLINE||!e)return;
+  getPos(function(pos){srv('POST','scans',{equipment:e.id,source:src,lat:pos?pos.lat:null,lon:pos?pos.lon:null,accuracy:pos?pos.acc:null})
+    .then(loadState).then(function(){if(S.cur===e.id&&detail.classList.contains('open'))loadHistory(e.id);}).catch(function(){});});
+}
+function stamp(at){var d=off(at);return (d===0?'Aujourd\'hui':d===-1?'Hier':fmt(d))+' à '+at.slice(11,16).replace(':',' h ');}
+function mapsLink(lat,lon,label){return 'https://maps.apple.com/?ll='+lat+','+lon+'&q='+encodeURIComponent(label)+'&z=18';}
+function scanRow(e){
+  if(!e.scan)return '';var s=e.scan,src={nfc:'puce NFC',lien:'lien de la puce',saisie:'saisie manuelle'}[s.source]||'puce NFC';
+  return '<div><dt>'+ic('tag')+'Dernier scan</dt><dd>'+stamp(s.at)+'<small class="dsub">'+esc(s.by||'')+' · '+src+'</small>'
+    +(s.lat!=null?'<a class="more geo" target="_blank" rel="noopener" href="'+mapsLink(s.lat,s.lon,e.ref)+'">'+ic('pin')+'Position ±'+Math.max(1,Math.round(s.accuracy||0))+' m</a>':'<small class="dsub">Position non partagée</small>')+'</dd></div>';
+}
+function loadHistory(id){
+  srv('GET','equipment/'+id).then(function(r){var e=byId(id);if(!e)return;e.h=r.events.map(function(v){return {d:off(v.at),txt:v.text,q:v.id,t:v.at.slice(11,16),by:v.by};});e.scans=r.scans;if(S.cur===id)renderDetail();}).catch(function(){});
+}
+
+/* Ordonnances */
+function docsSection(e){
+  if(!ONLINE||e.st!=='loc'||!e.rid)return '';
+  var rows=e.docs.map(function(d){return '<div class="row doc"><a class="rowin" href="api/documents/'+d.id+'" target="_blank" rel="noopener"><span class="ico a-info">'+svg(d.mime==='application/pdf'?'clip':'cam')+'</span><span class="body"><div class="t">'+esc(d.name)+'</div><div class="s">'+stamp(d.at)+' · '+esc(d.by)+' · '+Math.max(1,Math.round(d.size/1024))+' Ko</div></span></a><button class="keb2 del" data-deldoc="'+d.id+'" aria-label="Retirer '+esc(d.name)+'">'+svg('close')+'</button></div>';}).join('');
+  return '<section>'+secH('clip','Ordonnance',e.docs.length?badge(e.docs.length):'<span class="pill p-desinf">À fournir</span>')+'<div class="list">'+(rows||'<div class="empty">Aucune ordonnance pour cette location.</div>')+'</div>'
+    +'<button class="btn soft prog" data-act="add-doc">'+svg('up2')+'Importer l\'ordonnance</button><p class="note">Photo ou PDF, 12 Mo au plus. Visible par la pharmacie et l\'équipe du parc.</p></section>';
+}
+function shrink(f){
+  if(!/^image\/(jpeg|png)$/.test(f.type)||f.size<1.5e6)return Promise.resolve(f);
+  return new Promise(function(res){var im=new Image(),u=URL.createObjectURL(f);im.onload=function(){var k=Math.min(1,2200/Math.max(im.width,im.height)),c=document.createElement('canvas');
+    c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(function(b){res(b||f);},'image/jpeg',.85);};
+    im.onerror=function(){URL.revokeObjectURL(u);res(f);};im.src=u;});
+}
+function uploadDoc(f){
+  var e=byId(S.cur);if(!e||!e.rid)return;
+  if(f.size>12*1024*1024)return toast('Fichier trop volumineux (12 Mo au plus)');
+  toast('Envoi de l\'ordonnance…');
+  shrink(f).then(function(b){return fetch(API+'rentals/'+e.rid+'/documents',{method:'POST',credentials:'same-origin',headers:{'X-Mediparc':'1','X-Filename':encodeURIComponent(f.name||'ordonnance.jpg'),'Content-Type':b.type||'application/octet-stream'},body:b});})
+    .then(handleResp).then(loadState).then(function(){refresh();toast('Ordonnance ajoutée');}).catch(errToast);
+}
+document.addEventListener('change',function(x){if(x.target.id==='doc-in'&&x.target.files&&x.target.files[0])uploadDoc(x.target.files[0]);});
+
+/* NFC dans Chrome sur Android (Web NFC) */
+var nfcAbort=null;
+function webNfc(){return ONLINE&&'NDEFReader' in window;}
+function webRead(){
+  var ctl=new AbortController(),r=new NDEFReader();nfcAbort=ctl;
+  radarSheet('Prêt à scanner','Approchez le dos du téléphone de la puce collée sur l\'équipement.');
+  r.scan({signal:ctl.signal}).then(function(){
+    r.onreading=function(ev){var url=null;ev.message.records.forEach(function(rec){if(!url&&(rec.recordType==='url'||rec.recordType==='absolute-url'))url=new TextDecoder().decode(rec.data);});
+      ctl.abort();nfcAbort=null;closeSheet();window.onNfcLink(url);};
+    r.onreadingerror=function(){toast('Puce illisible, réessayez');};
+  }).catch(function(err){nfcAbort=null;closeSheet();linkTarget=null;if(err.name!=='AbortError')toast(err.name==='NotAllowedError'?'Autorisez le NFC pour ce site dans Chrome':'NFC indisponible : '+err.message);});
+}
+function webWrite(u){
+  var ctl=new AbortController();nfcAbort=ctl;
+  radarSheet('Écrire la puce','Approchez la puce du dos du téléphone.');
+  new NDEFReader().write({records:[{recordType:'url',data:u}]},{signal:ctl.signal}).then(function(){nfcAbort=null;closeSheet();window.onNfcWritten(u);})
+    .catch(function(err){nfcAbort=null;closeSheet();linkTarget=null;if(err.name!=='AbortError')toast('Écriture impossible : '+err.message);});
+}
+function manualScan(){
+  openSheet('<h2>Lecture NFC indisponible ici</h2><p class="sub">Utilisez l\'app iPhone ou Chrome sur Android. Sur un iPhone sans l\'app, approchez simplement la puce : la fiche s\'ouvre dans Safari.</p>'
+    +'<label class="fld" for="ref-in">Ou saisissez la référence</label><div class="uidrow"><input class="uid" id="ref-in" autocapitalize="characters" autocomplete="off" placeholder="LIT-0101"><button class="btn" data-act="open-ref">Ouvrir</button></div><p class="err" id="ref-err" hidden></p>'
+    +'<button class="btn soft" data-act="close-sheet">Fermer</button>');
+}
+function openRef(){var r=($('ref-in').value||'').trim().toUpperCase(),e=equip.filter(function(x){return x.ref===r;})[0];if(!e)return gateErr('ref-err','Aucun équipement visible avec cette référence.');closeSheet();openDetail(e.id);recordScan(e,'saisie');}
+
+/* Facturation */
+var fState={month:null,fa:''},fData=null;
+function ym(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2);}
+function monthLabel(m){var d=new Date(m+'-01T12:00:00');var s=d.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});return s.charAt(0).toUpperCase()+s.slice(1);}
+function shiftMonth(m,n){var d=new Date(m+'-01T12:00:00');d.setMonth(d.getMonth()+n);return ym(d);}
+function billingLocal(m,fa){
+  var ms=off(m+'-01'),nx=off(shiftMonth(m,1)+'-01'),L=[];
+  function add(e,p,f,s,en,open){if(fa&&f.id!==fa)return;var from=Math.max(s,ms),until=Math.min(en==null?nx:en,nx),days=until-from;if(days<=0)return;
+    L.push({pharmacy:f.n,patient:p.n,ref:e.ref,equipment:e.n,from:dateOf(from),to:dateOf(until-1),days:days,week_price:e.px,amount:Math.round(e.px*days/7),open:open});}
+  equip.forEach(function(e){if(e.st==='loc')add(e,pat(e.pt),phar(e.fa),e.since,null,true);});
+  DONE.forEach(function(c){add(c.e,c.p,c.fa,c.start,c.end,false);});
+  L.sort(function(a,b){return a.pharmacy.localeCompare(b.pharmacy)||a.patient.localeCompare(b.patient)||a.ref.localeCompare(b.ref);});
+  return {month:m,provisional:nx>0,total:L.reduce(function(a,l){return a+l.amount;},0),lines:L};
+}
+function viewFact(){
+  if(!fState.month)fState.month=ym(new Date());
+  var m=fState.month;
+  var head='<div class="mnav"><button class="tbtn" data-fmonth="-1" aria-label="Mois précédent">'+svg('back')+'</button><b>'+monthLabel(m)+'</b><button class="tbtn" data-fmonth="1" aria-label="Mois suivant">'+ICON.chev+'</button></div>'
+    +(STAFF?'<div class="chips"><button class="chip" data-ffa="" aria-pressed="'+(!fState.fa)+'">Toutes les pharmacies</button>'+PHARM.map(function(f){return '<button class="chip" data-ffa="'+f.id+'" aria-pressed="'+(fState.fa===f.id)+'">'+esc(f.n)+'</button>';}).join('')+'</div>':'');
+  if(!ONLINE){fData=billingLocal(m,fState.fa);return head+'<div id="fact-body">'+factBody(fData)+'</div>';}
+  var key=m+'|'+fState.fa;
+  if(!fData||fData.key!==key){
+    srv('GET','billing?month='+m+(STAFF&&fState.fa?'&pharmacy='+fState.fa:'')).then(function(b){b.key=key;b.lines.forEach(function(l){l.from=new Date(l.from+'T12:00:00');l.to=new Date(l.to+'T12:00:00');});fData=b;var fb=$('fact-body');if(fb)fb.innerHTML=factBody(b);}).catch(errToast);
+    return head+'<div id="fact-body"><div class="empty">Calcul de la facturation…</div></div>';
+  }
+  return head+'<div id="fact-body">'+factBody(fData)+'</div>';
+}
+function factBody(b){
+  var d=function(x){return x.toLocaleDateString('fr-FR',{day:'numeric',month:'short'});},groups={};
+  b.lines.forEach(function(l){(groups[l.pharmacy]=groups[l.pharmacy]||[]).push(l);});
+  var csv=ONLINE?'<a class="btn" href="api/billing.csv?month='+b.month+(STAFF&&fState.fa?'&pharmacy='+fState.fa:'')+'">'+svg('down')+'Télécharger (CSV)</a>':'';
+  return '<div class="rent"><div class="cols"><div><small>Total '+(b.provisional?'prévisionnel':'du mois')+'</small><b class="num">'+xpf(b.total)+'</b><small>'+b.lines.length+' ligne'+(b.lines.length>1?'s':'')+' de location</small></div>'
+    +'<div><small>Pharmacies</small><b class="num">'+Object.keys(groups).length+'</b><small>'+(b.provisional?'mois en cours : locations comptées jusqu\'à la fin du mois':'mois clos')+'</small></div></div></div>'
+    +'<div class="stack">'+csv+'<button class="btn soft" data-act="fact-copy">Copier pour un tableur</button></div>'
+    +(b.lines.length?Object.keys(groups).map(function(g){var ls=groups[g],t=ls.reduce(function(a,l){return a+l.amount;},0);
+      return '<section>'+secH('cross',esc(g),'<b class="pct num">'+xpf(t)+'</b>')+'<div class="list">'+ls.map(function(l){
+        return '<div class="row frow"><span class="body"><div class="t">'+esc(l.equipment)+'</div><div class="s w2">'+esc(l.patient)+' · '+l.ref+'<br>du '+d(l.from)+' au '+d(l.to)+' · '+l.days+' j × '+xpf(l.week_price)+' / sem.'+(l.open?' · en cours':'')+'</div></span><b class="pct num">'+xpf(l.amount)+'</b></div>';}).join('')+'</div></section>';}).join('')
+      :'<div class="list"><div class="empty">Aucune location facturable sur ce mois.</div></div>')
+    +'<p class="note">Calcul : nombre de jours de location dans le mois × tarif hebdomadaire ÷ 7. Le jour du retour n\'est pas facturé. Le fichier CSV s\'ouvre dans Excel ou se reprend dans votre logiciel de facturation.</p>';
+}
+function factCsv(b){var q=function(v){return '"'+String(v).replace(/"/g,'""')+'"';},f=function(x){return x.toLocaleDateString('fr-FR');};
+  return [['Pharmacie','Bénéficiaire','Référence','Équipement','Du','Au','Jours','Tarif hebdo XPF','Montant XPF']].concat(b.lines.map(function(l){return [l.pharmacy,l.patient,l.ref,l.equipment,f(l.from),f(l.to),l.days,l.week_price,l.amount];})).map(function(r){return r.map(q).join(';');}).join('\n');}
+
+/* Accueil du portail pharmacie */
+function phAlerts(){
+  var al=[];
+  equip.forEach(function(e){if(e.st==='loc'&&ONLINE&&!e.docs.length)al.push({o:e.id,k:'clip',c:'a-warn',t:'Ordonnance à fournir',s:e.n+' · '+pat(e.pt).n,g:['Ordonnance','p-desinf']});});
+  equip.forEach(function(e){if(e.st==='loc'&&e.end<=0)al.push({o:e.id,k:'ret',c:e.end<0?'a-crit':'a-info',t:e.end<0?'Retour en retard de '+jours(-e.end):'Retour prévu aujourd\'hui',s:e.n+' · '+pat(e.pt).n,g:[e.end<0?'Retard':'Retour',e.end<0?'p-maint':'p-loc']});});
+  return al;
+}
+function viewPharmaHome(){
+  var it=equip.filter(function(e){return e.st==='loc';}),rev=it.reduce(function(a,e){return a+e.px;},0),al=phAlerts();
+  var np=it.map(function(e){return e.pt;}).filter(function(x,i,a){return a.indexOf(x)===i;}).length,renew=it.filter(function(e){return e.end<=14;}).length,miss=it.filter(function(e){return ONLINE&&!e.docs.length;}).length;
+  return '<div class="hero"><div class="lbl">'+ic('cross')+esc(ME&&ME.pharmacy?ME.pharmacy.name:'Votre pharmacie')+'</div><div class="hero-top"><div class="occ"><div class="big num">'+it.length+'</div><div class="hs2">équipement'+(it.length>1?'s':'')+'<br>en location</div></div>'
+    +'<div class="side">'+ic('coins')+'<div><b class="num">'+xpf(rev)+'</b>de loyers par semaine</div></div></div></div>'
+    +'<div class="kpis"><button class="kpi" data-tab="loc">'+ic('users')+'<b class="num">'+np+'</b><span>Bénéficiaires équipés</span></button><button class="kpi" data-ltab="renew">'+ic('cal')+'<b class="num">'+renew+'</b><span>À renouveler sous 14 j</span></button>'
+    +'<button class="kpi" data-tab="loc">'+ic('clip')+'<b class="num">'+miss+'</b><span>Ordonnances à fournir</span></button><button class="kpi" data-tab="fact">'+ic('coins')+'<b class="num">'+DONE.length+'</b><span>Locations terminées</span></button></div>'
+    +'<section>'+secH('clip','À traiter<span class="badge red num" style="margin-left:4px">'+al.length+'</span>')+'<div class="list">'+alertRows(al)+'</div></section>'
+    +'<section>'+secH('lit','Vos locations','<button class="more" data-tab="loc">Tout voir'+ic('arrow')+'</button>')+'<div class="list">'+it.slice().sort(function(a,b){return a.end-b.end;}).slice(0,6).map(function(e){return rowE(e,pat(e.pt).n+' · '+leftTxt(rent(e)),pill(e));}).join('')+'</div></section>';
+}
+
+/* Comptes et pharmacies (administrateur) */
+var usersCache=[];
+function openAccounts(){ovMode='accounts';setOpen=true;renderAccounts();settingsEl.classList.add('open');settingsEl.setAttribute('aria-hidden','false');
+  srv('GET','users').then(function(r){usersCache=r.users;if(setOpen&&ovMode==='accounts')renderAccounts();}).catch(errToast);}
+var ROLE_L={admin:'Administrateur',equipe:'Équipe du parc',pharmacie:'Pharmacie'};
+function renderAccounts(){
+  settingsEl.innerHTML='<div class="sbar pad"><button class="back" data-act="close-settings" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><h2>Comptes</h2></div>'
+    +'<div class="dscroll"><div class="sbody pad"><p class="note">Chaque compte pharmacie ne voit que les locations de sa pharmacie, ses ordonnances et sa facturation. Les mots de passe provisoires sont changés à la première connexion.</p>'
+    +'<div class="stack"><button class="btn" data-act="new-user">'+svg('users')+'Nouveau compte</button><button class="btn soft" data-act="new-pharm">Nouvelle pharmacie</button></div>'
+    +'<section>'+secH('users','Comptes',badge(usersCache.length))+'<div class="list">'+(usersCache.map(function(x){
+      var st=!x.active?['Désactivé','p-maint']:x.must_change?['Provisoire','p-desinf']:['Actif','p-dispo'];
+      return '<button class="row" data-user="'+x.id+'"><span class="avatar">'+initials(x.name)+'</span><span class="body"><div class="t">'+esc(x.name)+'</div><div class="s w2">'+esc(x.login)+' · '+ROLE_L[x.role]+(x.pharmacy?' · '+esc(x.pharmacy):'')+'</div></span><span class="pill '+st[1]+'">'+st[0]+'</span></button>';}).join('')||'<div class="empty">Chargement…</div>')+'</div></section>'
+    +'<section>'+secH('cross','Pharmacies',badge(PHARM.length))+'<div class="list">'+PHARM.map(function(f){return '<div class="row"><span class="ico a-ok"><svg viewBox="0 0 24 24">'+ICON.cross+'</svg></span><span class="body"><div class="t">'+esc(f.n)+'</div><div class="s">'+esc(f.c)+'</div></span></div>';}).join('')+'</div></section></div></div>';
+}
+function chipSel(name,opts,cur){return '<div class="durs" data-sel="'+name+'">'+opts.map(function(o){return '<button type="button" class="chip" data-opt="'+esc(o[0])+'" aria-pressed="'+(cur===o[0])+'">'+esc(o[1])+'</button>';}).join('')+'</div>';}
+function selVal(name){var b=document.querySelector('[data-sel="'+name+'"] .chip[aria-pressed="true"]');return b?b.dataset.opt:'';}
+function userForm(){
+  openSheet('<h2>Nouveau compte</h2><form id="f-user" class="fform" novalidate><label class="fld" for="u-name">Nom affiché</label><input class="gin" id="u-name" placeholder="Pharmacie du Lagon ou Marie Teriitahi">'
+    +'<label class="fld" for="u-login">Identifiant de connexion</label><input class="gin" id="u-login" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="lagon">'
+    +'<label class="fld">Rôle</label>'+chipSel('role',[['pharmacie','Pharmacie'],['equipe','Équipe du parc'],['admin','Administrateur']],'pharmacie')
+    +'<label class="fld">Pharmacie (pour un compte pharmacie)</label>'+chipSel('pharm',PHARM.map(function(f){return [f.id,f.n];}),'')
+    +'<p class="err" id="u-err" hidden></p><button class="btn" type="submit">Créer le compte</button><button class="btn soft" type="button" data-act="close-sheet">Annuler</button></form>');
+  sheet.style.height='92%';
+}
+function pharmForm(){
+  openSheet('<h2>Nouvelle pharmacie</h2><form id="f-pharm" class="fform" novalidate><label class="fld" for="ph-name">Nom</label><input class="gin" id="ph-name" placeholder="Pharmacie de Arue">'
+    +'<label class="fld" for="ph-c">Commune</label><input class="gin" id="ph-c" placeholder="Arue"><p class="err" id="ph-err" hidden></p><button class="btn" type="submit">Ajouter la pharmacie</button><button class="btn soft" type="button" data-act="close-sheet">Annuler</button></form>');
+}
+function patForm(){
+  openSheet('<h2>Nouveau bénéficiaire</h2><form id="f-pat" class="fform" novalidate><label class="fld" for="pa-name">Nom</label><input class="gin" id="pa-name" placeholder="Prénom et nom">'
+    +'<label class="fld">Commune</label>'+chipSel('commune',COMMUNES.map(function(c){return [c,c];}),'')
+    +'<label class="fld" for="pa-addr">Adresse</label><input class="gin" id="pa-addr" placeholder="PK, quartier, servitude…">'
+    +'<label class="fld" for="pa-care">Prise en charge</label><input class="gin" id="pa-care" placeholder="Maintien à domicile, sortie d\'hospitalisation…">'
+    +'<p class="err" id="pa-err" hidden></p><button class="btn" type="submit">Ajouter</button><button class="btn soft" type="button" data-act="assign">Retour</button></form>');
+  sheet.style.height='92%';
+}
+function pwdSheet(login,pw,title){
+  openSheet('<h2>'+title+'</h2><p class="sub">Transmettez ces informations à la personne. Le mot de passe est provisoire : il lui sera demandé d\'en choisir un à la première connexion. Il ne sera plus affiché ensuite.</p>'
+    +'<div class="pwbox"><small>Adresse</small><code>'+esc(location.origin)+'/materiel/</code><small>Identifiant</small><code>'+esc(login)+'</code><small>Mot de passe provisoire</small><code id="pw-show">'+esc(pw)+'</code></div>'
+    +'<button class="btn" data-copy="'+esc('Adresse : '+location.origin+'/materiel/\nIdentifiant : '+login+'\nMot de passe provisoire : '+pw)+'">'+svg('copy')+'Copier</button><button class="btn soft" data-act="close-sheet">Fermer</button>');
+}
+function userSheet(id){
+  var x=usersCache.filter(function(u){return String(u.id)===String(id);})[0];if(!x)return;
+  menuSheet(esc(x.name),[['data-ureset="'+x.id+'"','tag','Réinitialiser le mot de passe','Un mot de passe provisoire sera créé'],
+    ['data-uactive="'+x.id+'" data-v="'+(x.active?0:1)+'"',x.active?'warn':'okc',x.active?'Désactiver le compte':'Réactiver le compte',x.active?'La personne ne pourra plus se connecter':'La personne pourra de nouveau se connecter']]);
+}
+function submitForm(id){
+  if(id==='f-user'){var role=selVal('role');srv('POST','users',{name:$('u-name').value,login:$('u-login').value,role:role,pharmacy:role==='pharmacie'?selVal('pharm'):null})
+      .then(function(r){pwdSheet(r.login,r.password,'Compte créé');return srv('GET','users');}).then(function(r){usersCache=r.users;renderAccounts();}).catch(function(e){gateErr('u-err',e.message);});}
+  else if(id==='f-pharm'){srv('POST','pharmacies',{name:$('ph-name').value,commune:$('ph-c').value}).then(loadState).then(function(){closeSheet();renderAccounts();toast('Pharmacie ajoutée');}).catch(function(e){gateErr('ph-err',e.message);});}
+  else if(id==='f-pat'){srv('POST','patients',{name:$('pa-name').value,commune:selVal('commune'),address:$('pa-addr').value,care:$('pa-care').value}).then(loadState).then(function(){pickPatient();toast('Bénéficiaire ajouté');}).catch(function(e){gateErr('pa-err',e.message);});}
+}
+function accountSheet(){
+  var it=[];
+  if(ONLINE&&ME)it.push(['data-act="noop"','users',esc(ME.name),ROLE_L[ROLE]+(ME.pharmacy?' · '+esc(ME.pharmacy.name):'')+' · '+esc(ME.login)]);
+  return it;
+}
+
 /* ---------- Actions ---------- */
 function act(a,e){
+  if(ONLINE){mut('equipment/'+e.id+'/action',{action:a},{return:'Retour enregistré',clean:'Désinfection validée',repair:'Matériel remis en stock',fault:'Panne signalée'}[a]);return;}
   if(a==='return'){var n=pat(e.pt).n;e.st='desinf';e.pt=null;e.fa=null;e.end=null;e.since=0;e.h.push(ev(0,'Retour de location ('+n+'), en attente de désinfection'));toast('Retour enregistré');}
   else if(a==='clean'){e.st='dispo';e.since=0;e.h.push(ev(0,'Désinfection validée, remis en stock'));toast('Désinfection validée');}
   else if(a==='repair'){e.st='dispo';e.since=0;if(e.chk<0)e.chk=365;e.h.push(ev(0,'Maintenance clôturée, contrôle conforme'));toast('Matériel remis en stock');}
@@ -1125,20 +1441,43 @@ function act(a,e){
   renderDetail();
 }
 document.addEventListener('click',function(x){
-  var t=x.target.closest('[data-tab],[data-open],[data-act],[data-filter],[data-pick],[data-link],[data-place],[data-mode],[data-state],[data-tag],[data-map],[data-dur],[data-hist],[data-fav],[data-keb],[data-progid],[data-ltab],[data-extend],[data-pkeb],[data-zone],[data-pext],[data-cdays],[data-scroll],[data-rtab],[data-export],[data-fa],[data-rfa]');if(!t)return;
+  var t=x.target.closest('[data-opt],[data-fmonth],[data-ffa],[data-deldoc],[data-deldocok],[data-user],[data-ureset],[data-uactive],[data-copy],[data-tab],[data-open],[data-act],[data-filter],[data-pick],[data-link],[data-place],[data-mode],[data-state],[data-tag],[data-map],[data-dur],[data-hist],[data-fav],[data-keb],[data-progid],[data-ltab],[data-extend],[data-pkeb],[data-zone],[data-pext],[data-cdays],[data-scroll],[data-rtab],[data-export],[data-fa],[data-rfa]');if(!t)return;
   var d=t.dataset;
+  if(d.opt!==undefined){var grp=t.parentNode;[].forEach.call(grp.querySelectorAll('.chip'),function(c){c.setAttribute('aria-pressed',String(c===t));});return;}
+  if(d.fmonth){fState.month=shiftMonth(fState.month,+d.fmonth);fData=null;render(true);return;}
+  if(d.ffa!==undefined){fState.fa=d.ffa;fData=null;render(true);return;}
+  if(d.deldoc){openSheet('<h2>Retirer cette ordonnance ?</h2><p class="sub">Le document sera supprimé du serveur.</p><button class="btn danger" data-deldocok="'+d.deldoc+'">Retirer</button><button class="btn soft" data-act="close-sheet">Annuler</button>');return;}
+  if(d.deldocok){closeSheet();mut('documents/'+d.deldocok+'/delete',{},'Ordonnance retirée');return;}
+  if(d.user){userSheet(d.user);return;}
+  if(d.ureset){srv('POST','users/'+d.ureset+'/reset',{}).then(function(r){pwdSheet(r.login,r.password,'Mot de passe réinitialisé');return srv('GET','users');}).then(function(r){usersCache=r.users;renderAccounts();}).catch(errToast);return;}
+  if(d.uactive){closeSheet();srv('POST','users/'+d.uactive+'/active',{active:d.v==='1'}).then(function(){return srv('GET','users');}).then(function(r){usersCache=r.users;renderAccounts();toast(d.v==='1'?'Compte réactivé':'Compte désactivé');}).catch(errToast);return;}
+  if(d.copy){copyText(d.copy,'Copié');return;}
+  if(d.act==='fact-copy'){copyText(factCsv(fData),'Facturation copiée pour un tableur');return;}
+  if(d.act==='add-doc'){var di=$('doc-in');di.value='';di.click();return;}
+  if(d.act==='logout'){logout();return;}
+  if(d.act==='gate-close'){gate.hidden=true;return;}
+  if(d.act==='change-pwd'){closeSheet();showPwd(false);return;}
+  if(d.act==='accounts'){closeSheet();openAccounts();return;}
+  if(d.act==='new-user'){userForm();return;}
+  if(d.act==='new-pharm'){pharmForm();return;}
+  if(d.act==='new-pat'){patForm();return;}
+  if(d.act==='open-ref'){openRef();return;}
+  if(d.act==='reload'){location.reload();return;}
+  if(d.act==='noop')return;
   if(d.rtab){closeSheet();S.rtab=d.rtab;S.tab='rap';render();}
   else if(d.export){copyText(csvRows(d.export),'Export copié dans le presse-papiers');}
   else if(d.cdays){S.cdays=+d.cdays;render(true);}
   else if(d.scroll){var se=$(d.scroll);if(se)main.scrollTo({top:se.offsetTop-8,behavior:'smooth'});}
   else if(d.ltab){S.ltab=d.ltab;render();}
+  else if(d.extend&&ONLINE){mut('rentals/extend',{equipment:d.extend,days:7},'Retour repoussé d\'une semaine');}
   else if(d.extend){var ee=byId(d.extend);ee.end+=7;ee.h.push(ev(0,'Location prolongée d\'une semaine'));render(true);toast(ee.n+' : retour repoussé au '+fmt(ee.end));}
   else if(d.zone!==undefined){S.lzone=d.zone||null;closeSheet();render();}
   else if(d.act==='lsort'){S.lsort=(S.lsort+1)%LSORT.length;render(true);toast('Tri : '+LSORT[S.lsort][1]);}
-  else if(d.act==='lfilter'){var zs=patients.map(function(p){return p.c;}).filter(function(c,i,a){return a.indexOf(c)===i;});openSheet('<h2>Filtrer les contrats</h2><label class="fld" style="text-align:center">Pharmacie</label><div class="durs"><button class="chip" data-fa="" aria-pressed="'+(!S.lfa)+'">Toutes</button>'+PHARM.map(function(f){return '<button class="chip" data-fa="'+f.id+'" aria-pressed="'+(S.lfa===f.id)+'">'+esc(f.n)+'</button>';}).join('')+'</div><label class="fld" style="text-align:center">Commune du bénéficiaire</label><div class="durs"><button class="chip" data-zone="" aria-pressed="'+(!S.lzone)+'">Toutes</button>'+zs.map(function(z){return '<button class="chip" data-zone="'+esc(z)+'" aria-pressed="'+(S.lzone===z)+'">'+esc(z)+'</button>';}).join('')+'</div><button class="btn soft" data-act="close-sheet">Fermer</button>');}
+  else if(d.act==='lfilter'){var zs=patients.map(function(p){return p.c;}).filter(function(c,i,a){return a.indexOf(c)===i;});openSheet('<h2>Filtrer les contrats</h2>'+(STAFF?'<label class="fld" style="text-align:center">Pharmacie</label><div class="durs"><button class="chip" data-fa="" aria-pressed="'+(!S.lfa)+'">Toutes</button>'+PHARM.map(function(f){return '<button class="chip" data-fa="'+f.id+'" aria-pressed="'+(S.lfa===f.id)+'">'+esc(f.n)+'</button>';}).join('')+'</div>':'')+'<label class="fld" style="text-align:center">Commune du bénéficiaire</label><div class="durs"><button class="chip" data-zone="" aria-pressed="'+(!S.lzone)+'">Toutes</button>'+zs.map(function(z){return '<button class="chip" data-zone="'+esc(z)+'" aria-pressed="'+(S.lzone===z)+'">'+esc(z)+'</button>';}).join('')+'</div><button class="btn soft" data-act="close-sheet">Fermer</button>');}
   else if(d.fa!==undefined){S.lfa=d.fa||null;closeSheet();S.tab='loc';S.ltab='cur';render();}
   else if(d.rfa){rentFa=d.rfa;pickPatient();}
   else if(d.pkeb){var pp=pat(d.pkeb);menuSheet(esc(pp.n),[['data-place="'+pp.id+'"','pin','Voir sur le plan',esc(pp.a)],['data-pext="'+pp.id+'"','cal','Prolonger d\'une semaine','Tous les équipements de ce bénéficiaire']]);}
+  else if(d.pext&&ONLINE){closeSheet();mut('rentals/extend',{patient:d.pext,days:7},'Locations prolongées d\'une semaine');}
   else if(d.pext){equip.forEach(function(e){if(e.st==='loc'&&e.pt===d.pext){e.end+=7;e.h.push(ev(0,'Location prolongée d\'une semaine'));}});closeSheet();render(true);toast('Locations prolongées d\'une semaine');}
   else if(d.fav){var fe=byId(d.fav);fe.fav=!fe.fav;saveFavs();closeSheet();render(true);toast(fe.fav?'Ajouté aux favoris':'Retiré des favoris');}
   else if(d.keb)kebSheet(d.keb);
@@ -1147,8 +1486,9 @@ document.addEventListener('click',function(x){
   else if(d.act==='quick')quickSheet();
   else if(d.act==='more')moreSheet();
   else if(d.act==='alerts')openSheet('<h2>À traiter · '+alerts().length+'</h2><div class="list">'+alertRows(alerts())+'</div><button class="btn soft" data-act="close-sheet">Fermer</button>');
-  else if(d.act==='search'){closeSheet();S.tab='parc';S.mode='grid';render();var qi=$('q');if(qi)qi.focus();}
+  else if(d.act==='search'){closeSheet();S.tab=STAFF?'parc':'loc';S.mode='grid';render();var qi=$('q');if(qi)qi.focus();}
   else if(d.dur){rentDur=+d.dur;pickPatient();}
+  else if(d.act==='extend'&&ONLINE){mut('rentals/extend',{equipment:S.cur,days:7},'Retour repoussé d\'une semaine');}
   else if(d.act==='extend'){var xe=byId(S.cur);xe.end+=7;xe.h.push(ev(0,'Location prolongée d\'une semaine'));renderDetail();toast('Retour repoussé au '+fmt(xe.end));}
   else if(d.map){openMap(d.map);}
   else if(d.tag){openTag(d.tag);}
@@ -1159,8 +1499,11 @@ document.addEventListener('click',function(x){
   else if(d.act==='write-tag'){var tw=tagId;closeSheet();writeTagFor(tw);}
   else if(d.act==='copy-link'){var ke=byId(tagId);copyText(ke.link||defLink(ke),'Lien copié');}
   else if(d.act==='save-base')saveBase();
+  else if(d.act==='clear-tag'&&ONLINE){var cf=byId(tagId);closeSheet();mut('equipment/'+cf.id+'/link',{link:''},'Puce retirée de '+cf.ref);}
   else if(d.act==='clear-tag'){var ce=byId(tagId);ce.link='';ce.h.push(ev(0,'Puce NFC retirée'));saveLinks();closeSheet();renderSettings();toast('Puce retirée de '+ce.ref);}
+  else if(d.act==='clear-all'&&ONLINE){mut('links/reset',{mode:'clear'},'Toutes les puces sont effacées');}
   else if(d.act==='clear-all'){equip.forEach(function(e){e.link='';});saveLinks();renderSettings();toast('Toutes les puces sont effacées');}
+  else if(d.act==='restore-all'&&ONLINE){mut('links/reset',{mode:'default'},'Liens par défaut rétablis');}
   else if(d.act==='restore-all'){equip.forEach(function(e){e.link=defLink(e);});saveLinks();renderSettings();toast('Liens par défaut rétablis');}
   else if(d.state){openState(d.state);}
   else if(d.place){closeSheet();var same=S.tab==='parc'&&S.mode==='plan';S.place=d.place;S.tab='parc';S.mode='plan';render(same);}
@@ -1169,6 +1512,7 @@ document.addEventListener('click',function(x){
   else if(d.link){var lu=pendingLink;pendingLink=null;assignLink(byId(d.link),lu);}
   else if(d.open){closeSheet();openDetail(d.open);}
   else if(d.filter){closeSheet();S.filter=d.filter;S.mode='grid';S.tab='parc';render();}
+  else if(d.pick&&ONLINE){closeSheet();mut('rentals',{equipment:S.cur,patient:d.pick,pharmacy:rentFa,days:rentDur},'Location démarrée');}
   else if(d.pick){var e=byId(S.cur),p=pat(d.pick);e.st='loc';e.pt=p.id;e.since=0;e.end=rentDur;e.fa=rentFa;e.h.push(ev(0,'Livré chez '+p.n+' par la '+phar(rentFa).n+' pour '+DURS.filter(function(x){return x[0]===rentDur;})[0][1]));closeSheet();renderDetail();toast('Location démarrée');}
   else if(d.act==='scan'){closeSheet();startScan();}
   else if(d.act==='close-sheet')closeSheet();
@@ -1180,9 +1524,12 @@ document.addEventListener('click',function(x){
   else if(S.cur)act(d.act,byId(S.cur));
 });
 document.addEventListener('input',function(x){if(x.target.id==='q'){S.q=x.target.value;$('parc-list').innerHTML=parcRows();}});
-document.addEventListener('keydown',function(x){if((x.key==='Enter'||x.key===' ')&&x.target.classList&&x.target.classList.contains('card')){x.preventDefault();openDetail(x.target.dataset.open);return;}if(x.key==='Enter'&&x.target.id==='uid-in'){saveUid();return;}if(x.key==='Enter'&&x.target.id==='base-in'){saveBase();return;}if(x.key==='Escape'){if(sheet.classList.contains('open'))closeSheet();else if(S.cur)closeDetail();else if(setOpen)closeSettings();}});
-render();
-openFromHash();
+document.addEventListener('keydown',function(x){if((x.key==='Enter'||x.key===' ')&&x.target.classList&&x.target.classList.contains('card')){x.preventDefault();openDetail(x.target.dataset.open);return;}if(x.key==='Enter'&&x.target.id==='uid-in'){saveUid();return;}if(x.key==='Enter'&&x.target.id==='ref-in'){openRef();return;}if(x.key==='Enter'&&x.target.id==='base-in'){saveBase();return;}if(x.key==='Escape'){if(sheet.classList.contains('open'))closeSheet();else if(S.cur)closeDetail();else if(setOpen)closeSettings();}});
+if(ONLINE){
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('/materiel/sw.js',{scope:'/materiel/'}).catch(function(){});
+  srv('GET','me').then(function(r){setRole(r.me);if(r.me.must_change)showPwd(true);else enterApp();})
+    .catch(function(e){if(e.status===401)showLogin();else gateShell('<h1>Serveur injoignable</h1><p class="gsub">Vérifiez la connexion internet, puis réessayez.</p><button class="btn" data-act="reload">Réessayer</button>');});
+}else{buildTabs();render();openFromHash();}
 })();
 </script>
 </body>
