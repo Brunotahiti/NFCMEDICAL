@@ -532,7 +532,7 @@ async function api(req, res, route, url) {
     if (body.attest !== true) fail(400, 'Confirmez que la pharmacie détient l\'ordonnance.');
     const d = String(body.date || '');
     if (!isDate(d) || d > today() || d < addDays(today(), -400)) fail(400, 'Date d\'ordonnance invalide.');
-    const ref = String(body.ref || '').trim().slice(0, 40);
+    const ref = String(body.ref || '').trim().slice(0, 80);
     if (/[^\p{L}\p{N} ._\/-]/u.test(ref)) fail(400, 'Le numéro interne ne peut contenir que des lettres, chiffres, espaces et . _ / -');
     tx(() => {
       q('INSERT INTO prescriptions(rental_id,presc_date,ref,at,user_name) VALUES(?,?,?,?,?) ON CONFLICT(rental_id) DO UPDATE SET presc_date=excluded.presc_date, ref=excluded.ref, at=excluded.at, user_name=excluded.user_name')

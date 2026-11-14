@@ -16,6 +16,7 @@ struct WebAppView: UIViewRepresentable {
         config.setURLSchemeHandler(BundleSchemeHandler(), forURLScheme: "mediparc")
         config.userContentController.add(context.coordinator, name: "nfc")
         config.userContentController.add(context.coordinator, name: "map")
+        config.userContentController.add(context.coordinator, name: "save")
 
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.scrollView.contentInsetAdjustmentBehavior = .never
@@ -45,6 +46,7 @@ struct WebAppView: UIViewRepresentable {
             switch message.name {
             case "nfc": handleNFC(body)
             case "map": showMap(body)
+            case "save": saveFile(body)
             default: break
             }
         }
@@ -94,6 +96,26 @@ struct WebAppView: UIViewRepresentable {
             let host = UIHostingController(rootView: MapScreen(pins: pins, focus: body["focus"] as? String))
             host.modalPresentationStyle = .fullScreen
             root.present(host, animated: true)
+        }
+
+        /// {name, mime, data (base64)} : ordonnance scannée, proposée à « Enregistrer dans Fichiers »
+        /// (serveur de la pharmacie connecté dans l'app Fichiers). Le fichier n'est pas envoyé à MédiParc.
+        private func saveFile(_ body: [String: Any]) {
+            guard let b64 = body["data"] as? String, let data = Data(base64Encoded: b64),
+                  let root = topController() else { return }
+            let raw = (body["name"] as? String) ?? "ordonnance.pdf"
+            let name = raw.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-")
+            let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            let url = dir.appendingPathComponent(name)
+            do { try data.write(to: url, options: .completeFileProtection) } catch { return }
+            let share = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+            share.popoverPresentationController?.sourceView = root.view
+            share.completionWithItemsHandler = { [weak self] _, completed, _, _ in
+                try? FileManager.default.removeItem(at: dir)
+                self?.run("window.onNativeSaved(\(completed ? "true" : "false"))")
+            }
+            root.present(share, animated: true)
         }
 
         // MARK: Navigation
