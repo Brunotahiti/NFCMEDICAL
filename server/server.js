@@ -74,6 +74,14 @@ db.exec(`CREATE TABLE IF NOT EXISTS prescriptions(rental_id INTEGER PRIMARY KEY 
    l'ordonnance et en déclare seulement la vérification. Activer (DOCUMENTS_ENABLED=1) uniquement sur un hébergement certifié HDS. */
 const DOCUMENTS_ENABLED = process.env.DOCUMENTS_ENABLED === '1';
 const DOCS = path.join(DATA, 'documents');
+/* Photos horodatées du matériel (état à la livraison, au retour, panne). Pas de donnée médicale : stockées sur le serveur. */
+db.exec(`CREATE TABLE IF NOT EXISTS photos(id INTEGER PRIMARY KEY, equipment_id INTEGER NOT NULL REFERENCES equipment(id), rental_id INTEGER REFERENCES rentals(id),
+  at TEXT NOT NULL, user_id INTEGER, user_name TEXT NOT NULL DEFAULT '', kind TEXT NOT NULL DEFAULT 'etat', lat REAL, lon REAL, accuracy REAL, file TEXT NOT NULL, size INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS photos_eq ON photos(equipment_id, at);`);
+const PHOTOS = path.join(DATA, 'photos');
+fs.mkdirSync(PHOTOS, { recursive: true });
+if (!db.prepare('PRAGMA table_info(events)').all().some(c => c.name === 'photo_id')) db.exec('ALTER TABLE events ADD COLUMN photo_id INTEGER');
+const PHOTO_KINDS = { livraison: 'livraison', retour: 'retour', etat: 'état', panne: 'panne' };
 for (const [col, def] of [['phone', "TEXT NOT NULL DEFAULT ''"], ['anonymized', 'INTEGER NOT NULL DEFAULT 0']])
   if (!db.prepare('PRAGMA table_info(patients)').all().some(c => c.name === col)) db.exec('ALTER TABLE patients ADD COLUMN ' + col + ' ' + def);
 fs.mkdirSync(DOCS, { recursive: true });
@@ -266,6 +274,9 @@ function purge() {
         AND (EXISTS (SELECT 1 FROM rentals r WHERE r.patient_id=p.id) OR p.created_at < ?)`).all(limit, limit);
       for (const p of old) q("UPDATE patients SET name=?, address='', phone='', lat=NULL, lon=NULL, anonymized=1 WHERE id=?").run(enc('Bénéficiaire anonymisé'), p.id);
       q('DELETE FROM scans WHERE at < ?').run(limit);
+      for (const x of q('SELECT p.id, p.file FROM photos p JOIN rentals r ON r.id=p.rental_id WHERE r.end_date IS NOT NULL AND r.end_date < ?').all(limit)) {
+        q('DELETE FROM photos WHERE id=?').run(x.id); q('UPDATE events SET photo_id=NULL WHERE photo_id=?').run(x.id); try { fs.unlinkSync(path.join(PHOTOS, x.file)); } catch (e) {}
+      }
       q("UPDATE prescriptions SET ref='' WHERE rental_id IN (SELECT id FROM rentals WHERE end_date IS NOT NULL AND end_date < ?)").run(limit);
       if (old.length) console.log(old.length + ' bénéficiaire(s) anonymisé(s) (conservation 3 ans).');
     });
@@ -360,7 +371,7 @@ function eventTexts(rows) {
   const names = patientNames([...new Set(rp.values())]);
   return rows.map(r => r.text.includes('{p}') ? r.text.split('{p}').join(names.get(rp.get(r.rental_id)) || 'bénéficiaire') : r.text);
 }
-function addEvent(eqId, rentalId, text, u) { q('INSERT INTO events(equipment_id,rental_id,at,text,user_name) VALUES(?,?,?,?,?)').run(eqId, rentalId || null, nowStamp(), text, u ? u.name : ''); }
+function addEvent(eqId, rentalId, text, u, photoId) { q('INSERT INTO events(equipment_id,rental_id,at,text,user_name,photo_id) VALUES(?,?,?,?,?,?)').run(eqId, rentalId || null, nowStamp(), text, u ? u.name : '', photoId || null); }
 function durLabel(n) { return n % 7 === 0 ? (n / 7 === 1 ? '1 semaine' : n / 7 + ' semaines') : n === 90 ? '3 mois' : n + ' jours'; }
 
 function state(u) {
@@ -384,6 +395,11 @@ function state(u) {
     : q(`SELECT * FROM (SELECT s.*, ROW_NUMBER() OVER (PARTITION BY s.equipment_id ORDER BY s.at DESC, s.id DESC) rn FROM scans s
          JOIN rentals r ON r.id=s.rental_id WHERE r.pharmacy_id=?) WHERE rn=1`).all(ph);
   const scans = new Map(scRows.map(s => [s.equipment_id, s]));
+  const phRows = staff
+    ? q(`SELECT * FROM (SELECT p.*, ROW_NUMBER() OVER (PARTITION BY equipment_id ORDER BY at DESC, id DESC) rn FROM photos p) WHERE rn<=6`).all()
+    : q(`SELECT * FROM (SELECT p.*, ROW_NUMBER() OVER (PARTITION BY p.equipment_id ORDER BY p.at DESC, p.id DESC) rn FROM photos p
+         JOIN rentals r ON r.id=p.rental_id WHERE r.pharmacy_id=?) WHERE rn<=6`).all(ph);
+  const photos = new Map(); for (const x of phRows) { if (!photos.has(x.equipment_id)) photos.set(x.equipment_id, []); photos.get(x.equipment_id).push({ id: x.id, at: x.at, by: x.user_name, kind: x.kind, lat: x.lat, lon: x.lon }); }
   const presc = new Map(q(`SELECT p.* FROM prescriptions p JOIN rentals r ON r.id=p.rental_id WHERE r.end_date IS NULL ${staff ? '' : 'AND r.pharmacy_id=?'}`)
     .all(...(staff ? [] : [ph])).map(p => [p.rental_id, { date: p.presc_date, ref: p.ref, at: p.at, by: p.user_name }]));
   const docs = new Map();
@@ -399,7 +415,8 @@ function state(u) {
       patient_id: e.patient_id || null, pharmacy_id: e.pharmacy_id || null, planned_end: e.planned_end || null,
       rental_id: e.rental_id || null, documents: e.rental_id ? (docs.get(e.rental_id) || []) : [],
       prescription: e.rental_id ? (presc.get(e.rental_id) || null) : null,
-      events: (evs.get(e.id) || []).map(v => ({ id: v.id, at: v.at, text: v.text, by: v.user_name })),
+      photos: photos.get(e.id) || [],
+      events: (evs.get(e.id) || []).map(v => ({ id: v.id, at: v.at, text: v.text, by: v.user_name, photo: v.photo_id || null })),
       last_scan: scans.has(e.id) ? (s => ({ at: s.at, by: s.user_name, lat: s.lat, lon: s.lon, accuracy: s.accuracy, source: s.source }))(scans.get(e.id)) : null
     };
     if (staff) Object.assign(o, { buy_price: e.buy_price, buy_estimated: !!e.buy_estimated, rented_days: e.prior_days + (closedDays.get(e.id) || 0), link: e.link });
@@ -451,7 +468,7 @@ function billingCsv(b) {
 /* ---------- API ---------- */
 async function api(req, res, route, url) {
   const m = req.method;
-  const upload = m === 'POST' && /^rentals\/\d+\/documents$/.test(route);
+  const upload = m === 'POST' && /^(rentals\/\d+\/documents|equipment\/\d+\/photos)$/.test(route);
   if (m === 'POST') {
     if (upload ? req.headers['x-mediparc'] !== '1' : !/application\/json/.test(req.headers['content-type'] || '')) fail(415, 'Format de requête non accepté.');
     const origin = req.headers.origin;
@@ -494,12 +511,15 @@ async function api(req, res, route, url) {
   let mm;
   if ((mm = route.match(/^equipment\/(\d+)$/)) && m === 'GET') {
     const e = equipmentFor(u, mm[1]);
-    const evs = isStaff(u) ? q('SELECT id,at,text,rental_id,user_name by_ FROM events WHERE equipment_id=? ORDER BY at DESC, id DESC').all(e.id)
-        : q('SELECT ev.id,ev.at,ev.text,ev.rental_id,ev.user_name by_ FROM events ev JOIN rentals r ON r.id=ev.rental_id WHERE ev.equipment_id=? AND r.pharmacy_id=? ORDER BY ev.at DESC, ev.id DESC').all(e.id, u.pharmacy_id);
+    const evs = isStaff(u) ? q('SELECT id,at,text,rental_id,photo_id,user_name by_ FROM events WHERE equipment_id=? ORDER BY at DESC, id DESC').all(e.id)
+        : q('SELECT ev.id,ev.at,ev.text,ev.rental_id,ev.photo_id,ev.user_name by_ FROM events ev JOIN rentals r ON r.id=ev.rental_id WHERE ev.equipment_id=? AND r.pharmacy_id=? ORDER BY ev.at DESC, ev.id DESC').all(e.id, u.pharmacy_id);
     const sc = isStaff(u) ? q('SELECT at,user_name,lat,lon,accuracy,source FROM scans WHERE equipment_id=? ORDER BY at DESC, id DESC LIMIT 20').all(e.id)
       : q('SELECT s.at,s.user_name,s.lat,s.lon,s.accuracy,s.source FROM scans s JOIN rentals r ON r.id=s.rental_id WHERE s.equipment_id=? AND r.pharmacy_id=? ORDER BY s.at DESC LIMIT 20').all(e.id, u.pharmacy_id);
+    const pho = isStaff(u) ? q('SELECT id,at,user_name,kind,lat,lon FROM photos WHERE equipment_id=? ORDER BY at DESC, id DESC').all(e.id)
+      : q('SELECT p.id,p.at,p.user_name,p.kind,p.lat,p.lon FROM photos p JOIN rentals r ON r.id=p.rental_id WHERE p.equipment_id=? AND r.pharmacy_id=? ORDER BY p.at DESC').all(e.id, u.pharmacy_id);
     const tx2 = eventTexts(evs);
-    return json(req, res, 200, { events: evs.map((v, i) => ({ id: v.id, at: v.at, text: tx2[i], by: v.by_ })), scans: sc });
+    return json(req, res, 200, { events: evs.map((v, i) => ({ id: v.id, at: v.at, text: tx2[i], by: v.by_, photo: v.photo_id || null })), scans: sc,
+      photos: pho.map(x => ({ id: x.id, at: x.at, by: x.user_name, kind: x.kind, lat: x.lat, lon: x.lon })) });
   }
   if ((mm = route.match(/^equipment\/(\d+)\/action$/)) && m === 'POST') {
     needStaff(u);
@@ -589,6 +609,34 @@ async function api(req, res, route, url) {
     const src = ['nfc', 'lien', 'saisie'].includes(body.source) ? body.source : 'nfc';
     q('INSERT INTO scans(equipment_id,rental_id,at,user_id,user_name,lat,lon,accuracy,source) VALUES(?,?,?,?,?,?,?,?,?)')
       .run(e.id, r ? r.id : null, nowStamp(), u.id, u.name, lat, lat === null ? null : lon, lat === null ? null : num(body.accuracy, 0, 1e6), src);
+    return json(req, res, 200, { ok: true });
+  }
+  if ((mm = route.match(/^equipment\/(\d+)\/photos$/)) && m === 'POST') {
+    const e = equipmentFor(u, mm[1]), r = openRental(e.id);
+    const kind = PHOTO_KINDS[req.headers['x-kind']] ? req.headers['x-kind'] : 'etat';
+    const buf = await readRaw(req, 8 * 1024 * 1024);
+    const t = sniff(buf); if (!t || !/^image\/(jpeg|png)$/.test(t[0])) fail(415, 'Envoyez une photo (JPEG ou PNG).');
+    const num = (v, lo, hi) => { const n = parseFloat(v); return isFinite(n) && n >= lo && n <= hi ? n : null; };
+    const lat = num(req.headers['x-lat'], -90, 90), lon = lat === null ? null : num(req.headers['x-lon'], -180, 180);
+    const file = crypto.randomBytes(16).toString('hex') + t[1];
+    fs.writeFileSync(path.join(PHOTOS, file), buf, { mode: 0o600 });
+    const at = nowStamp();
+    const id = Number(q('INSERT INTO photos(equipment_id,rental_id,at,user_id,user_name,kind,lat,lon,accuracy,file,size) VALUES(?,?,?,?,?,?,?,?,?,?,?)')
+      .run(e.id, r ? r.id : null, at, u.id, u.name, kind, lat, lon, lat === null ? null : num(req.headers['x-acc'], 0, 1e6), file, buf.length).lastInsertRowid);
+    addEvent(e.id, r ? r.id : null, 'Photo du matériel (' + PHOTO_KINDS[kind] + ')', u, id);
+    return json(req, res, 200, { id, at });
+  }
+  if ((mm = route.match(/^photos\/(\d+)$/)) && m === 'GET') {
+    const x = q('SELECT p.*, r.pharmacy_id FROM photos p LEFT JOIN rentals r ON r.id=p.rental_id WHERE p.id=?').get(Number(mm[1]));
+    if (!x || (!isStaff(u) && x.pharmacy_id !== u.pharmacy_id)) fail(404, 'Photo introuvable.');
+    return send(req, res, 200, fs.readFileSync(path.join(PHOTOS, x.file)), /\.png$/.test(x.file) ? 'image/png' : 'image/jpeg',
+      { 'Cache-Control': 'private, max-age=86400', 'Content-Disposition': 'inline; filename="photo-' + x.id + (/\.png$/.test(x.file) ? '.png' : '.jpg') + '"', 'Content-Security-Policy': "sandbox; default-src 'none'; img-src 'self'" });
+  }
+  if ((mm = route.match(/^photos\/(\d+)\/delete$/)) && m === 'POST') {
+    needStaff(u);
+    const x = q('SELECT * FROM photos WHERE id=?').get(Number(mm[1])); if (!x) fail(404, 'Photo introuvable.');
+    tx(() => { q('DELETE FROM photos WHERE id=?').run(x.id); q('UPDATE events SET photo_id=NULL WHERE photo_id=?').run(x.id); addEvent(x.equipment_id, x.rental_id, 'Photo du ' + x.at.split(' ')[0].split('-').reverse().join('/') + ' supprimée', u); });
+    try { fs.unlinkSync(path.join(PHOTOS, x.file)); } catch (e) {}
     return json(req, res, 200, { ok: true });
   }
   if ((mm = route.match(/^rentals\/(\d+)\/documents$/)) && m === 'POST') {

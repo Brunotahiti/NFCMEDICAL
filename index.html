@@ -293,6 +293,12 @@ a.btn{text-decoration:none}
 .infobox>svg{width:22px;height:22px;flex:none;color:var(--ok);margin-top:1px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .infobox b{display:block;font-weight:700;margin-bottom:2px}
 .sheet .infobox{text-align:left}
+.tlph{display:block;margin:6px 0 0 34px;width:min(220px,70%);aspect-ratio:4/3;border-radius:12px;overflow:hidden;background:var(--surface-2);box-shadow:var(--shadow)}
+.tlph img{width:100%;height:100%;object-fit:cover;display:block}
+.gal{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.gph{position:relative;display:block;aspect-ratio:1;border-radius:12px;overflow:hidden;background:var(--surface-2)}
+.gph img{width:100%;height:100%;object-fit:cover;display:block}
+.gph span{position:absolute;left:0;right:0;bottom:0;padding:3px 6px;font-size:10.5px;font-weight:600;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.65))}
 .duo{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .duo .btn{padding:0 8px;font-size:15px}
 .scanprev{display:flex;gap:12px;align-items:center;background:var(--bg);border-radius:16px;padding:12px 14px;text-align:left}
@@ -527,6 +533,7 @@ input.uid::placeholder{color:var(--muted);opacity:.6}
   <input type="file" id="scan-in" accept="image/*" capture="environment" hidden>
   <input type="file" id="import-in" hidden>
   <input type="file" id="view-in" hidden>
+  <input type="file" id="photo-in" accept="image/*" capture="environment" hidden>
 </div>
 
 <script>
@@ -578,7 +585,7 @@ var OKC='<svg class="ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill
 var PIC={loc:'cal',dispo:'okc',desinf:'drop',maint:'gear'};
 function secH(k,t,r){return '<div class="sec-h"><h2>'+ic(k)+t+'</h2>'+(r||'')+'</div>';}
 function badge(n){return '<span class="badge num">'+n+'</span>';}
-function hIcon(t){return /^Ordonnance|ordonnance/.test(t)?'clip':/^Livr/.test(t)?'truck':/^Retour/.test(t)?'ret':/^Désinf/.test(t)?'drop':/^Contrôle|conforme/.test(t)?'clip':'gear';}
+function hIcon(t){return /^Photo/.test(t)?'cam':/^Ordonnance|ordonnance/.test(t)?'clip':/^Livr/.test(t)?'truck':/^Retour/.test(t)?'ret':/^Désinf/.test(t)?'drop':/^Contrôle|conforme/.test(t)?'clip':'gear';}
 function svg(k){return '<svg viewBox="0 0 24 24">'+ICON[k]+'</svg>';}
 
 var STATUS={loc:{l:'En location',c:'p-loc',seg:'--seg-loc'},dispo:{l:'Disponible',c:'p-dispo',seg:'--seg-dispo'},
@@ -984,7 +991,7 @@ function renderDetail(){
   if(e.st!=='maint')acts+='<button class="btn danger" data-act="fault">'+svg('warn')+'Signaler une panne</button>';
   }
   var chk=e.chk<0?'<dd class="late">En retard de '+(-e.chk)+' j</dd>':'<dd>'+dateOf(e.chk).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})+'</dd>';
-  var hist=e.h.slice().sort(function(a,b){return b.d-a.d||b.q-a.q;}).map(function(h,i){return '<li'+(i?'':' class="first"')+'><time>'+rel(h.d)+(h.t?' · '+h.t.replace(':',' h '):'')+(h.by&&ONLINE?' · '+esc(h.by):'')+'</time><div class="evt">'+ic(hIcon(h.txt))+'<span>'+esc(h.txt)+'</span>'+(i?'':OKC)+'</div></li>';}).join('');
+  var hist=e.h.slice().sort(function(a,b){return b.d-a.d||b.q-a.q;}).map(function(h,i){return '<li'+(i?'':' class="first"')+'><time>'+rel(h.d)+(h.t?' · '+h.t.replace(':',' h '):'')+(h.by&&ONLINE?' · '+esc(h.by):'')+'</time><div class="evt">'+ic(hIcon(h.txt))+'<span>'+esc(h.txt)+'</span>'+(i?'':OKC)+'</div>'+(h.pid?'<a class="tlph" href="api/photos/'+h.pid+'" target="_blank" rel="noopener"><img src="api/photos/'+h.pid+'" alt="Photo du matériel" loading="lazy"></a>':'')+'</li>';}).join('');
   detail.innerHTML='<button class="back" data-act="back" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button>'
     +'<div class="dscroll"><div class="dhero">'+(e.ph?'<div class="bg" style="background-image:url('+src(e)+')"></div>':'')+img(e,e.n)+pill(e)+'</div>'
     +'<div class="dbody pad"><div class="dhead"><h2>'+esc(e.n)+'</h2><p>'+esc(e.m)+' · '+e.ref+'</p></div>'
@@ -998,6 +1005,7 @@ function renderDetail(){
     +'<div><dt>'+ic('coins')+'Tarif de location</dt><dd class="num">'+xpf(e.px)+' / semaine</dd></div>'
     +'<div><dt>'+ic('tool')+'Prochain contrôle</dt>'+chk+'</div>'+scanRow(e)+'</dl>'
     +docsSection(e)
+    +photosSection(e)
     +(STAFF?'<section>'+secH('coins','Rentabilité')+profitCard(e)+'</section>':'')
     +'<section>'+secH('pin','Localisation')+'<div class="mapcard">'+mapSvg([{id:placeOf(e),n:null}],placeOf(e),false)+'<div class="mapfoot"><div><b>'+esc(place(placeOf(e)).n)+'</b><span>'+esc(place(placeOf(e)).a)+'</span></div>'+mapBtn(placeOf(e))+'</div></div></section>'
     +'<section>'+secH('hist','Historique','<span>'+e.h.length+' événements</span>')+'<ol class="tl">'+hist+'</ol></section></div></div>'
@@ -1200,8 +1208,8 @@ function applyState(st){
   var favs={};try{JSON.parse(localStorage.getItem(FKEY)||'[]').forEach(function(id){favs[id]=1;});}catch(x){}
   equip=st.equipment.map(function(e){var id=String(e.id);return {id:id,ref:e.ref,ph:e.photo,k:e.kind,n:e.name,m:e.brand,cat:e.catalog,st:e.status,
     pt:e.patient_id?String(e.patient_id):null,fa:e.pharmacy_id?String(e.pharmacy_id):null,since:off(e.since),end:e.planned_end?off(e.planned_end):null,chk:off(e.next_check),
-    px:e.week_price,buy:e.buy_price||0,days:e.rented_days||0,est:!!e.buy_estimated,link:e.link||'',rid:e.rental_id,docs:e.documents||[],prescription:e.prescription,scan:e.last_scan,fav:!!favs[id],
-    h:e.events.map(function(v){return {d:off(v.at),txt:v.text,q:v.id,t:v.at.slice(11,16),by:v.by};})};});
+    px:e.week_price,buy:e.buy_price||0,days:e.rented_days||0,est:!!e.buy_estimated,link:e.link||'',rid:e.rental_id,docs:e.documents||[],prescription:e.prescription,photos:e.photos||[],scan:e.last_scan,fav:!!favs[id],
+    h:e.events.map(function(v){return {d:off(v.at),txt:v.text,q:v.id,t:v.at.slice(11,16),by:v.by,pid:v.photo};})};});
   DONE=st.closed.map(function(c){var e=byId(String(c.equipment.id))||{id:String(c.equipment.id),ref:c.equipment.ref,n:c.equipment.name,ph:c.equipment.photo,k:c.equipment.kind,px:c.equipment.week_price,st:'dispo',stub:true};
     var s=off(c.start),en=off(c.end);return {e:e,p:pat(String(c.patient_id))||{n:'—'},fa:phar(String(c.pharmacy_id))||{n:'—'},start:s,end:en,dur:en-s,sum:c.amount};});
   if(!phar(rentFa)&&PHARM[0])rentFa=PHARM[0].id;
@@ -1271,13 +1279,48 @@ function scanRow(e){
     +(s.lat!=null?'<a class="more geo" target="_blank" rel="noopener" href="'+mapsLink(s.lat,s.lon,e.ref)+'">'+ic('pin')+'Position ±'+Math.max(1,Math.round(s.accuracy||0))+' m</a>':'<small class="dsub">Position non partagée</small>')+'</dd></div>';
 }
 function loadHistory(id){
-  srv('GET','equipment/'+id).then(function(r){var e=byId(id);if(!e)return;e.h=r.events.map(function(v){return {d:off(v.at),txt:v.text,q:v.id,t:v.at.slice(11,16),by:v.by};});e.scans=r.scans;if(S.cur===id)renderDetail();}).catch(function(){});
+  srv('GET','equipment/'+id).then(function(r){var e=byId(id);if(!e)return;e.h=r.events.map(function(v){return {d:off(v.at),txt:v.text,q:v.id,t:v.at.slice(11,16),by:v.by,pid:v.photo};});e.scans=r.scans;if(r.photos)e.photos=r.photos;if(S.cur===id)renderDetail();}).catch(function(){});
 }
 
 /* Ordonnances */
 /* Ordonnance : la pharmacie conserve le document et déclare l'avoir vérifiée (aucun fichier envoyé, serveur non HDS). */
 var DOCS_ON=false;
 function fmtDate(d){return new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});}
+/* ---------- Photos horodatées du matériel ---------- */
+var PKINDS=[['livraison','Livraison'],['retour','Retour'],['etat','État'],['panne','Panne']],photoKind='etat',photoBlob=null;
+function photosSection(e){
+  if(!ONLINE)return '';
+  var ph=e.photos||[];
+  return '<section>'+secH('cam','Photos du matériel',ph.length?badge(ph.length):'')
+    +(ph.length?'<div class="gal">'+ph.map(function(x){return '<a class="gph" href="api/photos/'+x.id+'" target="_blank" rel="noopener"><img src="api/photos/'+x.id+'" alt="Photo du '+esc(x.at)+'" loading="lazy"><span>'+esc((PKINDS.filter(function(k){return k[0]===x.kind;})[0]||['','État'])[1])+' · '+x.at.slice(8,10)+'/'+x.at.slice(5,7)+' '+x.at.slice(11,16)+'</span></a>';}).join('')+'</div>':'<div class="list"><div class="empty">Aucune photo pour cet équipement.</div></div>')
+    +'<button class="btn prog" data-act="take-photo">'+svg('cam')+'Prendre une photo horodatée</button>'
+    +'<p class="note">La date, l\'heure, la référence et l\'auteur sont incrustés sur la photo ; l\'heure du serveur et la position sont aussi enregistrées. Photographiez uniquement le matériel.</p></section>';
+}
+function stampPhoto(f,e,pos){
+  return new Promise(function(res,rej){var im=new Image(),u=URL.createObjectURL(f);
+    im.onload=function(){var k=Math.min(1,1600/Math.max(im.naturalWidth,im.naturalHeight)),c=document.createElement('canvas'),w=Math.round(im.naturalWidth*k),h=Math.round(im.naturalHeight*k);
+      c.width=w;c.height=h;var g=c.getContext('2d');g.drawImage(im,0,0,w,h);URL.revokeObjectURL(u);
+      var t=new Date(),fs2=Math.max(14,Math.round(w/42)),pad=Math.round(fs2*.6);
+      var l1=t.toLocaleDateString('fr-FR')+' '+t.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})+' · '+e.ref;
+      var l2=(ME?ME.name:'')+(pos?' · '+pos.lat.toFixed(5)+', '+pos.lon.toFixed(5)+' (±'+pos.acc+' m)':'')+' · '+(PKINDS.filter(function(x){return x[0]===photoKind;})[0][1]);
+      var bh=fs2*2+pad*3;g.fillStyle='rgba(0,0,0,.6)';g.fillRect(0,h-bh,w,bh);g.fillStyle='#fff';g.textBaseline='top';
+      g.font='600 '+fs2+'px sans-serif';g.fillText(l1,pad,h-bh+pad);g.font=fs2*.85+'px sans-serif';g.fillText(l2,pad,h-bh+pad*2+fs2);
+      c.toBlob(function(b){b?res(b):rej(new Error('Photo illisible'));},'image/jpeg',.85);};
+    im.onerror=function(){URL.revokeObjectURL(u);rej(new Error('Ce fichier n\'est pas une photo lisible.'));};im.src=u;});
+}
+function photoSheet(){
+  var e=byId(S.cur);if(!e)return;
+  openSheet('<h2>Photo du matériel</h2><p class="sub">'+esc(e.n)+' · '+esc(e.ref)+'</p><label class="fld" style="text-align:center">Type de photo</label><div class="durs">'
+    +PKINDS.map(function(k){return '<button class="chip" data-pkind="'+k[0]+'" aria-pressed="'+(photoKind===k[0])+'">'+k[1]+'</button>';}).join('')+'</div>'
+    +'<button class="btn" data-act="photo-shoot">'+svg('cam')+'Prendre la photo</button><button class="btn soft" data-act="close-sheet">Annuler</button>');
+}
+function onPhotoFile(f){
+  var e=byId(S.cur);if(!e||!f)return;closeSheet();toast('Horodatage de la photo…');
+  getPos(function(pos){stampPhoto(f,e,pos).then(function(b){
+    var h={'X-Mediparc':'1','X-Kind':photoKind,'Content-Type':'image/jpeg'};if(pos){h['X-Lat']=String(pos.lat);h['X-Lon']=String(pos.lon);h['X-Acc']=String(pos.acc);}
+    return fetch(API+'equipment/'+e.id+'/photos',{method:'POST',credentials:'same-origin',headers:h,body:b});}).then(handleResp)
+    .then(loadState).then(function(){loadHistory(e.id);refresh();toast('Photo enregistrée');}).catch(errToast);});
+}
 function docsSection(e){
   if(!ONLINE||e.st!=='loc'||!e.rid)return '';
   var pr=e.prescription;
@@ -1408,7 +1451,7 @@ function viewPresc(pick){
    .catch(function(err){if(err&&err.name==='AbortError')return;toast(err&&err.message?err.message:'Lecture du dossier impossible');});
 }
 window.onNativeSaved=function(ok){if(ok)scanSaved('sur le serveur de la pharmacie');};
-document.addEventListener('change',function(x){if(x.target.id==='view-in'&&x.target.files&&x.target.files[0]){var ve=byId(S.cur);if(ve)viewSheet(ve,[x.target.files[0]],'');return;}if((x.target.id==='scan-in'||x.target.id==='import-in')&&x.target.files&&x.target.files[0])onScanFile(x.target.files[0]);});
+document.addEventListener('change',function(x){if(x.target.id==='photo-in'&&x.target.files&&x.target.files[0]){onPhotoFile(x.target.files[0]);return;}if(x.target.id==='view-in'&&x.target.files&&x.target.files[0]){var ve=byId(S.cur);if(ve)viewSheet(ve,[x.target.files[0]],'');return;}if((x.target.id==='scan-in'||x.target.id==='import-in')&&x.target.files&&x.target.files[0])onScanFile(x.target.files[0]);});
 function prescSheet(prefRef){
   var e=byId(S.cur);if(!e)return;var pr=e.prescription||{},refv=typeof prefRef==='string'&&prefRef?prefRef:(pr.ref||''),t=new Date(),iso=t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2);
   openSheet('<h2>Confirmer l\'ordonnance</h2><p class="sub">'+esc(e.n)+' · '+esc(pat(e.pt).n)+'</p>'+'<div class="infobox">'+svg('cross')+'<div><b>Aucune ordonnance n\'est stockée en ligne.</b><span>Les ordonnances sont accessibles via le programme, qui va les récupérer sur votre serveur local. Seule la vérification (date, numéro interne, auteur) est enregistrée en ligne.</span></div></div>'+'<form id="f-presc" class="fform" novalidate>'
@@ -1593,7 +1636,7 @@ function act(a,e){
   renderDetail();
 }
 document.addEventListener('click',function(x){
-  var t=x.target.closest('[data-opt],[data-fmonth],[data-ffa],[data-deldoc],[data-deldocok],[data-user],[data-ureset],[data-uactive],[data-copy],[data-tab],[data-open],[data-act],[data-filter],[data-pick],[data-link],[data-place],[data-mode],[data-state],[data-tag],[data-map],[data-dur],[data-hist],[data-fav],[data-keb],[data-progid],[data-ltab],[data-extend],[data-pkeb],[data-zone],[data-pext],[data-cdays],[data-scroll],[data-rtab],[data-export],[data-fa],[data-rfa]');if(!t)return;
+  var t=x.target.closest('[data-opt],[data-fmonth],[data-ffa],[data-deldoc],[data-deldocok],[data-user],[data-ureset],[data-pkind],[data-uactive],[data-copy],[data-tab],[data-open],[data-act],[data-filter],[data-pick],[data-link],[data-place],[data-mode],[data-state],[data-tag],[data-map],[data-dur],[data-hist],[data-fav],[data-keb],[data-progid],[data-ltab],[data-extend],[data-pkeb],[data-zone],[data-pext],[data-cdays],[data-scroll],[data-rtab],[data-export],[data-fa],[data-rfa]');if(!t)return;
   var d=t.dataset;
   if(d.opt!==undefined){var grp=t.parentNode;[].forEach.call(grp.querySelectorAll('.chip'),function(c){c.setAttribute('aria-pressed',String(c===t));});return;}
   if(d.fmonth){fState.month=shiftMonth(fState.month,+d.fmonth);fData=null;render(true);return;}
@@ -1607,6 +1650,9 @@ document.addEventListener('click',function(x){
   if(d.act==='fact-copy'){copyText(factCsv(fData),'Facturation copiée pour un tableur');return;}
   if(d.act==='presc'){prescSheet();return;}
   if(d.act==='scan-presc'){var si=$('scan-in');si.value='';si.click();return;}
+  if(d.act==='take-photo'){photoSheet();return;}
+  if(d.act==='photo-shoot'){var pi=$('photo-in');pi.value='';pi.click();return;}
+  if(d.pkind){photoKind=d.pkind;photoSheet();return;}
   if(d.act==='view-presc'){viewPresc(false);return;}
   if(d.act==='view-pick-dir'){closeSheet();viewPresc(true);return;}
   if(d.act==='import-presc'){var ii=$('import-in');ii.value='';ii.click();return;}

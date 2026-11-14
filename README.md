@@ -71,6 +71,8 @@ Adresse : `https://manaprocess.cloud/materiel/`. Tout le monde (iPhone, Android,
 - **Android** : Chrome lit et écrit les puces NFC directement (Web NFC) et propose d'installer l'application sur l'écran d'accueil.
 - **Facturation** : par mois et par pharmacie, jours de location dans le mois × tarif hebdomadaire ÷ 7 (le jour du retour n'est pas facturé). Export CSV pour Excel ou un logiciel de facturation. Le mois en cours est prévisionnel.
 
+- **Photos horodatées du matériel** : depuis la fiche, « Prendre une photo horodatée » (livraison, retour, état, panne). Date, heure, référence, auteur et position sont incrustés sur l'image ; le serveur enregistre aussi sa propre heure et la position. Chaque photo apparaît aussi en vignette dans l'historique de l'équipement, à sa date. Les photos prises pendant une location sont visibles par la pharmacie concernée et supprimées 3 ans après la fin de cette location.
+
 ### Données personnelles
 
 - **Aucune information médicale** : ni ordonnance, ni pathologie, ni motif, ni prescripteur. Un bénéficiaire = nom, adresse, commune, téléphone.
