@@ -68,6 +68,11 @@ CREATE TABLE IF NOT EXISTS documents(id INTEGER PRIMARY KEY, rental_id INTEGER N
   filename TEXT NOT NULL, mime TEXT NOT NULL, size INTEGER NOT NULL, file TEXT NOT NULL, at TEXT NOT NULL, user_name TEXT NOT NULL DEFAULT '');
 CREATE INDEX IF NOT EXISTS documents_r ON documents(rental_id);
 `);
+db.exec(`CREATE TABLE IF NOT EXISTS prescriptions(rental_id INTEGER PRIMARY KEY REFERENCES rentals(id), presc_date TEXT NOT NULL, ref TEXT NOT NULL DEFAULT '',
+  at TEXT NOT NULL, user_name TEXT NOT NULL DEFAULT '');`);
+/* Dépôt de fichiers d'ordonnance : désactivé par défaut (serveur non certifié HDS). La pharmacie conserve
+   l'ordonnance et en déclare seulement la vérification. Activer (DOCUMENTS_ENABLED=1) uniquement sur un hébergement certifié HDS. */
+const DOCUMENTS_ENABLED = process.env.DOCUMENTS_ENABLED === '1';
 const DOCS = path.join(DATA, 'documents');
 fs.mkdirSync(DOCS, { recursive: true });
 
@@ -299,6 +304,8 @@ function state(u) {
     : q(`SELECT * FROM (SELECT s.*, ROW_NUMBER() OVER (PARTITION BY s.equipment_id ORDER BY s.at DESC, s.id DESC) rn FROM scans s
          JOIN rentals r ON r.id=s.rental_id WHERE r.pharmacy_id=?) WHERE rn=1`).all(ph);
   const scans = new Map(scRows.map(s => [s.equipment_id, s]));
+  const presc = new Map(q(`SELECT p.* FROM prescriptions p JOIN rentals r ON r.id=p.rental_id WHERE r.end_date IS NULL ${staff ? '' : 'AND r.pharmacy_id=?'}`)
+    .all(...(staff ? [] : [ph])).map(p => [p.rental_id, { date: p.presc_date, ref: p.ref, at: p.at, by: p.user_name }]));
   const docs = new Map();
   for (const d of q(`SELECT d.id, d.rental_id, d.filename, d.mime, d.size, d.at, d.user_name FROM documents d JOIN rentals r ON r.id=d.rental_id
       WHERE r.end_date IS NULL ${staff ? '' : 'AND r.pharmacy_id=?'} ORDER BY d.at`).all(...(staff ? [] : [ph]))) {
@@ -311,6 +318,7 @@ function state(u) {
       status: e.status, since: e.status === 'loc' && e.start_date ? e.start_date : e.status_since, next_check: e.next_check,
       patient_id: e.patient_id || null, pharmacy_id: e.pharmacy_id || null, planned_end: e.planned_end || null,
       rental_id: e.rental_id || null, documents: e.rental_id ? (docs.get(e.rental_id) || []) : [],
+      prescription: e.rental_id ? (presc.get(e.rental_id) || null) : null,
       events: (evs.get(e.id) || []).map(v => ({ id: v.id, at: v.at, text: v.text, by: v.user_name })),
       last_scan: scans.has(e.id) ? (s => ({ at: s.at, by: s.user_name, lat: s.lat, lon: s.lon, accuracy: s.accuracy, source: s.source }))(scans.get(e.id)) : null
     };
@@ -324,7 +332,7 @@ function state(u) {
   const pIds = new Set(equipment.filter(e => e.patient_id).map(e => e.patient_id).concat(closed.map(c => c.patient_id)));
   const patients = (staff ? q('SELECT * FROM patients ORDER BY name').all() : q('SELECT * FROM patients ORDER BY name').all().filter(p => pIds.has(p.id)))
     .map(p => ({ id: p.id, name: p.name, address: p.address, commune: p.commune, care: p.care, lat: p.lat, lon: p.lon }));
-  return { me: publicUser(u), today: T, link_base: setting('link_base', PUBLIC_URL), communes: Object.keys(COMMUNES), pharmacies, patients, equipment, closed };
+  return { me: publicUser(u), documents_enabled: DOCUMENTS_ENABLED, today: T, link_base: setting('link_base', PUBLIC_URL), communes: Object.keys(COMMUNES), pharmacies, patients, equipment, closed };
 }
 
 /* Facturation : jours de location compris dans le mois (le jour du retour n'est pas facturé). */
@@ -332,8 +340,9 @@ function billing(u, month, pharmacyId) {
   if (!/^\d{4}-\d{2}$/.test(month || '')) fail(400, 'Mois invalide.');
   const ms = month + '-01', next = addDays(addDays(ms, 31).slice(0, 7) + '-01', 0), T = today();
   const ph = isStaff(u) ? (pharmacyId ? Number(pharmacyId) : null) : u.pharmacy_id;
-  const rows = q(`SELECT r.*, e.ref, e.name eq_name, p.name patient, f.name pharmacy FROM rentals r
+  const rows = q(`SELECT r.*, e.ref, e.name eq_name, p.name patient, f.name pharmacy, pr.presc_date, pr.ref presc_ref FROM rentals r
       JOIN equipment e ON e.id=r.equipment_id JOIN patients p ON p.id=r.patient_id JOIN pharmacies f ON f.id=r.pharmacy_id
+      LEFT JOIN prescriptions pr ON pr.rental_id=r.id
       WHERE r.start_date < ? AND (r.end_date IS NULL OR r.end_date > ?) ${ph ? 'AND r.pharmacy_id=?' : ''}
       ORDER BY f.name, p.name, e.ref`).all(...(ph ? [next, ms, ph] : [next, ms]));
   const lines = rows.map(r => {
@@ -341,16 +350,17 @@ function billing(u, month, pharmacyId) {
     const until = r.end_date && r.end_date < next ? r.end_date : next;
     const days = Math.max(0, diffDays(from, until));
     return { rental_id: r.id, pharmacy_id: r.pharmacy_id, pharmacy: r.pharmacy, patient: r.patient, ref: r.ref, equipment: r.eq_name,
-      from, to: addDays(until, -1), days, week_price: r.week_price, amount: Math.round(r.week_price * days / 7), open: !r.end_date };
+      from, to: addDays(until, -1), days, week_price: r.week_price, amount: Math.round(r.week_price * days / 7), open: !r.end_date,
+      presc_date: r.presc_date || null, presc_ref: r.presc_ref || '' };
   }).filter(l => l.days > 0);
   return { month, provisional: next > T, total: lines.reduce((a, l) => a + l.amount, 0), lines };
 }
 function billingCsv(b) {
   const esc = v => '"' + String(v).replace(/"/g, '""') + '"';
   const fr = d => d.split('-').reverse().join('/');
-  const head = ['Pharmacie', 'Bénéficiaire', 'Référence', 'Équipement', 'Du', 'Au', 'Jours', 'Tarif hebdo XPF', 'Montant XPF', 'Location en cours'];
-  const rows = b.lines.map(l => [l.pharmacy, l.patient, l.ref, l.equipment, fr(l.from), fr(l.to), l.days, l.week_price, l.amount, l.open ? 'oui' : 'non']);
-  rows.push(['Total', '', '', '', '', '', '', '', b.total, '']);
+  const head = ['Pharmacie', 'Bénéficiaire', 'Référence', 'Équipement', 'Du', 'Au', 'Jours', 'Tarif hebdo XPF', 'Montant XPF', 'Location en cours', 'Ordonnance du', 'N° interne ordonnance'];
+  const rows = b.lines.map(l => [l.pharmacy, l.patient, l.ref, l.equipment, fr(l.from), fr(l.to), l.days, l.week_price, l.amount, l.open ? 'oui' : 'non', l.presc_date ? fr(l.presc_date) : 'non vérifiée', l.presc_ref]);
+  rows.push(['Total', '', '', '', '', '', '', '', b.total, '', '', '']);
   return '﻿' + [head].concat(rows).map(r => r.map(esc).join(';')).join('\r\n') + '\r\n';
 }
 
@@ -497,6 +507,7 @@ async function api(req, res, route, url) {
     return json(req, res, 200, { ok: true });
   }
   if ((mm = route.match(/^rentals\/(\d+)\/documents$/)) && m === 'POST') {
+    if (!DOCUMENTS_ENABLED) fail(403, 'Dépôt de documents désactivé : ce serveur n\'est pas certifié pour héberger des données de santé.');
     const r = q('SELECT * FROM rentals WHERE id=?').get(Number(mm[1]));
     if (!r || (!isStaff(u) && r.pharmacy_id !== u.pharmacy_id)) fail(404, 'Location introuvable.');
     if (q('SELECT COUNT(*) n FROM documents WHERE rental_id=?').get(r.id).n >= 10) fail(409, 'Dix documents au plus par location.');
@@ -509,6 +520,26 @@ async function api(req, res, route, url) {
     const id = Number(q('INSERT INTO documents(rental_id,filename,mime,size,file,at,user_name) VALUES(?,?,?,?,?,?,?)').run(r.id, name, t[0], buf.length, file, nowStamp(), u.name).lastInsertRowid);
     addEvent(r.equipment_id, r.id, 'Ordonnance ajoutée (' + name + ')', u);
     return json(req, res, 200, { id });
+  }
+  if ((mm = route.match(/^rentals\/(\d+)\/prescription(\/delete)?$/)) && m === 'POST') {
+    const r = q('SELECT * FROM rentals WHERE id=?').get(Number(mm[1]));
+    if (!r || (!isStaff(u) && r.pharmacy_id !== u.pharmacy_id)) fail(404, 'Location introuvable.');
+    if (r.end_date) fail(409, 'Location terminée.');
+    if (mm[2]) {
+      tx(() => { q('DELETE FROM prescriptions WHERE rental_id=?').run(r.id); addEvent(r.equipment_id, r.id, 'Vérification de l\'ordonnance annulée', u); });
+      return json(req, res, 200, { ok: true });
+    }
+    if (body.attest !== true) fail(400, 'Confirmez que la pharmacie détient l\'ordonnance.');
+    const d = String(body.date || '');
+    if (!isDate(d) || d > today() || d < addDays(today(), -400)) fail(400, 'Date d\'ordonnance invalide.');
+    const ref = String(body.ref || '').trim().slice(0, 40);
+    if (/[^\p{L}\p{N} ._\/-]/u.test(ref)) fail(400, 'Le numéro interne ne peut contenir que des lettres, chiffres, espaces et . _ / -');
+    tx(() => {
+      q('INSERT INTO prescriptions(rental_id,presc_date,ref,at,user_name) VALUES(?,?,?,?,?) ON CONFLICT(rental_id) DO UPDATE SET presc_date=excluded.presc_date, ref=excluded.ref, at=excluded.at, user_name=excluded.user_name')
+        .run(r.id, d, ref, nowStamp(), u.name);
+      addEvent(r.equipment_id, r.id, 'Ordonnance vérifiée par la pharmacie (ordonnance du ' + d.split('-').reverse().join('/') + (ref ? ', n° ' + ref : '') + ')', u);
+    });
+    return json(req, res, 200, { ok: true });
   }
   if ((mm = route.match(/^documents\/(\d+)$/)) && m === 'GET') {
     const d = q('SELECT d.*, r.pharmacy_id FROM documents d JOIN rentals r ON r.id=d.rental_id WHERE d.id=?').get(Number(mm[1]));
