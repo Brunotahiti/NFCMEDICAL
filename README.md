@@ -71,6 +71,13 @@ Adresse : `https://manaprocess.cloud/materiel/`. Tout le monde (iPhone, Android,
 - **Android** : Chrome lit et écrit les puces NFC directement (Web NFC) et propose d'installer l'application sur l'écran d'accueil.
 - **Facturation** : par mois et par pharmacie, jours de location dans le mois × tarif hebdomadaire ÷ 7 (le jour du retour n'est pas facturé). Export CSV pour Excel ou un logiciel de facturation. Le mois en cours est prévisionnel.
 
+### Données personnelles
+
+- **Aucune information médicale** : ni ordonnance, ni pathologie, ni motif, ni prescripteur. Un bénéficiaire = nom, adresse, commune, téléphone.
+- **Chiffrement** : nom, adresse et téléphone sont chiffrés en AES-256-GCM dans la base et dans ses sauvegardes. La clé (`DATA_KEY`) est stockée dans les variables du projet sur le VPS, séparément des données : la conserver aussi en lieu sûr, car sans elle les noms ne peuvent plus être lus.
+- **Conservation** : 3 ans après la fin de sa dernière location, un bénéficiaire est anonymisé automatiquement (nom remplacé, adresse, téléphone et position effacés). Les positions de scan et numéros d'ordonnance de plus de 3 ans sont effacés. Les montants et dates restent pour la comptabilité.
+- **À prévoir** : désigner un référent pour la protection des données et tenir le registre des traitements.
+
 ### Serveur
 
 `server/server.js` : Node 22 sans dépendance externe (SQLite, http et crypto intégrés). Mots de passe chiffrés (scrypt), sessions par cookie sécurisé, limitation des tentatives de connexion, sauvegarde quotidienne de la base (14 jours conservés).

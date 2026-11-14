@@ -2,7 +2,8 @@
 # Au démarrage, le conteneur télécharge ce dépôt (public), génère le site et lance le serveur.
 # Les données (base SQLite, ordonnances, sauvegardes quotidiennes) sont dans le volume « mediparc-data ».
 # ADMIN_PASSWORD n'est lu qu'au tout premier démarrage (création du compte « admin ») ;
-# il est fourni par les variables du projet sur le VPS, jamais par ce dépôt.
+# DATA_KEY est la clé de chiffrement AES-256 des données personnelles (32 octets en base64).
+# Ces deux valeurs sont fournies par les variables du projet sur le VPS, jamais par ce dépôt.
 services:
   site:
     image: node:22-alpine
@@ -16,6 +17,7 @@ services:
       - SITE_DIR=/app/deploy/site/materiel
       - PUBLIC_URL=https://manaprocess.cloud/materiel/
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      - DATA_KEY=${DATA_KEY:-}
     volumes:
       - mediparc-data:/data
     command:

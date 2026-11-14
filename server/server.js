@@ -74,8 +74,36 @@ db.exec(`CREATE TABLE IF NOT EXISTS prescriptions(rental_id INTEGER PRIMARY KEY 
    l'ordonnance et en déclare seulement la vérification. Activer (DOCUMENTS_ENABLED=1) uniquement sur un hébergement certifié HDS. */
 const DOCUMENTS_ENABLED = process.env.DOCUMENTS_ENABLED === '1';
 const DOCS = path.join(DATA, 'documents');
+for (const [col, def] of [['phone', "TEXT NOT NULL DEFAULT ''"], ['anonymized', 'INTEGER NOT NULL DEFAULT 0']])
+  if (!db.prepare('PRAGMA table_info(patients)').all().some(c => c.name === col)) db.exec('ALTER TABLE patients ADD COLUMN ' + col + ' ' + def);
 fs.mkdirSync(DOCS, { recursive: true });
 
+/* ---------- Chiffrement des données personnelles (AES-256-GCM) ----------
+   Nom, adresse et téléphone des bénéficiaires sont chiffrés dans la base. La clé (32 octets en base64) vient de DATA_KEY,
+   conservée hors de la base ; à défaut, une clé est créée dans le dossier des données (à éviter en production). */
+function loadKey() {
+  if (process.env.DATA_KEY) {
+    const b = Buffer.from(process.env.DATA_KEY, 'base64');
+    if (b.length !== 32) throw new Error('DATA_KEY doit contenir 32 octets encodés en base64.');
+    return b;
+  }
+  const f = path.join(DATA, 'data.key');
+  if (!fs.existsSync(f)) { fs.writeFileSync(f, crypto.randomBytes(32).toString('base64'), { mode: 0o600 }); console.warn('Clé de chiffrement créée dans ' + f + ' : définissez DATA_KEY en production.'); }
+  return Buffer.from(fs.readFileSync(f, 'utf8').trim(), 'base64');
+}
+const KEY = loadKey();
+function enc(t) {
+  if (t == null || t === '') return '';
+  const iv = crypto.randomBytes(12), c = crypto.createCipheriv('aes-256-gcm', KEY, iv);
+  const ct = Buffer.concat([c.update(String(t), 'utf8'), c.final()]);
+  return 'v1:' + Buffer.concat([iv, c.getAuthTag(), ct]).toString('base64');
+}
+function dec(v) {
+  if (!v || !String(v).startsWith('v1:')) return v || '';
+  const b = Buffer.from(String(v).slice(3), 'base64'), d = crypto.createDecipheriv('aes-256-gcm', KEY, b.subarray(0, 12));
+  d.setAuthTag(b.subarray(12, 28));
+  return Buffer.concat([d.update(b.subarray(28)), d.final()]).toString('utf8');
+}
 const q = (sql) => db.prepare(sql);
 function tx(fn) { db.exec('BEGIN'); try { const r = fn(); db.exec('COMMIT'); return r; } catch (e) { db.exec('ROLLBACK'); throw e; } }
 function setting(k, def) { const r = q('SELECT value FROM settings WHERE key=?').get(k); return r ? r.value : def; }
@@ -145,15 +173,14 @@ function seedDemo() {
     const ph = [['Pharmacie du Lagon', 'Punaauia'], ['Pharmacie Moana', 'Papeete'], ['Pharmacie de la Presqu\'île', 'Taravao']]
       .map(([n, c]) => Number(q('INSERT INTO pharmacies(name,commune,created_at) VALUES(?,?,?)').run(n, c, nowStamp()).lastInsertRowid));
     const pts = [
-      ['Jeanne Morel', 'PK 15 côté mer, Punaauia', 'Punaauia', 'Maintien à domicile', -17.635, -149.607],
-      ['André Lefèvre', 'PK 10,5 côté montagne, Mahina', 'Mahina', 'Sortie d\'hospitalisation', -17.508, -149.482],
-      ['Lucie Bernard', 'PK 22 côté mer, Paea', 'Paea', 'Soins palliatifs', -17.718, -149.588],
-      ['Henri Girard', 'Centre-ville, Taravao', 'Taravao', 'Rééducation', -17.737, -149.303],
-      ['Résidence Les Tilleuls', 'PK 36 côté montagne, Papara', 'Papara', 'EHPAD, chambre 14', -17.752, -149.512]
-    ].map(p => Number(q('INSERT INTO patients(name,address,commune,care,lat,lon,created_at) VALUES(?,?,?,?,?,?,?)').run(...p, nowStamp()).lastInsertRowid));
+      ['Jeanne Morel', 'PK 15 côté mer, Punaauia', 'Punaauia', '87 10 20 30', -17.635, -149.607],
+      ['André Lefèvre', 'PK 10,5 côté montagne, Mahina', 'Mahina', '87 11 22 33', -17.508, -149.482],
+      ['Lucie Bernard', 'PK 22 côté mer, Paea', 'Paea', '89 12 34 56', -17.718, -149.588],
+      ['Henri Girard', 'Centre-ville, Taravao', 'Taravao', '87 13 24 35', -17.737, -149.303],
+      ['Résidence Les Tilleuls', 'PK 36 côté montagne, Papara', 'Papara', '40 54 32 10', -17.752, -149.512]
+    ].map(([n, a, c, t, la, lo]) => Number(q('INSERT INTO patients(name,address,commune,phone,lat,lon,created_at) VALUES(?,?,?,?,?,?,?)').run(enc(n), enc(a), c, enc(t), la, lo, nowStamp()).lastInsertRowid));
     const P = { p1: pts[0], p2: pts[1], p3: pts[2], p4: pts[3], p5: pts[4] };
     const FA = { p1: ph[0], p2: ph[1], p3: ph[0], p4: ph[2], p5: ph[1] };
-    const pname = id => q('SELECT name FROM patients WHERE id=?').get(id).name;
     const fname = id => q('SELECT name FROM pharmacies WHERE id=?').get(id).name;
     const base = setting('link_base', PUBLIC_URL);
     const ids = [];
@@ -168,7 +195,7 @@ function seedDemo() {
         const rid = Number(q('INSERT INTO rentals(equipment_id,patient_id,pharmacy_id,start_date,planned_end,week_price,created_by) VALUES(?,?,?,?,?,?,?)')
           .run(id, P[pt], fa, addDays(T, since), addDays(T, end), px, 'Démonstration').lastInsertRowid);
         ev(since - 1, 'Désinfection validée');
-        ev(since, 'Livré chez ' + pname(P[pt]) + ' par la ' + fname(fa), rid);
+        ev(since, 'Livré chez {p} par la ' + fname(fa), rid);
       } else if (st === 'dispo') ev(since, 'Désinfection validée, remis en stock');
       else if (st === 'desinf') ev(since, 'Retour de location, en attente de désinfection');
       else ev(since, 'Panne signalée : batterie à remplacer');
@@ -181,13 +208,35 @@ function seedDemo() {
       const px = q('SELECT week_price FROM equipment WHERE id=?').get(e.id).week_price;
       const rid = Number(q('INSERT INTO rentals(equipment_id,patient_id,pharmacy_id,start_date,planned_end,end_date,week_price,created_by) VALUES(?,?,?,?,?,?,?,?)')
         .run(e.id, P[pk], fa, addDays(T, startOff), addDays(T, endOff), addDays(T, endOff), px, 'Démonstration').lastInsertRowid);
-      q('INSERT INTO events(equipment_id,rental_id,at,text,user_name) VALUES(?,?,?,?,?)').run(e.id, rid, at(startOff), 'Livré chez ' + pname(P[pk]) + ' par la ' + fname(fa), 'Démonstration');
-      q('INSERT INTO events(equipment_id,rental_id,at,text,user_name) VALUES(?,?,?,?,?)').run(e.id, rid, at(endOff, '16:00'), 'Retour de location (' + pname(P[pk]) + ')', 'Démonstration');
+      q('INSERT INTO events(equipment_id,rental_id,at,text,user_name) VALUES(?,?,?,?,?)').run(e.id, rid, at(startOff), 'Livré chez {p} par la ' + fname(fa), 'Démonstration');
+      q('INSERT INTO events(equipment_id,rental_id,at,text,user_name) VALUES(?,?,?,?,?)').run(e.id, rid, at(endOff, '16:00'), 'Retour de location ({p})', 'Démonstration');
     }
     setSetting('seeded', today());
   });
 }
 if (!setting('link_base')) setSetting('link_base', PUBLIC_URL);
+/* Migration : aucune information médicale (champ « prise en charge » vidé), données personnelles chiffrées,
+   noms retirés du texte de l'historique (remplacés par {p}, complété à l'affichage). */
+if (setting('privacy_v1') !== '1') tx(() => {
+  for (const p of q('SELECT * FROM patients').all()) {
+    const name = dec(p.name);
+    for (const ev of q('SELECT ev.id, ev.text FROM events ev JOIN rentals r ON r.id=ev.rental_id WHERE r.patient_id=?').all(p.id))
+      if (name && ev.text.includes(name)) q('UPDATE events SET text=? WHERE id=?').run(ev.text.split(name).join('{p}'), ev.id);
+    q("UPDATE patients SET name=?, address=?, phone=?, care='' WHERE id=?").run(enc(name), enc(dec(p.address)), enc(dec(p.phone)), p.id);
+  }
+  setSetting('privacy_v1', '1');
+  setSetting('privacy_cleanup', '1');
+});
+/* Après la migration : la base est compactée (plus aucune trace des anciennes valeurs en clair)
+   et les sauvegardes antérieures, non chiffrées, sont supprimées. */
+if (setting('privacy_cleanup') === '1') {
+  try {
+    db.exec('VACUUM');
+    const dir = path.join(DATA, 'backups');
+    for (const n of fs.readdirSync(dir)) if (/^mediparc-.*\.db$/.test(n)) fs.unlinkSync(path.join(dir, n));
+    setSetting('privacy_cleanup', '0');
+  } catch (e) { console.error('Nettoyage après migration impossible :', e.message); }
+}
 if (!setting('seeded') && q('SELECT COUNT(*) n FROM equipment').get().n === 0) seedDemo();
 if (q('SELECT COUNT(*) n FROM users').get().n === 0) {
   let pw = process.env.ADMIN_PASSWORD;
@@ -205,6 +254,24 @@ function backup() {
   } catch (e) { console.error('Sauvegarde impossible :', e.message); }
 }
 backup(); setInterval(backup, 6 * 3600e3).unref();
+/* Conservation : 3 ans après la fin de la dernière location, le bénéficiaire est anonymisé ; les positions de scan
+   et numéros d'ordonnance de plus de 3 ans sont effacés. Les montants et dates de location restent (comptabilité). */
+const RETENTION_DAYS = 3 * 365 + 1;
+function purge() {
+  try {
+    const limit = addDays(today(), -RETENTION_DAYS);
+    tx(() => {
+      const old = q(`SELECT p.id FROM patients p WHERE p.anonymized=0
+        AND NOT EXISTS (SELECT 1 FROM rentals r WHERE r.patient_id=p.id AND (r.end_date IS NULL OR r.end_date >= ?))
+        AND (EXISTS (SELECT 1 FROM rentals r WHERE r.patient_id=p.id) OR p.created_at < ?)`).all(limit, limit);
+      for (const p of old) q("UPDATE patients SET name=?, address='', phone='', lat=NULL, lon=NULL, anonymized=1 WHERE id=?").run(enc('Bénéficiaire anonymisé'), p.id);
+      q('DELETE FROM scans WHERE at < ?').run(limit);
+      q("UPDATE prescriptions SET ref='' WHERE rental_id IN (SELECT id FROM rentals WHERE end_date IS NOT NULL AND end_date < ?)").run(limit);
+      if (old.length) console.log(old.length + ' bénéficiaire(s) anonymisé(s) (conservation 3 ans).');
+    });
+  } catch (e) { console.error('Purge impossible :', e.message); }
+}
+purge(); setInterval(purge, 24 * 3600e3).unref();
 setInterval(() => q('DELETE FROM sessions WHERE expires_at<?').run(Date.now()), 3600e3).unref();
 
 /* ---------- Outils HTTP ---------- */
@@ -281,6 +348,18 @@ function equipmentFor(u, id) {
   }
   return e;
 }
+function patientNames(ids) {
+  const m = new Map(); if (!ids.length) return m;
+  for (const p of q('SELECT id, name FROM patients WHERE id IN (' + ids.map(() => '?').join(',') + ')').all(...ids)) m.set(p.id, dec(p.name));
+  return m;
+}
+/* Remplace {p} par le nom du bénéficiaire de la location (déchiffré à l'affichage seulement). */
+function eventTexts(rows) {
+  const rids = [...new Set(rows.map(r => r.rental_id).filter(Boolean))];
+  const rp = new Map(); if (rids.length) for (const r of q('SELECT id, patient_id FROM rentals WHERE id IN (' + rids.map(() => '?').join(',') + ')').all(...rids)) rp.set(r.id, r.patient_id);
+  const names = patientNames([...new Set(rp.values())]);
+  return rows.map(r => r.text.includes('{p}') ? r.text.split('{p}').join(names.get(rp.get(r.rental_id)) || 'bénéficiaire') : r.text);
+}
 function addEvent(eqId, rentalId, text, u) { q('INSERT INTO events(equipment_id,rental_id,at,text,user_name) VALUES(?,?,?,?,?)').run(eqId, rentalId || null, nowStamp(), text, u ? u.name : ''); }
 function durLabel(n) { return n % 7 === 0 ? (n / 7 === 1 ? '1 semaine' : n / 7 + ' semaines') : n === 90 ? '3 mois' : n + ' jours'; }
 
@@ -298,6 +377,7 @@ function state(u) {
     ? q(`SELECT * FROM (SELECT ev.*, ROW_NUMBER() OVER (PARTITION BY equipment_id ORDER BY at DESC, id DESC) rn FROM events ev) WHERE rn<=8`).all()
     : q(`SELECT * FROM (SELECT ev.*, ROW_NUMBER() OVER (PARTITION BY ev.equipment_id ORDER BY ev.at DESC, ev.id DESC) rn FROM events ev
          JOIN rentals r ON r.id=ev.rental_id WHERE r.pharmacy_id=?) WHERE rn<=8`).all(ph);
+  const evText = eventTexts(evRows); evRows.forEach((e, i) => { e.text = evText[i]; });
   const evs = new Map(); for (const e of evRows) { if (!evs.has(e.equipment_id)) evs.set(e.equipment_id, []); evs.get(e.equipment_id).push(e); }
   const scRows = staff
     ? q(`SELECT * FROM (SELECT s.*, ROW_NUMBER() OVER (PARTITION BY equipment_id ORDER BY at DESC, id DESC) rn FROM scans s) WHERE rn=1`).all()
@@ -330,8 +410,9 @@ function state(u) {
     .map(r => ({ id: r.id, equipment: { id: r.equipment_id, ref: r.ref, name: r.name, photo: r.photo, kind: r.kind, week_price: r.week_price },
       patient_id: r.patient_id, pharmacy_id: r.pharmacy_id, start: r.start_date, end: r.end_date, amount: Math.round(r.week_price * diffDays(r.start_date, r.end_date) / 7) }));
   const pIds = new Set(equipment.filter(e => e.patient_id).map(e => e.patient_id).concat(closed.map(c => c.patient_id)));
-  const patients = (staff ? q('SELECT * FROM patients ORDER BY name').all() : q('SELECT * FROM patients ORDER BY name').all().filter(p => pIds.has(p.id)))
-    .map(p => ({ id: p.id, name: p.name, address: p.address, commune: p.commune, care: p.care, lat: p.lat, lon: p.lon }));
+  const patients = (staff ? q('SELECT * FROM patients').all() : q('SELECT * FROM patients').all().filter(p => pIds.has(p.id)))
+    .map(p => ({ id: p.id, name: dec(p.name), address: dec(p.address), commune: p.commune, phone: dec(p.phone), lat: p.lat, lon: p.lon, anonymized: !!p.anonymized }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'fr'));
   return { me: publicUser(u), documents_enabled: DOCUMENTS_ENABLED, today: T, link_base: setting('link_base', PUBLIC_URL), communes: Object.keys(COMMUNES), pharmacies, patients, equipment, closed };
 }
 
@@ -340,11 +421,14 @@ function billing(u, month, pharmacyId) {
   if (!/^\d{4}-\d{2}$/.test(month || '')) fail(400, 'Mois invalide.');
   const ms = month + '-01', next = addDays(addDays(ms, 31).slice(0, 7) + '-01', 0), T = today();
   const ph = isStaff(u) ? (pharmacyId ? Number(pharmacyId) : null) : u.pharmacy_id;
-  const rows = q(`SELECT r.*, e.ref, e.name eq_name, p.name patient, f.name pharmacy, pr.presc_date, pr.ref presc_ref FROM rentals r
-      JOIN equipment e ON e.id=r.equipment_id JOIN patients p ON p.id=r.patient_id JOIN pharmacies f ON f.id=r.pharmacy_id
+  const rows = q(`SELECT r.*, e.ref, e.name eq_name, f.name pharmacy, pr.presc_date, pr.ref presc_ref FROM rentals r
+      JOIN equipment e ON e.id=r.equipment_id JOIN pharmacies f ON f.id=r.pharmacy_id
       LEFT JOIN prescriptions pr ON pr.rental_id=r.id
       WHERE r.start_date < ? AND (r.end_date IS NULL OR r.end_date > ?) ${ph ? 'AND r.pharmacy_id=?' : ''}
-      ORDER BY f.name, p.name, e.ref`).all(...(ph ? [next, ms, ph] : [next, ms]));
+      ORDER BY f.name, e.ref`).all(...(ph ? [next, ms, ph] : [next, ms]));
+  const names = patientNames([...new Set(rows.map(r => r.patient_id))]);
+  rows.forEach(r => { r.patient = names.get(r.patient_id) || ''; });
+  rows.sort((a, b) => a.pharmacy.localeCompare(b.pharmacy, 'fr') || a.patient.localeCompare(b.patient, 'fr') || a.ref.localeCompare(b.ref));
   const lines = rows.map(r => {
     const from = r.start_date > ms ? r.start_date : ms;
     const until = r.end_date && r.end_date < next ? r.end_date : next;
@@ -410,11 +494,12 @@ async function api(req, res, route, url) {
   let mm;
   if ((mm = route.match(/^equipment\/(\d+)$/)) && m === 'GET') {
     const e = equipmentFor(u, mm[1]);
-    const evs = isStaff(u) ? q('SELECT id,at,text,user_name by_ FROM events WHERE equipment_id=? ORDER BY at DESC, id DESC').all(e.id)
-      : q('SELECT ev.id,ev.at,ev.text,ev.user_name by_ FROM events ev JOIN rentals r ON r.id=ev.rental_id WHERE ev.equipment_id=? AND r.pharmacy_id=? ORDER BY ev.at DESC, ev.id DESC').all(e.id, u.pharmacy_id);
+    const evs = isStaff(u) ? q('SELECT id,at,text,rental_id,user_name by_ FROM events WHERE equipment_id=? ORDER BY at DESC, id DESC').all(e.id)
+        : q('SELECT ev.id,ev.at,ev.text,ev.rental_id,ev.user_name by_ FROM events ev JOIN rentals r ON r.id=ev.rental_id WHERE ev.equipment_id=? AND r.pharmacy_id=? ORDER BY ev.at DESC, ev.id DESC').all(e.id, u.pharmacy_id);
     const sc = isStaff(u) ? q('SELECT at,user_name,lat,lon,accuracy,source FROM scans WHERE equipment_id=? ORDER BY at DESC, id DESC LIMIT 20').all(e.id)
       : q('SELECT s.at,s.user_name,s.lat,s.lon,s.accuracy,s.source FROM scans s JOIN rentals r ON r.id=s.rental_id WHERE s.equipment_id=? AND r.pharmacy_id=? ORDER BY s.at DESC LIMIT 20').all(e.id, u.pharmacy_id);
-    return json(req, res, 200, { events: evs.map(v => ({ id: v.id, at: v.at, text: v.text, by: v.by_ })), scans: sc });
+    const tx2 = eventTexts(evs);
+    return json(req, res, 200, { events: evs.map((v, i) => ({ id: v.id, at: v.at, text: tx2[i], by: v.by_ })), scans: sc });
   }
   if ((mm = route.match(/^equipment\/(\d+)\/action$/)) && m === 'POST') {
     needStaff(u);
@@ -425,7 +510,7 @@ async function api(req, res, route, url) {
         if (e.status !== 'loc' || !r) fail(409, 'Cet équipement n\'est pas en location.');
         q('UPDATE rentals SET end_date=? WHERE id=?').run(T, r.id);
         q("UPDATE equipment SET status='desinf', status_since=? WHERE id=?").run(T, e.id);
-        addEvent(e.id, r.id, 'Retour de location (' + q('SELECT name FROM patients WHERE id=?').get(r.patient_id).name + '), en attente de désinfection', u);
+        addEvent(e.id, r.id, 'Retour de location ({p}), en attente de désinfection', u);
       } else if (a === 'clean') {
         if (e.status !== 'desinf') fail(409, 'Cet équipement n\'est pas en attente de désinfection.');
         q("UPDATE equipment SET status='dispo', status_since=? WHERE id=?").run(T, e.id);
@@ -455,7 +540,7 @@ async function api(req, res, route, url) {
       const rid = Number(q('INSERT INTO rentals(equipment_id,patient_id,pharmacy_id,start_date,planned_end,week_price,created_by) VALUES(?,?,?,?,?,?,?)')
         .run(e.id, p.id, f.id, T, addDays(T, days), e.week_price, u.name).lastInsertRowid);
       q("UPDATE equipment SET status='loc', status_since=? WHERE id=?").run(T, e.id);
-      addEvent(e.id, rid, 'Livré chez ' + p.name + ' par la ' + f.name + ' pour ' + durLabel(days), u);
+      addEvent(e.id, rid, 'Livré chez {p} par la ' + f.name + ' pour ' + durLabel(days), u);
     });
     return json(req, res, 200, { ok: true });
   }
@@ -565,8 +650,10 @@ async function api(req, res, route, url) {
     const name = String(body.name || '').trim(), commune = String(body.commune || '').trim();
     if (name.length < 2) fail(400, 'Indiquez le nom du bénéficiaire.');
     const c = COMMUNES[commune]; if (!c) fail(400, 'Choisissez une commune.');
-    const id = Number(q('INSERT INTO patients(name,address,commune,care,lat,lon,created_at) VALUES(?,?,?,?,?,?,?)')
-      .run(name.slice(0, 120), String(body.address || '').trim().slice(0, 200), commune, String(body.care || '').trim().slice(0, 120), c[0], c[1], nowStamp()).lastInsertRowid);
+    const phone = String(body.phone || '').trim();
+    if (phone && !/^\+?[0-9 .-]{6,20}$/.test(phone)) fail(400, 'Numéro de téléphone invalide.');
+    const id = Number(q('INSERT INTO patients(name,address,commune,phone,lat,lon,created_at) VALUES(?,?,?,?,?,?,?)')
+      .run(enc(name.slice(0, 120)), enc(String(body.address || '').trim().slice(0, 200)), commune, enc(phone), c[0], c[1], nowStamp()).lastInsertRowid);
     return json(req, res, 200, { id });
   }
   if (route === 'pharmacies' && m === 'POST') {

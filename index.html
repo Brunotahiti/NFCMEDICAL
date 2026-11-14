@@ -296,6 +296,7 @@ a.btn{text-decoration:none}
 .scanprev{display:flex;gap:12px;align-items:center;background:var(--bg);border-radius:16px;padding:12px 14px;text-align:left}
 .scanprev>svg{width:30px;height:30px;flex:none;color:var(--accent);fill:none;stroke:currentColor;stroke-width:1.8}
 .scanprev b{display:block;font-size:13.5px;overflow-wrap:anywhere}.scanprev span{font-size:12.5px;color:var(--muted)}
+a.tel{color:var(--accent);font-weight:600;text-decoration:none}
 .warnt{color:var(--warn);font-weight:600}
 .chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.4;margin:4px 0}
 .chk input{width:20px;height:20px;flex:none;margin-top:1px;accent-color:var(--accent)}
@@ -565,6 +566,7 @@ var ICON={
   up2:'<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>',
   down:'<path d="M12 4v12M7 11l5 5 5-5M5 20h14"/>',
   back:'<path d="m15 5-7 7 7 7"/>',
+  phone:'<path d="M6.500 3.500h3l1.500 4-2 1.300a11 11 0 0 0 6.200 6.200L16.500 13l4 1.500v3a2 2 0 0 1-2.200 2A16 16 0 0 1 4.500 5.700 2 2 0 0 1 6.500 3.500z"/>',
   ret:'<path d="M9 7 4 12l5 5M4 12h11a5 5 0 0 1 0 10h-2"/>'
 };
 function ic(k){return '<svg class="i" viewBox="0 0 24 24">'+ICON[k]+'</svg>';}
@@ -579,11 +581,11 @@ var STATUS={loc:{l:'En location',c:'p-loc',seg:'--seg-loc'},dispo:{l:'Disponible
   desinf:{l:'Désinfection',c:'p-desinf',seg:'--seg-desinf'},maint:{l:'Maintenance',c:'p-maint',seg:'--seg-maint'}};
 
 var patients=[
-  {id:'p1',a:'PK 15 côté mer, Punaauia',c:'Punaauia',lat:-17.635,lon:-149.607,n:'Jeanne Morel',z:'Punaauia · Maintien à domicile'},
-  {id:'p2',a:'PK 10,5 côté montagne, Mahina',c:'Mahina',lat:-17.508,lon:-149.482,n:'André Lefèvre',z:'Mahina · Sortie d\'hospitalisation'},
-  {id:'p3',a:'PK 22 côté mer, Paea',c:'Paea',lat:-17.718,lon:-149.588,n:'Lucie Bernard',z:'Paea · Soins palliatifs'},
-  {id:'p4',a:'Centre-ville, Taravao',c:'Taravao',lat:-17.737,lon:-149.303,n:'Henri Girard',z:'Taravao · Rééducation'},
-  {id:'p5',a:'PK 36 côté montagne, Papara',c:'Papara',lat:-17.752,lon:-149.512,n:'Résidence Les Tilleuls',z:'Papara · EHPAD, chambre 14'}
+  {id:'p1',a:'PK 15 côté mer, Punaauia',c:'Punaauia',lat:-17.635,lon:-149.607,n:'Jeanne Morel',z:'Punaauia',ph:'87 10 20 30'},
+  {id:'p2',a:'PK 10,5 côté montagne, Mahina',c:'Mahina',lat:-17.508,lon:-149.482,n:'André Lefèvre',z:'Mahina',ph:'87 11 22 33'},
+  {id:'p3',a:'PK 22 côté mer, Paea',c:'Paea',lat:-17.718,lon:-149.588,n:'Lucie Bernard',z:'Paea',ph:'89 12 34 56'},
+  {id:'p4',a:'Centre-ville, Taravao',c:'Taravao',lat:-17.737,lon:-149.303,n:'Henri Girard',z:'Taravao',ph:'87 13 24 35'},
+  {id:'p5',a:'PK 36 côté montagne, Papara',c:'Papara',lat:-17.752,lon:-149.512,n:'Résidence Les Tilleuls',z:'Papara',ph:'40 54 32 10'}
 ];
 var DEPOT={id:'depot',n:'Dépôt MédiParc',a:'Fare Ute, Papeete',c:'Papeete',lat:-17.532,lon:-149.572};
 /* Pharmacies qui délivrent les locations (noms de démonstration). */
@@ -987,7 +989,7 @@ function renderDetail(){
     +(e.st==='loc'?rentCard(e):'')
     +'<dl class="kv" style="margin:0">'
     +'<div><dt>'+ic('pin')+'Emplacement</dt><dd>'+esc(where(e))+'</dd></div>'
-    +(p?'<div><dt>'+ic('heart')+'Prise en charge</dt><dd>'+esc(p.z.split(' · ')[1]||p.z)+'</dd></div>'+(e.fa?'<div><dt>'+ic('cross')+'Pharmacie</dt><dd>'+esc(phar(e.fa).n)+'<small class="dsub">'+esc(phar(e.fa).c)+'</small></dd></div>':''):'')
+    +(p?(p.ph?'<div><dt>'+ic('phone')+'Téléphone</dt><dd><a class="tel num" href="tel:'+esc(p.ph.replace(/[^0-9+]/g,''))+'">'+esc(p.ph)+'</a></dd></div>':'')+(e.fa?'<div><dt>'+ic('cross')+'Pharmacie</dt><dd>'+esc(phar(e.fa).n)+'<small class="dsub">'+esc(phar(e.fa).c)+'</small></dd></div>':''):'')
     +'<div><dt>'+ic('clip')+'Prix catalogue</dt><dd class="num">'+esc(e.cat)+'</dd></div>'
     +'<div><dt>'+ic('coins')+'Tarif de location</dt><dd class="num">'+xpf(e.px)+' / semaine</dd></div>'
     +'<div><dt>'+ic('tool')+'Prochain contrôle</dt>'+chk+'</div>'+scanRow(e)+'</dl>'
@@ -1190,7 +1192,7 @@ function loadState(){return srv('GET','state').then(applyState);}
 function applyState(st){
   setRole(st.me);DOCS_ON=!!st.documents_enabled;base=st.link_base||DEFBASE;COMMUNES=st.communes||[];
   PHARM=st.pharmacies.map(function(f){return {id:String(f.id),n:f.name,c:f.commune};});
-  patients=st.patients.map(function(p){return {id:String(p.id),a:p.address||p.commune,c:p.commune,lat:p.lat,lon:p.lon,n:p.name,z:p.commune+(p.care?' · '+p.care:'')};});
+  patients=st.patients.map(function(p){return {id:String(p.id),a:p.address||p.commune,c:p.commune,lat:p.lat,lon:p.lon,n:p.name,z:p.commune,ph:p.phone||''};});
   var favs={};try{JSON.parse(localStorage.getItem(FKEY)||'[]').forEach(function(id){favs[id]=1;});}catch(x){}
   equip=st.equipment.map(function(e){var id=String(e.id);return {id:id,ref:e.ref,ph:e.photo,k:e.kind,n:e.name,m:e.brand,cat:e.catalog,st:e.status,
     pt:e.patient_id?String(e.patient_id):null,fa:e.pharmacy_id?String(e.pharmacy_id):null,since:off(e.since),end:e.planned_end?off(e.planned_end):null,chk:off(e.next_check),
@@ -1291,7 +1293,7 @@ function docsSection(e){
 var scanFile=null,scanUrl=null;
 function slug(t){return String(t).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||'patient';}
 function scanName(e){var t=new Date(),d=t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2)+'_'+('0'+t.getHours()).slice(-2)+'h'+('0'+t.getMinutes()).slice(-2);
-  return 'Ordonnance_'+d+'_'+slug(pat(e.pt).n)+'_'+e.ref+'.pdf';}
+  return 'Ordonnance_'+d+'_'+e.ref+'_'+slug(initials(pat(e.pt).n)||'X')+'.pdf';}
 function bytesOf(str){var b=new Uint8Array(str.length);for(var i=0;i<str.length;i++)b[i]=str.charCodeAt(i)&255;return b;}
 /* PDF d'une page contenant la photo (JPEG), à la largeur d'une page A4. */
 function jpegToPdf(jpg,w,h){
@@ -1513,7 +1515,8 @@ function patForm(){
   openSheet('<h2>Nouveau bénéficiaire</h2><form id="f-pat" class="fform" novalidate><label class="fld" for="pa-name">Nom</label><input class="gin" id="pa-name" placeholder="Prénom et nom">'
     +'<label class="fld">Commune</label>'+chipSel('commune',COMMUNES.map(function(c){return [c,c];}),'')
     +'<label class="fld" for="pa-addr">Adresse</label><input class="gin" id="pa-addr" placeholder="PK, quartier, servitude…">'
-    +'<label class="fld" for="pa-care">Prise en charge</label><input class="gin" id="pa-care" placeholder="Maintien à domicile, sortie d\'hospitalisation…">'
+    +'<label class="fld" for="pa-tel">Téléphone</label><input class="gin" id="pa-tel" type="tel" inputmode="tel" autocomplete="off" placeholder="87 12 34 56">'
+    +'<p class="note">Seuls le nom, l\'adresse et le téléphone sont enregistrés, chiffrés. Ne saisissez aucune information médicale.</p>'
     +'<p class="err" id="pa-err" hidden></p><button class="btn" type="submit">Ajouter</button><button class="btn soft" type="button" data-act="assign">Retour</button></form>');
   sheet.style.height='92%';
 }
@@ -1533,7 +1536,7 @@ function submitForm(id){
   else if(id==='f-pharm'){srv('POST','pharmacies',{name:$('ph-name').value,commune:$('ph-c').value}).then(loadState).then(function(){closeSheet();renderAccounts();toast('Pharmacie ajoutée');}).catch(function(e){gateErr('ph-err',e.message);});}
   else if(id==='f-presc'){var pe=byId(S.cur);if(!$('pr-ok').checked)return gateErr('pr-err','Cochez la case pour confirmer que la pharmacie détient l\'ordonnance.');
     srv('POST','rentals/'+pe.rid+'/prescription',{date:$('pr-date').value,ref:$('pr-ref').value,attest:true}).then(loadState).then(function(){closeSheet();refresh();loadHistory(pe.id);toast('Ordonnance vérifiée');}).catch(function(err){gateErr('pr-err',err.message);});}
-  else if(id==='f-pat'){srv('POST','patients',{name:$('pa-name').value,commune:selVal('commune'),address:$('pa-addr').value,care:$('pa-care').value}).then(loadState).then(function(){pickPatient();toast('Bénéficiaire ajouté');}).catch(function(e){gateErr('pa-err',e.message);});}
+  else if(id==='f-pat'){srv('POST','patients',{name:$('pa-name').value,commune:selVal('commune'),address:$('pa-addr').value,phone:$('pa-tel').value}).then(loadState).then(function(){pickPatient();toast('Bénéficiaire ajouté');}).catch(function(e){gateErr('pa-err',e.message);});}
 }
 function accountSheet(){
   var it=[];
