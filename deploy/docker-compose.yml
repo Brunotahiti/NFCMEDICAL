@@ -4,7 +4,7 @@
 # ADMIN_PASSWORD n'est lu qu'au tout premier démarrage (création du compte « admin ») ;
 # il est fourni par les variables du projet sur le VPS, jamais par ce dépôt.
 services:
-  app:
+  site:
     image: node:22-alpine
     container_name: mediparc-nfc
     restart: unless-stopped
