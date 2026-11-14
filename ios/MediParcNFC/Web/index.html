@@ -534,6 +534,7 @@ input.uid::placeholder{color:var(--muted);opacity:.6}
   <input type="file" id="doc-in" accept="image/*,application/pdf" hidden>
   <input type="file" id="scan-in" accept="image/*" capture="environment" hidden>
   <input type="file" id="import-in" hidden>
+  <input type="file" id="view-in" hidden>
 </div>
 
 <script>
@@ -1015,7 +1016,7 @@ function closeDetail(){detail.classList.remove('open');detail.setAttribute('aria
 
 /* ---------- Feuilles ---------- */
 function openSheet(html){sheet.innerHTML='<div class="grab"></div>'+html;sheet.classList.add('open');scrim.classList.add('open');}
-function closeSheet(){if(typeof nfcAbort!=='undefined'&&nfcAbort){nfcAbort.abort();nfcAbort=null;}sheet.style.height='';timers.forEach(clearTimeout);timers=[];sheet.classList.remove('open');scrim.classList.remove('open');}
+function closeSheet(){if(typeof clearViews==='function'&&viewUrls.length)setTimeout(clearViews,60000);if(typeof nfcAbort!=='undefined'&&nfcAbort){nfcAbort.abort();nfcAbort=null;}sheet.style.height='';timers.forEach(clearTimeout);timers=[];sheet.classList.remove('open');scrim.classList.remove('open');}
 /* ---------- Puces NFC : chaque puce porte un lien (enregistrement NDEF de type URI) ---------- */
 var FKEY='mediparc-favoris';
 try{JSON.parse(localStorage.getItem(FKEY)||'[]').forEach(function(id){var fe=byId(id);if(fe)fe.fav=true;});}catch(x){}
@@ -1291,7 +1292,8 @@ function docsSection(e){
   var body=pr?'<div class="row"><span class="ico a-ok">'+svg('okc')+'</span><span class="body"><div class="t">Ordonnance du '+fmtDate(pr.date)+'</div><div class="s w2">'+(pr.ref?'N° interne '+esc(pr.ref)+' · ':'')+'vérifiée par '+esc(pr.by)+', '+stamp(pr.at).toLowerCase()+'</div></span></div>'
     :'<div class="empty">Ordonnance pas encore vérifiée pour cette location.</div>';
   var files=DOCS_ON&&e.docs.length?e.docs.map(function(d){return '<div class="row doc"><a class="rowin" href="api/documents/'+d.id+'" target="_blank" rel="noopener"><span class="ico a-info">'+svg(d.mime==='application/pdf'?'clip':'cam')+'</span><span class="body"><div class="t">'+esc(d.name)+'</div><div class="s">'+stamp(d.at)+' · '+esc(d.by)+'</div></span></a><button class="keb2 del" data-deldoc="'+d.id+'" aria-label="Retirer '+esc(d.name)+'">'+svg('close')+'</button></div>';}).join(''):'';
-  return '<section>'+secH('clip','Ordonnance',pr?'<span class="pill p-dispo">'+ic('okc')+'Vérifiée</span>':'<span class="pill p-desinf">À confirmer</span>')+'<div class="infobox">'+svg('cross')+'<div><b>L\'ordonnance reste uniquement à la pharmacie.</b><span>Elle n\'est jamais envoyée ni conservée dans cette application : seule sa vérification (date, numéro interne, auteur) est enregistrée.</span></div></div>'+'<div class="list">'+body+files+'</div>'
+  return '<section>'+secH('clip','Ordonnance',pr?'<span class="pill p-dispo">'+ic('okc')+'Vérifiée</span>':'<span class="pill p-desinf">À confirmer</span>')+'<div class="infobox">'+svg('cross')+'<div><b>Aucune ordonnance n\'est stockée en ligne.</b><span>Les ordonnances sont accessibles via le programme, qui va les récupérer sur votre serveur local. Seule la vérification (date, numéro interne, auteur) est enregistrée en ligne.</span></div></div>'+'<div class="list">'+body+files+'</div>'
+    +'<button class="btn prog" data-act="view-presc">'+svg('clip')+'Voir l\'ordonnance</button>'
     +'<div class="duo"><button class="btn prog" data-act="scan-presc">'+svg('cam')+'Scanner</button><button class="btn prog" data-act="import-presc">'+svg('up2')+'Importer un fichier</button></div>'
     +'<button class="btn soft prog" data-act="presc">'+svg('okc')+(pr?'Modifier la vérification':'Confirmer l\'ordonnance')+'</button>'
     +(DOCS_ON?'<button class="btn soft prog" data-act="add-doc">'+svg('up2')+'Joindre un fichier</button>':'')
@@ -1385,11 +1387,39 @@ function shareScan(){
   if(n){f.arrayBuffer().then(function(ab){var b=new Uint8Array(ab),s2='';for(var i=0;i<b.length;i+=32768)s2+=String.fromCharCode.apply(null,b.subarray(i,i+32768));n.postMessage({name:f.name,mime:f.type,data:btoa(s2)});});return;}
   navigator.share({files:[f],title:f.name}).then(function(){scanSaved('sur le serveur de la pharmacie');}).catch(function(err){if(err&&err.name!=='AbortError')toast('Partage impossible : '+err.message);});
 }
+/* Consultation : le fichier est lu sur le serveur local de la pharmacie et affiché sur cet appareil, sans passer par Internet. */
+var viewUrls=[];
+function clearViews(){viewUrls.forEach(function(u){URL.revokeObjectURL(u);});viewUrls=[];}
+function viewSheet(e,files,from){
+  clearViews();
+  var rows=files.map(function(f){var u=URL.createObjectURL(f);viewUrls.push(u);
+    return '<a class="row doc" href="'+u+'" target="_blank" rel="noopener"><span class="rowin"><span class="ico a-info">'+svg(/\.pdf$/i.test(f.name)?'clip':'cam')+'</span><span class="body"><div class="t">'+esc(f.name)+'</div><div class="s">'+Math.max(1,Math.round(f.size/1024))+' Ko · '+new Date(f.lastModified).toLocaleDateString('fr-FR')+'</div></span></span></a>';}).join('');
+  openSheet('<h2>Ordonnance</h2><p class="sub">'+esc(e.n)+' · '+esc(e.ref)+(from?' · '+esc(from):'')+'</p><div class="list">'+rows+'</div>'
+    +'<p class="note">Fichier lu sur le serveur local de la pharmacie et affiché sur cet appareil uniquement.</p>'
+    +(canPickDir()?'<button class="btn soft" data-act="view-pick-dir">Changer de dossier</button>':'')+'<button class="btn soft" data-act="close-sheet">Fermer</button>');
+}
+function viewPresc(pick){
+  var e=byId(S.cur);if(!e)return;
+  if(!canPickDir()){var vi=$('view-in');vi.value='';vi.click();return;}
+  var p=Promise.resolve();
+  if(pick||!dirHandle)p=idbGet('dir:'+(ME?ME.login:'')).then(function(h){if(h&&!pick){dirHandle=h;return;}
+    return window.showDirectoryPicker({id:'ordonnances',mode:'readwrite'}).then(function(h2){dirHandle=h2;return idbSet('dir:'+(ME?ME.login:''),h2);});});
+  p.then(function(){return dirHandle.queryPermission({mode:'read'}).then(function(st){return st==='granted'?st:dirHandle.requestPermission({mode:'read'});});})
+   .then(function(st){if(st!=='granted')throw new Error('Accès au dossier refusé.');
+     var found=[],it=dirHandle.values();
+     function step(){return it.next().then(function(r){if(r.done)return;var h=r.value;
+       if(h.kind==='file'&&h.name.toUpperCase().indexOf(e.ref.toUpperCase())>=0)return h.getFile().then(function(f){found.push(f);return step();});return step();});}
+     return step().then(function(){return found;});})
+   .then(function(found){
+     if(!found.length){toast('Aucune ordonnance pour '+e.ref+' dans « '+dirHandle.name+' »');return;}
+     found.sort(function(a,b){return b.lastModified-a.lastModified;});viewSheet(e,found,dirHandle.name);})
+   .catch(function(err){if(err&&err.name==='AbortError')return;toast(err&&err.message?err.message:'Lecture du dossier impossible');});
+}
 window.onNativeSaved=function(ok){if(ok)scanSaved('sur le serveur de la pharmacie');};
-document.addEventListener('change',function(x){if((x.target.id==='scan-in'||x.target.id==='import-in')&&x.target.files&&x.target.files[0])onScanFile(x.target.files[0]);});
+document.addEventListener('change',function(x){if(x.target.id==='view-in'&&x.target.files&&x.target.files[0]){var ve=byId(S.cur);if(ve)viewSheet(ve,[x.target.files[0]],'');return;}if((x.target.id==='scan-in'||x.target.id==='import-in')&&x.target.files&&x.target.files[0])onScanFile(x.target.files[0]);});
 function prescSheet(prefRef){
   var e=byId(S.cur);if(!e)return;var pr=e.prescription||{},refv=typeof prefRef==='string'&&prefRef?prefRef:(pr.ref||''),t=new Date(),iso=t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2);
-  openSheet('<h2>Confirmer l\'ordonnance</h2><p class="sub">'+esc(e.n)+' · '+esc(pat(e.pt).n)+'</p>'+'<div class="infobox">'+svg('cross')+'<div><b>L\'ordonnance reste uniquement à la pharmacie.</b><span>Elle n\'est jamais envoyée ni conservée dans cette application : seule sa vérification (date, numéro interne, auteur) est enregistrée.</span></div></div>'+'<form id="f-presc" class="fform" novalidate>'
+  openSheet('<h2>Confirmer l\'ordonnance</h2><p class="sub">'+esc(e.n)+' · '+esc(pat(e.pt).n)+'</p>'+'<div class="infobox">'+svg('cross')+'<div><b>Aucune ordonnance n\'est stockée en ligne.</b><span>Les ordonnances sont accessibles via le programme, qui va les récupérer sur votre serveur local. Seule la vérification (date, numéro interne, auteur) est enregistrée en ligne.</span></div></div>'+'<form id="f-presc" class="fform" novalidate>'
     +'<label class="fld" for="pr-date">Date de l\'ordonnance</label><input class="gin" id="pr-date" type="date" max="'+iso+'" value="'+esc(pr.date||'')+'">'
     +'<label class="fld" for="pr-ref">N° interne de la pharmacie (facultatif)</label><input class="gin" id="pr-ref" maxlength="80" autocomplete="off" placeholder="ORD-2026-0412" value="'+esc(refv)+'">'
     +'<label class="chk"><input type="checkbox" id="pr-ok"><span>La pharmacie détient l\'ordonnance originale et l\'a vérifiée pour ce matériel et cette durée.</span></label>'
@@ -1495,7 +1525,7 @@ function viewPharmaHome(){
     +'<div class="side">'+ic('coins')+'<div><b class="num">'+xpf(rev)+'</b>de loyers par semaine</div></div></div></div>'
     +'<div class="kpis"><button class="kpi" data-tab="loc">'+ic('users')+'<b class="num">'+np+'</b><span>Bénéficiaires équipés</span></button><button class="kpi" data-ltab="renew">'+ic('cal')+'<b class="num">'+renew+'</b><span>À renouveler sous 14 j</span></button>'
     +'<button class="kpi" data-tab="loc">'+ic('clip')+'<b class="num">'+miss+'</b><span>Ordonnances à confirmer</span></button><button class="kpi" data-tab="fact">'+ic('coins')+'<b class="num">'+DONE.length+'</b><span>Locations terminées</span></button></div>'
-    +'<div class="infobox">'+svg('cross')+'<div><b>L\'ordonnance reste uniquement à la pharmacie.</b><span>Elle n\'est jamais envoyée ni conservée dans cette application : seule sa vérification (date, numéro interne, auteur) est enregistrée.</span></div></div>'
+    +'<div class="infobox">'+svg('cross')+'<div><b>Aucune ordonnance n\'est stockée en ligne.</b><span>Les ordonnances sont accessibles via le programme, qui va les récupérer sur votre serveur local. Seule la vérification (date, numéro interne, auteur) est enregistrée en ligne.</span></div></div>'
     +'<section>'+secH('clip','À traiter<span class="badge red num" style="margin-left:4px">'+al.length+'</span>')+'<div class="list">'+alertRows(al)+'</div></section>'
     +'<section>'+secH('lit','Vos locations','<button class="more" data-tab="loc">Tout voir'+ic('arrow')+'</button>')+'<div class="list">'+it.slice().sort(function(a,b){return a.end-b.end;}).slice(0,6).map(function(e){return rowE(e,pat(e.pt).n+' · '+leftTxt(rent(e)),pill(e));}).join('')+'</div></section>';
 }
@@ -1585,6 +1615,8 @@ document.addEventListener('click',function(x){
   if(d.act==='fact-copy'){copyText(factCsv(fData),'Facturation copiée pour un tableur');return;}
   if(d.act==='presc'){prescSheet();return;}
   if(d.act==='scan-presc'){var si=$('scan-in');si.value='';si.click();return;}
+  if(d.act==='view-presc'){viewPresc(false);return;}
+  if(d.act==='view-pick-dir'){closeSheet();viewPresc(true);return;}
   if(d.act==='import-presc'){var ii=$('import-in');ii.value='';ii.click();return;}
   if(d.act==='scan-save-dir'){saveToDir(false);return;}
   if(d.act==='scan-pick-dir'){saveToDir(true);return;}
