@@ -584,6 +584,7 @@ var ICON={
   down:'<path d="M12 4v12M7 11l5 5 5-5M5 20h14"/>',
   back:'<path d="m15 5-7 7 7 7"/>',
   phone:'<path d="M6.500 3.500h3l1.500 4-2 1.300a11 11 0 0 0 6.200 6.200L16.500 13l4 1.500v3a2 2 0 0 1-2.200 2A16 16 0 0 1 4.500 5.700 2 2 0 0 1 6.500 3.500z"/>',
+  mail:'<rect x="3.500" y="5.500" width="17" height="13" rx="2.500"/><path d="m4 7 8 6 8-6"/>',
   ret:'<path d="M9 7 4 12l5 5M4 12h11a5 5 0 0 1 0 10h-2"/>'
 };
 function ic(k){return '<svg class="i" viewBox="0 0 24 24">'+ICON[k]+'</svg>';}
@@ -1168,7 +1169,7 @@ function moreSheet(){
   var it=accountSheet();
   if(STAFF){it.push(['data-act="settings"','gear','Paramètres','Puces NFC et adresse des liens'],['data-mode="plan"','pin','Plan du matériel','Où se trouve chaque équipement'],['data-rtab="fact"','clip','Facturation','Montants par mois et par pharmacie']);
     if(ONLINE&&ROLE==='admin')it.push(['data-act="accounts"','users','Comptes et pharmacies','Accès des pharmacies et de l\'équipe']);}
-  else it.push(['data-tab="fact"','clip','Facturation','Vos montants par mois']);
+  else it.push(['data-tab="fact"','clip','Facturation','Vos montants par mois'],['data-act="my-mail"','mail','E-mail des rappels',PHARM[0]&&PHARM[0].em?esc(PHARM[0].em):'Aucune adresse enregistrée']);
   if(ONLINE)it.push(['data-act="change-pwd"','tag','Changer le mot de passe','Au moins 10 caractères'],['data-act="logout"','ret','Se déconnecter','Fermer la session sur cet appareil']);
   it.push(['data-act="credits"','clip','Crédits photos','Auteurs et licences']);
   menuSheet('Plus',it);
@@ -1209,7 +1210,7 @@ function setRole(me){ME=me;ROLE=me.role;STAFF=ROLE!=='pharmacie';}
 function loadState(){return srv('GET','state').then(applyState);}
 function applyState(st){
   setRole(st.me);DOCS_ON=!!st.documents_enabled;base=st.link_base||DEFBASE;COMMUNES=st.communes||[];
-  PHARM=st.pharmacies.map(function(f){return {id:String(f.id),n:f.name,c:f.commune};});
+  PHARM=st.pharmacies.map(function(f){return {id:String(f.id),n:f.name,c:f.commune,em:f.email||''};});
   patients=st.patients.map(function(p){return {id:String(p.id),a:p.address||p.commune,c:p.commune,lat:p.lat,lon:p.lon,n:p.name,z:p.commune,ph:p.phone||''};});
   var favs={};try{JSON.parse(localStorage.getItem(FKEY)||'[]').forEach(function(id){favs[id]=1;});}catch(x){}
   equip=st.equipment.map(function(e){var id=String(e.id);return {id:id,ref:e.ref,ph:e.photo,k:e.kind,n:e.name,m:e.brand,cat:e.catalog,st:e.status,
@@ -1249,7 +1250,7 @@ document.addEventListener('submit',function(x){
     srv('POST','login',{login:l,password:p}).then(function(r){setRole(r.me);if(r.me.must_change)showPwd(true);else enterApp();}).catch(function(e){gateErr('lg-err',e.message);});}
   else if(x.target.id==='f-pwd'){x.preventDefault();var c=$('pw-cur').value,n=$('pw-new').value,n2=$('pw-new2').value;if(n!==n2)return gateErr('pw-err','Les deux nouveaux mots de passe ne sont pas identiques.');
     srv('POST','password',{current:c,next:n}).then(function(r){setRole(r.me);toast('Mot de passe enregistré');enterApp();}).catch(function(e){if(e.status===401)return showLogin();gateErr('pw-err',e.message);});}
-  else if(x.target.id==='f-user'||x.target.id==='f-pharm'||x.target.id==='f-pat'||x.target.id==='f-presc'){x.preventDefault();submitForm(x.target.id);}
+  else if(x.target.id==='f-user'||x.target.id==='f-pharm'||x.target.id==='f-pat'||x.target.id==='f-presc'||x.target.id==='f-mail'||x.target.id==='f-mtest'){x.preventDefault();submitForm(x.target.id);}
 });
 function logout(){srv('POST','logout',{}).catch(function(){}).then(function(){ME=null;booted=false;closeSheet();if(S.cur)closeDetail();if(setOpen)closeSettings();showLogin();});}
 
@@ -1593,8 +1594,11 @@ function viewPharmaHome(){
 
 /* Comptes et pharmacies (administrateur) */
 var usersCache=[];
+var mailCache=null;
 function openAccounts(){ovMode='accounts';setOpen=true;renderAccounts();settingsEl.classList.add('open');settingsEl.setAttribute('aria-hidden','false');
-  srv('GET','users').then(function(r){usersCache=r.users;if(setOpen&&ovMode==='accounts')renderAccounts();}).catch(errToast);}
+  srv('GET','users').then(function(r){usersCache=r.users;if(setOpen&&ovMode==='accounts')renderAccounts();}).catch(errToast);
+  loadMail();}
+function loadMail(){srv('GET','mail').then(function(r){mailCache=r;if(setOpen&&ovMode==='accounts')renderAccounts();}).catch(function(){});}
 var ROLE_L={admin:'Administrateur',equipe:'Équipe du parc',pharmacie:'Pharmacie'};
 function renderAccounts(){
   settingsEl.innerHTML='<div class="sbar pad"><button class="back" data-act="close-settings" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button><h2>Comptes</h2></div>'
@@ -1603,7 +1607,20 @@ function renderAccounts(){
     +'<section>'+secH('users','Comptes',badge(usersCache.length))+'<div class="list">'+(usersCache.map(function(x){
       var st=!x.active?['Désactivé','p-maint']:x.must_change?['Provisoire','p-desinf']:['Actif','p-dispo'];
       return '<button class="row" data-user="'+x.id+'"><span class="avatar">'+initials(x.name)+'</span><span class="body"><div class="t">'+esc(x.name)+'</div><div class="s w2">'+esc(x.login)+' · '+ROLE_L[x.role]+(x.pharmacy?' · '+esc(x.pharmacy):'')+'</div></span><span class="pill '+st[1]+'">'+st[0]+'</span></button>';}).join('')||'<div class="empty">Chargement…</div>')+'</div></section>'
-    +'<section>'+secH('cross','Pharmacies',badge(PHARM.length))+'<div class="list">'+PHARM.map(function(f){return '<div class="row"><span class="ico a-ok"><svg viewBox="0 0 24 24">'+ICON.cross+'</svg></span><span class="body"><div class="t">'+esc(f.n)+'</div><div class="s">'+esc(f.c)+'</div></span></div>';}).join('')+'</div></section></div></div>';
+    +'<section>'+secH('cross','Pharmacies',badge(PHARM.length))+'<div class="list">'+PHARM.map(function(f){return '<button class="row" data-phmail="'+f.id+'"><span class="ico a-ok"><svg viewBox="0 0 24 24">'+ICON.cross+'</svg></span><span class="body"><div class="t">'+esc(f.n)+'</div><div class="s w2">'+esc(f.c)+' · '+(f.em?esc(f.em):'<span class="warnt">aucune adresse e-mail</span>')+'</div></span><span class="chev">'+ICON.chev+'</span></button>';}).join('')+'</div></section>'
+    +mailSection()+'</div></div>';
+}
+function mailSection(){
+  var m=mailCache;if(!m)return '<section>'+secH('mail','E-mails de rappel')+'<div class="list"><div class="empty">Chargement…</div></div></section>';
+  var log=m.log,last=log?('Dernier envoi : '+stamp(log.at)+' · '+log.sent+' e-mail'+(log.sent>1?'s':'')+' envoyé'+(log.sent>1?'s':'')+(log.skipped?' · '+log.skipped+' pharmacie'+(log.skipped>1?'s':'')+' sans adresse':'')+(log.errors.length?'<br><span class="warnt">'+log.errors.map(esc).join('<br>')+'</span>':'')):'Aucun envoi pour l\'instant.';
+  return '<section>'+secH('mail','E-mails de rappel',m.configured?'<span class="pill p-dispo">'+ic('okc')+'Prêt</span>':'<span class="pill p-desinf">À configurer</span>')
+    +'<p class="note">Chaque matin, chaque pharmacie reçoit un e-mail s\'il y a du nouveau : ordonnances à confirmer, à renouveler ou expirées. Le patient n\'y figure que par ses initiales et sa commune.</p>'
+    +(m.configured?'':'<div class="renew">'+svg('warn')+'<div><b>Envoi d\'e-mails non configuré sur le serveur</b><span>Il faut brancher un service d\'envoi (Resend, Brevo ou votre messagerie). Les réglages ci-dessous sont enregistrés en attendant.</span></div></div>')
+    +'<div class="list"><button class="row" data-act="mail-toggle"><span class="ico '+(m.enabled?'a-ok':'a-crit')+'">'+svg(m.enabled?'okc':'close')+'</span><span class="body"><div class="t">Envoi automatique '+(m.enabled?'activé':'désactivé')+'</div><div class="s">Toucher pour '+(m.enabled?'désactiver':'activer')+'</div></span></button></div>'
+    +'<label class="fld">Heure d\'envoi (heure de Tahiti)</label><div class="durs left">'+[6,7,8,9].map(function(h){return '<button class="chip" data-mhour="'+h+'" aria-pressed="'+(m.hour===h)+'">'+h+' h</button>';}).join('')+'</div>'
+    +'<div class="stack"><button class="btn soft" data-act="mail-preview">Voir les rappels en attente</button>'
+    +(m.configured?'<button class="btn soft" data-act="mail-test">Envoyer un e-mail de test</button><button class="btn" data-act="mail-run">'+svg('mail')+'Envoyer les rappels maintenant</button>':'')+'</div>'
+    +'<p class="note">'+last+'</p></section>';
 }
 function chipSel(name,opts,cur){return '<div class="durs" data-sel="'+name+'">'+opts.map(function(o){return '<button type="button" class="chip" data-opt="'+esc(o[0])+'" aria-pressed="'+(cur===o[0])+'">'+esc(o[1])+'</button>';}).join('')+'</div>';}
 function selVal(name){var b=document.querySelector('[data-sel="'+name+'"] .chip[aria-pressed="true"]');return b?b.dataset.opt:'';}
@@ -1638,7 +1655,15 @@ function userSheet(id){
   menuSheet(esc(x.name),[['data-ureset="'+x.id+'"','tag','Réinitialiser le mot de passe','Un mot de passe provisoire sera créé'],
     ['data-uactive="'+x.id+'" data-v="'+(x.active?0:1)+'"',x.active?'warn':'okc',x.active?'Désactiver le compte':'Réactiver le compte',x.active?'La personne ne pourra plus se connecter':'La personne pourra de nouveau se connecter']]);
 }
+function emailSheet(title,cur,target){
+  openSheet('<h2>'+title+'</h2><form id="f-mail" class="fform" novalidate data-target="'+target+'"><label class="fld" for="ml-in">Adresse(s) e-mail des rappels</label>'
+    +'<input class="gin" id="ml-in" type="email" inputmode="email" autocomplete="email" autocapitalize="none" placeholder="officine@pharmacie.pf" value="'+esc(cur||'')+'">'
+    +'<p class="note">Plusieurs adresses possibles, séparées par une virgule. Laisser vide pour ne plus recevoir de rappels.</p><p class="err" id="ml-err" hidden></p>'
+    +'<button class="btn" type="submit">Enregistrer</button><button class="btn soft" type="button" data-act="close-sheet">Annuler</button></form>');
+}
 function submitForm(id){
+  if(id==='f-mail'){var tg=document.getElementById('f-mail').dataset.target;srv('POST','pharmacies/'+tg+'/email',{email:$('ml-in').value}).then(loadState).then(function(){closeSheet();if(setOpen&&ovMode==='accounts')renderAccounts();toast('Adresse enregistrée');}).catch(function(e){gateErr('ml-err',e.message);});return;}
+  if(id==='f-mtest'){srv('POST','mail/test',{to:$('mt-in').value}).then(function(){closeSheet();toast('E-mail de test envoyé');}).catch(function(e){gateErr('mt-err',e.message);});return;}
   if(id==='f-user'){var role=selVal('role');srv('POST','users',{name:$('u-name').value,login:$('u-login').value,role:role,pharmacy:role==='pharmacie'?selVal('pharm'):null})
       .then(function(r){pwdSheet(r.login,r.password,'Compte créé');return srv('GET','users');}).then(function(r){usersCache=r.users;renderAccounts();}).catch(function(e){gateErr('u-err',e.message);});}
   else if(id==='f-pharm'){srv('POST','pharmacies',{name:$('ph-name').value,commune:$('ph-c').value}).then(loadState).then(function(){closeSheet();renderAccounts();toast('Pharmacie ajoutée');}).catch(function(e){gateErr('ph-err',e.message);});}
@@ -1662,7 +1687,7 @@ function act(a,e){
   renderDetail();
 }
 document.addEventListener('click',function(x){
-  var t=x.target.closest('[data-opt],[data-fmonth],[data-ffa],[data-deldoc],[data-deldocok],[data-user],[data-ureset],[data-pkind],[data-pvalid],[data-uactive],[data-copy],[data-tab],[data-open],[data-act],[data-filter],[data-pick],[data-link],[data-place],[data-mode],[data-state],[data-tag],[data-map],[data-dur],[data-hist],[data-fav],[data-keb],[data-progid],[data-ltab],[data-extend],[data-pkeb],[data-zone],[data-pext],[data-cdays],[data-scroll],[data-rtab],[data-export],[data-fa],[data-rfa]');if(!t)return;
+  var t=x.target.closest('[data-opt],[data-fmonth],[data-ffa],[data-deldoc],[data-deldocok],[data-user],[data-ureset],[data-pkind],[data-pvalid],[data-phmail],[data-mhour],[data-uactive],[data-copy],[data-tab],[data-open],[data-act],[data-filter],[data-pick],[data-link],[data-place],[data-mode],[data-state],[data-tag],[data-map],[data-dur],[data-hist],[data-fav],[data-keb],[data-progid],[data-ltab],[data-extend],[data-pkeb],[data-zone],[data-pext],[data-cdays],[data-scroll],[data-rtab],[data-export],[data-fa],[data-rfa]');if(!t)return;
   var d=t.dataset;
   if(d.opt!==undefined){var grp=t.parentNode;[].forEach.call(grp.querySelectorAll('.chip'),function(c){c.setAttribute('aria-pressed',String(c===t));});return;}
   if(d.fmonth){fState.month=shiftMonth(fState.month,+d.fmonth);fData=null;render(true);return;}
@@ -1674,6 +1699,14 @@ document.addEventListener('click',function(x){
   if(d.uactive){closeSheet();srv('POST','users/'+d.uactive+'/active',{active:d.v==='1'}).then(function(){return srv('GET','users');}).then(function(r){usersCache=r.users;renderAccounts();toast(d.v==='1'?'Compte réactivé':'Compte désactivé');}).catch(errToast);return;}
   if(d.copy){copyText(d.copy,'Copié');return;}
   if(d.act==='fact-copy'){copyText(factCsv(fData),'Facturation copiée pour un tableur');return;}
+  if(d.phmail){var pf=phar(d.phmail);emailSheet('E-mail · '+esc(pf.n),pf.em,pf.id);return;}
+  if(d.act==='my-mail'){closeSheet();var mp=PHARM[0];emailSheet('E-mail des rappels',mp?mp.em:'','me');return;}
+  if(d.mhour){srv('POST','mail/settings',{hour:+d.mhour}).then(loadMail).catch(errToast);return;}
+  if(d.act==='mail-toggle'){srv('POST','mail/settings',{enabled:!(mailCache&&mailCache.enabled)}).then(loadMail).then(function(){toast(mailCache&&!mailCache.enabled?'Envoi automatique activé':'Envoi automatique désactivé');}).catch(errToast);return;}
+  if(d.act==='mail-test'){openSheet('<h2>E-mail de test</h2><form id="f-mtest" class="fform" novalidate><label class="fld" for="mt-in">Envoyer à</label><input class="gin" id="mt-in" type="email" autocapitalize="none" placeholder="vous@exemple.pf"><p class="err" id="mt-err" hidden></p><button class="btn" type="submit">Envoyer</button><button class="btn soft" type="button" data-act="close-sheet">Annuler</button></form>');return;}
+  if(d.act==='mail-run'){toast('Envoi des rappels…');srv('POST','mail/run',{}).then(function(r){loadMail();toast(r.sent+' e-mail'+(r.sent>1?'s':'')+' envoyé'+(r.sent>1?'s':'')+(r.errors.length?' · '+r.errors.length+' erreur(s)':''));}).catch(errToast);return;}
+  if(d.act==='mail-preview'){srv('GET','mail/preview').then(function(r){var html=r.pharmacies.map(function(f){return '<section>'+secH('cross',esc(f.name),badge(f.items.length))+'<p class="note">'+(f.email?'Envoi à '+esc(f.email):'<span class="warnt">Aucune adresse : pas d\'envoi</span>')+'</p>'+(f.items.length?'<div class="list">'+f.items.map(function(i){return '<div class="row"><span class="body"><div class="t">'+esc(i.kind)+'</div><div class="s w2">'+esc(i.eq)+' · '+esc(i.ref)+'<br>'+esc(i.who)+' · '+esc(i.when)+'</div></span></div>';}).join('')+'</div>':'<p class="note">Rien de nouveau.</p>')+'</section>';}).join('');
+    openSheet('<h2>Rappels en attente</h2><p class="sub">Ce qui partira au prochain envoi (chaque rappel n\'est envoyé qu\'une fois).</p><div class="plist">'+html+'</div><button class="btn soft" data-act="close-sheet">Fermer</button>');sheet.style.height='88%';}).catch(errToast);return;}
   if(d.act==='presc'){prescSheet();return;}
   if(d.act==='presc-new'){prescSheet('',true);return;}
   if(d.pvalid){var pd=$('pr-date').value,base2=pd||(function(){var t=new Date();return t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2);})();

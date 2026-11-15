@@ -15,6 +15,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const zlib = require('node:zlib');
 const { DatabaseSync } = require('node:sqlite');
+const mailer = require('./mailer');
 
 const ROOT = path.resolve(__dirname, '..');
 const PORT = Number(process.env.PORT) || 3000;
@@ -83,6 +84,9 @@ CREATE INDEX IF NOT EXISTS photos_eq ON photos(equipment_id, at);`);
 const PHOTOS = path.join(DATA, 'photos');
 fs.mkdirSync(PHOTOS, { recursive: true });
 if (!db.prepare('PRAGMA table_info(events)').all().some(c => c.name === 'photo_id')) db.exec('ALTER TABLE events ADD COLUMN photo_id INTEGER');
+if (!db.prepare('PRAGMA table_info(pharmacies)').all().some(c => c.name === 'email')) db.exec("ALTER TABLE pharmacies ADD COLUMN email TEXT NOT NULL DEFAULT ''");
+db.exec(`CREATE TABLE IF NOT EXISTS notifications(id INTEGER PRIMARY KEY, rental_id INTEGER NOT NULL REFERENCES rentals(id), kind TEXT NOT NULL, ckey TEXT NOT NULL,
+  sent_at TEXT NOT NULL, UNIQUE(rental_id, kind, ckey));`);
 const PHOTO_KINDS = { livraison: 'livraison', retour: 'retour', etat: 'état', panne: 'panne' };
 for (const [col, def] of [['phone', "TEXT NOT NULL DEFAULT ''"], ['anonymized', 'INTEGER NOT NULL DEFAULT 0']])
   if (!db.prepare('PRAGMA table_info(patients)').all().some(c => c.name === col)) db.exec('ALTER TABLE patients ADD COLUMN ' + col + ' ' + def);
@@ -300,6 +304,80 @@ function purge() {
 purge(); setInterval(purge, 24 * 3600e3).unref();
 setInterval(() => q('DELETE FROM sessions WHERE expires_at<?').run(Date.now()), 3600e3).unref();
 
+/* ---------- Rappels par e-mail aux pharmacies ----------
+   Un e-mail par jour et par pharmacie, seulement s'il y a du nouveau. Chaque rappel n'est envoyé qu'une fois par étape
+   (clé = date de validité de l'ordonnance) : une nouvelle ordonnance relance le cycle. Le patient n'y figure que par ses
+   initiales et sa commune ; le lien ouvre la fiche dans le portail (connexion obligatoire). */
+const MAIL_KINDS = { missing: 'Ordonnance à confirmer', soon14: 'Nouvelle ordonnance à prévoir', soon3: 'Ordonnance bientôt expirée', expired: 'Ordonnance expirée', beforeEnd: 'Ordonnance plus courte que la location' };
+function initialsOf(n) { return String(n || '').split(/[\s-]+/).filter(w => /^\p{Lu}/u.test(w)).slice(0, 3).map(w => w[0] + '.').join(' ') || '—'; }
+function emailsOf(s) { return String(s || '').split(/[,;\s]+/).map(x => x.trim()).filter(x => /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(x)); }
+function pendingReminders(pharmacyId) {
+  const T = today();
+  const rows = q(`SELECT r.id, r.patient_id, r.start_date, r.planned_end, e.ref, e.name eq, p.commune, p.name pname, pr.valid_until, pr.presc_date
+    FROM rentals r JOIN equipment e ON e.id=r.equipment_id JOIN patients p ON p.id=r.patient_id LEFT JOIN prescriptions pr ON pr.rental_id=r.id
+    WHERE r.end_date IS NULL AND r.pharmacy_id=? ORDER BY e.ref`).all(pharmacyId);
+  const out = [];
+  for (const r of rows) {
+    let kind = null, key = '', when = '';
+    if (!r.valid_until) {
+      if (!r.presc_date && diffDays(r.start_date, T) >= 2) { kind = 'missing'; key = r.start_date; when = 'location démarrée le ' + r.start_date.split('-').reverse().join('/'); }
+    } else {
+      const left = diffDays(T, r.valid_until), v = r.valid_until.split('-').reverse().join('/');
+      if (left < 0) { kind = 'expired'; key = r.valid_until; when = 'expirée depuis le ' + v; }
+      else if (left <= 3) { kind = 'soon3'; key = r.valid_until; when = 'expire le ' + v; }
+      else if (left <= 14) { kind = 'soon14'; key = r.valid_until; when = 'expire le ' + v; }
+      else if (r.valid_until < r.planned_end) { kind = 'beforeEnd'; key = r.valid_until + '|' + r.planned_end; when = 'valable jusqu\'au ' + v + ', location prévue jusqu\'au ' + r.planned_end.split('-').reverse().join('/'); }
+    }
+    if (!kind) continue;
+    if (q('SELECT 1 FROM notifications WHERE rental_id=? AND kind=? AND ckey=?').get(r.id, kind, key)) continue;
+    out.push({ rental_id: r.id, kind, key, ref: r.ref, eq: r.eq, who: initialsOf(dec(r.pname)) + ' (' + r.commune + ')', when });
+  }
+  return out;
+}
+function reminderMail(ph, items) {
+  const base = setting('link_base', PUBLIC_URL).replace(/[#=]$/, '').replace(/\/?$/, '/');
+  const h = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const crit = items.filter(i => i.kind === 'expired').length;
+  const subject = (crit ? crit + ' ordonnance' + (crit > 1 ? 's' : '') + ' expirée' + (crit > 1 ? 's' : '') + ' · ' : '') + 'Rappels ordonnances · ' + ph.name;
+  const rows = items.map(i => '<tr><td style="padding:10px 12px;border-bottom:1px solid #e3ecee"><b style="color:' + (i.kind === 'expired' ? '#b8352b' : '#a65f00') + '">' + h(MAIL_KINDS[i.kind]) + '</b><br>'
+    + h(i.eq) + ' · ' + h(i.ref) + '<br><span style="color:#5b7078">Bénéficiaire ' + h(i.who) + ' · ' + h(i.when) + '</span></td>'
+    + '<td style="padding:10px 12px;border-bottom:1px solid #e3ecee;text-align:right;white-space:nowrap"><a href="' + h(base + i.ref) + '" style="color:#0a7c88;font-weight:600">Ouvrir la fiche</a></td></tr>').join('');
+  const html = '<div style="font-family:Arial,Helvetica,sans-serif;color:#0d2730;max-width:620px;margin:0 auto">'
+    + '<div style="background:#0b5361;color:#fff;padding:16px 20px;border-radius:12px 12px 0 0"><b style="font-size:18px;color:#62cfc4">Mana</b><b style="font-size:18px">Process</b> · Parc NFC</div>'
+    + '<div style="border:1px solid #d5dfe1;border-top:0;border-radius:0 0 12px 12px;padding:18px 20px">'
+    + '<p style="margin:0 0 12px">Bonjour,</p><p style="margin:0 0 14px">Voici les ordonnances à traiter pour les locations de la <b>' + h(ph.name) + '</b> :</p>'
+    + '<table style="width:100%;border-collapse:collapse;font-size:14px">' + rows + '</table>'
+    + '<p style="margin:16px 0 0;font-size:13px;color:#5b7078">Pour enregistrer une nouvelle ordonnance, ouvrez la fiche dans le portail puis « Enregistrer la nouvelle ordonnance ». '
+    + 'Aucune ordonnance n\'est stockée en ligne : elles restent sur le serveur de la pharmacie.</p>'
+    + '<p style="margin:12px 0 0;font-size:12px;color:#8fa6ad">Message automatique envoyé une fois par jour lorsqu\'il y a du nouveau. Pour changer l\'adresse de réception : portail, menu Plus, « E-mail des rappels ».</p></div></div>';
+  const text = 'Rappels ordonnances · ' + ph.name + '\n\n' + items.map(i => '- ' + MAIL_KINDS[i.kind] + ' : ' + i.eq + ' (' + i.ref + '), bénéficiaire ' + i.who + ', ' + i.when + '\n  ' + base + i.ref).join('\n')
+    + '\n\nAucune ordonnance n\'est stockée en ligne : elles restent sur le serveur de la pharmacie.\nMessage automatique.';
+  return { subject, html, text };
+}
+async function runReminders(manual) {
+  const res = { at: nowStamp(), sent: 0, skipped: 0, errors: [] };
+  if (!mailer.configured()) { res.errors.push('Envoi d\'e-mails non configuré.'); setSetting('mail_log', JSON.stringify(res)); return res; }
+  for (const ph of q('SELECT * FROM pharmacies ORDER BY name').all()) {
+    const items = pendingReminders(ph.id), to = emailsOf(ph.email);
+    if (!items.length) continue;
+    if (!to.length) { res.skipped++; continue; }
+    try {
+      await mailer.send(Object.assign({ to }, reminderMail(ph, items)));
+      tx(() => items.forEach(i => q('INSERT OR IGNORE INTO notifications(rental_id,kind,ckey,sent_at) VALUES(?,?,?,?)').run(i.rental_id, i.kind, i.key, nowStamp())));
+      res.sent++;
+    } catch (e) { res.errors.push(ph.name + ' : ' + e.message); }
+  }
+  setSetting('mail_log', JSON.stringify(res));
+  if (!manual) setSetting('mail_last_run', today());
+  if (res.sent || res.errors.length) console.log('Rappels e-mail : ' + res.sent + ' envoyé(s), ' + res.errors.length + ' erreur(s).');
+  return res;
+}
+setInterval(() => {
+  if (setting('mail_enabled', '1') !== '1' || setting('mail_last_run') === today()) return;
+  const hour = Number(new Date().toLocaleString('sv-SE', { timeZone: TZ }).slice(11, 13));
+  if (hour >= Number(setting('mail_hour', '7'))) runReminders(false).catch(e => console.error('Rappels e-mail :', e.message));
+}, 10 * 60e3).unref();
+
 /* ---------- Outils HTTP ---------- */
 class HttpError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
 const fail = (s, m) => { throw new HttpError(s, m); };
@@ -391,7 +469,7 @@ function durLabel(n) { return n % 7 === 0 ? (n / 7 === 1 ? '1 semaine' : n / 7 +
 
 function state(u) {
   const T = today(), staff = isStaff(u), ph = u.pharmacy_id;
-  const pharmacies = staff ? q('SELECT id,name,commune FROM pharmacies ORDER BY name').all() : q('SELECT id,name,commune FROM pharmacies WHERE id=?').all(ph);
+  const pharmacies = staff ? q('SELECT id,name,commune,email FROM pharmacies ORDER BY name').all() : q('SELECT id,name,commune,email FROM pharmacies WHERE id=?').all(ph);
   const eqRows = staff ? q(`SELECT e.*, r.id rental_id, r.patient_id, r.pharmacy_id, r.start_date, r.planned_end
       FROM equipment e LEFT JOIN rentals r ON r.equipment_id=e.id AND r.end_date IS NULL ORDER BY e.ref`).all()
     : q(`SELECT e.*, r.id rental_id, r.patient_id, r.pharmacy_id, r.start_date, r.planned_end
@@ -730,6 +808,39 @@ async function api(req, res, route, url) {
     const name = String(body.name || '').trim(); if (name.length < 2) fail(400, 'Indiquez le nom de la pharmacie.');
     const id = Number(q('INSERT INTO pharmacies(name,commune,created_at) VALUES(?,?,?)').run(name.slice(0, 120), String(body.commune || '').trim().slice(0, 80), nowStamp()).lastInsertRowid);
     return json(req, res, 200, { id });
+  }
+  if ((mm = route.match(/^pharmacies\/(\d+|me)\/email$/)) && m === 'POST') {
+    const id = mm[1] === 'me' ? u.pharmacy_id : Number(mm[1]);
+    if (mm[1] !== 'me') needAdmin(u); else if (!id) fail(403, 'Réservé aux comptes pharmacie.');
+    if (!q('SELECT id FROM pharmacies WHERE id=?').get(id)) fail(404, 'Pharmacie introuvable.');
+    const raw = String(body.email || '').trim(), list = emailsOf(raw);
+    if (raw && list.length !== raw.split(/[,;\s]+/).filter(Boolean).length) fail(400, 'Adresse e-mail invalide. Séparez plusieurs adresses par une virgule.');
+    if (list.length > 5) fail(400, 'Cinq adresses au plus.');
+    q('UPDATE pharmacies SET email=? WHERE id=?').run(list.join(', '), id);
+    return json(req, res, 200, { email: list.join(', ') });
+  }
+  if (route === 'mail' && m === 'GET') {
+    needAdmin(u);
+    let log = null; try { log = JSON.parse(setting('mail_log', 'null')); } catch (e) {}
+    return json(req, res, 200, Object.assign(mailer.info(), { enabled: setting('mail_enabled', '1') === '1', hour: Number(setting('mail_hour', '7')), last_run: setting('mail_last_run', null), log }));
+  }
+  if (route === 'mail/settings' && m === 'POST') {
+    needAdmin(u);
+    if (typeof body.enabled === 'boolean') setSetting('mail_enabled', body.enabled ? '1' : '0');
+    if (body.hour !== undefined) { const hh = Number(body.hour); if (!Number.isInteger(hh) || hh < 5 || hh > 20) fail(400, 'Heure invalide (5 à 20 h).'); setSetting('mail_hour', String(hh)); }
+    return json(req, res, 200, { ok: true });
+  }
+  if (route === 'mail/test' && m === 'POST') {
+    needAdmin(u);
+    const to = emailsOf(body.to); if (!to.length) fail(400, 'Adresse e-mail invalide.');
+    try { await mailer.send({ to, subject: 'Test des e-mails MédiParc NFC', text: 'Cet e-mail confirme que l\'envoi automatique fonctionne.', html: '<p>Cet e-mail confirme que l\'envoi automatique des rappels <b>MédiParc NFC</b> fonctionne.</p>' }); }
+    catch (e) { fail(502, e.message); }
+    return json(req, res, 200, { ok: true });
+  }
+  if (route === 'mail/run' && m === 'POST') { needAdmin(u); return json(req, res, 200, await runReminders(true)); }
+  if (route === 'mail/preview' && m === 'GET') {
+    needAdmin(u);
+    return json(req, res, 200, { pharmacies: q('SELECT * FROM pharmacies ORDER BY name').all().map(f => ({ name: f.name, email: f.email, items: pendingReminders(f.id).map(i => ({ kind: MAIL_KINDS[i.kind], ref: i.ref, eq: i.eq, who: i.who, when: i.when })) })) });
   }
   if (route === 'users' && m === 'GET') {
     needAdmin(u);

@@ -73,6 +73,8 @@ Adresse : `https://manaprocess.cloud/materiel/`. Tout le monde (iPhone, Android,
 
 - **Photos horodatées du matériel** : depuis la fiche, « Prendre une photo horodatée » (livraison, retour, état, panne). Date, heure, référence, auteur et position sont incrustés sur l'image ; le serveur enregistre aussi sa propre heure et la position. Chaque photo apparaît aussi en vignette dans l'historique de l'équipement, à sa date. Les photos prises pendant une location sont visibles par la pharmacie concernée et supprimées 3 ans après la fin de cette location.
 
+- **E-mails de rappel aux pharmacies** : chaque jour à l'heure choisie (7 h par défaut, heure de Tahiti), chaque pharmacie reçoit un e-mail s'il y a du nouveau : ordonnance à confirmer (2 jours après le début de la location), à renouveler (14 jours puis 3 jours avant l'expiration, ou plus courte que la location), expirée. Chaque rappel n'est envoyé qu'une fois par étape ; une nouvelle ordonnance relance le cycle. Le patient n'y figure que par ses initiales et sa commune, avec un lien vers la fiche (connexion obligatoire). Réglages : Plus > Comptes et pharmacies (adresses, activation, heure, test, aperçu) ; chaque pharmacie peut changer son adresse (Plus > E-mail des rappels). Service d'envoi : variables `MAIL_PROVIDER` (resend, brevo ou smtp), `MAIL_API_KEY` ou `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASS`, et `MAIL_FROM`.
+
 ### Données personnelles
 
 - **Aucune information médicale** : ni ordonnance, ni pathologie, ni motif, ni prescripteur. Un bénéficiaire = nom, adresse, commune, téléphone.

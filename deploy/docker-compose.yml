@@ -18,6 +18,14 @@ services:
       - PUBLIC_URL=https://manaprocess.cloud/materiel/
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
       - DATA_KEY=${DATA_KEY:-}
+      - MAIL_PROVIDER=${MAIL_PROVIDER:-}
+      - MAIL_API_KEY=${MAIL_API_KEY:-}
+      - MAIL_FROM=${MAIL_FROM:-}
+      - MAIL_REPLY_TO=${MAIL_REPLY_TO:-}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
     volumes:
       - mediparc-data:/data
     command:
