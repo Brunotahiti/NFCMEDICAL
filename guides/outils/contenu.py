@@ -2,7 +2,7 @@
 
 
 def _h(g):
-    return {k: g[k] for k in ('phone', 'crop', 'duo', 'steps', 'bullets', 'tip', 'warn', 'key', 'split', 'faq', 'desk', 'win')}
+    return {k: g[k] for k in ('phone', 'crop', 'duo', 'steps', 'bullets', 'tip', 'warn', 'key', 'split', 'faq', 'desk', 'win', 'annot', 'legend')}
 
 
 def ui(t):
@@ -43,14 +43,15 @@ def pharmacie(g):
         win('p_pwd', 'Choix du mot de passe à la première connexion'), wide=True)
       + tip('Un compte par personne', 'Demandez au grossiste un identifiant pour chaque membre de l\'équipe officinale : l\'historique indiquera qui a fait chaque demande et chaque vérification d\'ordonnance.')))
     ch.append(('L\'écran principal', 'Le menu, la barre du haut et le tableau de bord',
-      desk('p_home', 'Repères : menu à gauche, barre du haut, tableau de bord au centre')
-      + '<table class="t"><tr><th>Zone</th><th>À quoi elle sert</th></tr>'
-      + '<tr><td><b>Nouvelle demande</b> (bouton en haut du menu)</td><td>Ouvre les quatre types de demande : location, reprise, prolongation, problème.</td></tr>'
-      + '<tr><td><b>Accueil</b></td><td>Le tableau de bord : chiffres clés, demandes en cours, actions à traiter.</td></tr>'
-      + '<tr><td><b>Locations</b></td><td>Contrats en cours, à renouveler, demandes et locations terminées.</td></tr>'
-      + '<tr><td><b>Facturation</b></td><td>Les montants de location de chaque mois.</td></tr>'
-      + '<tr><td><b>Plus</b></td><td>Catalogue, e-mail des rappels, guide d\'utilisation, mot de passe, déconnexion.</td></tr>'
-      + '<tr><td><b>Loupe, cloche, profil</b> (en haut à droite)</td><td>Rechercher un bénéficiaire ou un matériel ; voir les actions à traiter (le chiffre rouge) ; votre compte.</td></tr></table>'
+      h['annot']('p_home', [(16.3, 12.2), (16.3, 25.1), (16.3, 95.1), (88.2, 3.6), (95.2, 2.0), (21.6, 23.4), (21.6, 41.4), (21.6, 58.6)], 'Les repères de l\'écran principal, sur ordinateur')
+      + h['legend'](('Nouvelle demande', 'Location, reprise, prolongation ou problème.'),
+                    ('Accueil, Locations, Facturation', 'Les trois écrans du portail.'),
+                    ('Plus', 'Catalogue, e-mails, guide, mot de passe, déconnexion.'),
+                    ('Recherche', 'Retrouver un bénéficiaire ou un matériel.'),
+                    ('Cloche', 'Le nombre d\'actions à traiter.'),
+                    ('Bandeau', 'Équipements en location et loyers par semaine.'),
+                    ('Tuiles', 'Bénéficiaires, fins sous 14 jours, ordonnances, demandes.'),
+                    ('Nouvelle demande', 'Les quatre demandes, directement depuis l\'accueil.'))
       + split('<h3>Le tableau de bord</h3>' + bullets('<b>Le bandeau</b> : nombre d\'équipements en location et loyers par semaine.',
                 '<b>Les tuiles</b> : bénéficiaires équipés, fins de location sous 14 jours, ordonnances à traiter, demandes en cours. Cliquez sur une tuile pour ouvrir le détail.',
                 '<b>À traiter</b> : les actions urgentes en premier (ordonnance expirée, retour en retard…).')
@@ -155,9 +156,13 @@ def pharmacie(g):
       + f'<div class="contact"><b>Besoin d\'aide ?</b><br>{g["CONTACT"]}<br>Du lundi au vendredi, de 8 h à 16 h (heure de Tahiti).</div>'))
     intro = ('<div class="intro"><div class="c"><b>À qui s\'adresse ce guide ?</b>Aux pharmacies clientes qui demandent et suivent leurs locations de matériel médical, principalement depuis l\'ordinateur de l\'officine.</div>'
              '<div class="c"><b>Adresse du portail</b>https://manaprocess.cloud/materiel/<br>Identifiant et mot de passe fournis par le grossiste.</div></div>')
-    return {'file': 'guide-pharmacie.pdf', 'footer': 'MédiParc NFC · Guide du portail pharmacie', 'intro': intro, 'chapters': ch,
+    quick = [('Se connecter', 'Adresse manaprocess.cloud/materiel, identifiant fourni par le grossiste, puis votre mot de passe personnel.'),
+             ('Demander du matériel', 'Bouton « Nouvelle demande » › Location : produit, bénéficiaire, durée, date de livraison.'),
+             ('Suivre et ajuster', 'Locations › Demandes : planifiée, effectuée… Prolongation, reprise ou problème depuis la fiche.'),
+             ('Vérifier les ordonnances', 'Scan enregistré sur le serveur de la pharmacie, puis date et validité. Rappels avant expiration.')]
+    return {'quick': quick, 'chips': ('Sur ordinateur',), 'file': 'guide-pharmacie.pdf', 'footer': 'MédiParc NFC · Guide du portail pharmacie', 'intro': intro, 'chapters': ch,
             'cover': ('Guide d\'utilisation', 'Portail<br>pharmacie', 'Demandez le matériel, suivez vos locations, vérifiez les ordonnances et contrôlez la facturation, depuis l\'ordinateur de l\'officine.',
-                      'Pour les pharmacies clientes', [('p_home', 150)])}
+                      'Pour les pharmacies clientes', [('p_home', 120)])}
 
 
 # --------------------------------------------------------------------------------------------
@@ -187,6 +192,10 @@ def administrateur(g):
         + '<tr><td><b>Rapports</b></td><td>Rentabilité, utilisation, activité, exports, facturation.</td></tr>'
         + '<tr><td><b>Plus</b></td><td>Suivi des pharmacies, catalogue, paramètres NFC, comptes, guides.</td></tr></table>',
         win('g_quick', 'Les actions rapides'), wide=True)
+      + h['annot']('g_home', [(16.3, 12.2), (16.3, 25.1), (16.3, 30.6), (16.3, 36.0), (16.3, 41.5), (16.3, 95.1), (95.2, 2.0), (21.6, 23.4), (21.6, 55.0), (86.6, 16.2)], 'Les repères du tableau de bord')
+      + h['legend'](('Actions rapides', 'Demandes, planning, scan, location, retour.'), ('Parc', 'Tous les équipements.'), ('Locations', 'Contrats, demandes, planning.'),
+                    ('Entretien', 'Désinfection, maintenance, contrôles.'), ('Rapports', 'Rentabilité, exports, facturation.'), ('Plus', 'Pharmacies, catalogue, comptes, guides.'),
+                    ('Cloche', 'Actions à traiter, nouvelles demandes en tête.'), ('Occupation', 'Taux d\'occupation et revenus par semaine.'), ('Tuiles', 'Revenus, équipements, actions, maintenance.'), ('Paramètres', 'Étiquettes NFC et adresse des liens.'))
       + desk('g_home2', 'L\'accueil : demandes des pharmacies, planning, suivi, et la liste « À traiter »', small=True)
       + bullets('<b>Taux d\'occupation</b> et revenus par semaine ; cliquez sur un état (En location, Disponible…) pour la liste.',
                 '<b>Demandes des pharmacies</b> : les nouvelles demandes, avec un accès direct au planning et au suivi des pharmacies.',
@@ -306,9 +315,13 @@ def administrateur(g):
       + f'<div class="contact"><b>Assistance</b><br>{g["CONTACT"]}</div>'))
     intro = ('<div class="intro"><div class="c"><b>À qui s\'adresse ce guide ?</b>Au grossiste qui loue le matériel : administrateur et équipe du parc, sur l\'ordinateur du bureau.</div>'
              '<div class="c"><b>Les autres guides</b>Guide du portail pharmacie (pour vos clients) et guide du technicien (scan des étiquettes sur le téléphone), dans le menu Plus.</div></div>')
-    return {'file': 'guide-administrateur.pdf', 'footer': 'MédiParc NFC · Guide du grossiste', 'intro': intro, 'chapters': ch,
+    quick = [('Créer les accès', 'Comptes et pharmacies : un compte par pharmacie et par membre de l\'équipe, mot de passe provisoire.'),
+             ('Traiter les demandes', 'Accueil ou Locations › Demandes : planifier, livrer un équipement disponible, refuser.'),
+             ('Organiser les tournées', 'Locations › Planning : passages par jour et par commune, à copier pour le livreur.'),
+             ('Piloter le parc', 'Entretien, rapports de rentabilité, suivi des pharmacies et facturation mensuelle.')]
+    return {'quick': quick, 'chips': ('Sur ordinateur', 'Équipe du parc'), 'file': 'guide-administrateur.pdf', 'footer': 'MédiParc NFC · Guide du grossiste', 'intro': intro, 'chapters': ch,
             'cover': ('Guide d\'utilisation', 'Portail<br>du grossiste', 'Traitez les demandes des pharmacies, planifiez les tournées, suivez le parc, l\'entretien, la rentabilité et la facturation.',
-                      'Administrateur et équipe du parc', [('g_home', 150)])}
+                      'Pour le grossiste', [('g_home', 120)])}
 
 
 # --------------------------------------------------------------------------------------------
@@ -421,6 +434,10 @@ def technicien(g):
           ('Le bouton attendu n\'apparaît pas.', 'Les boutons dépendent de l\'état du matériel : vérifiez l\'état en haut de la fiche.'))))
     intro = ('<div class="intro"><div class="c"><b>À qui s\'adresse ce guide ?</b>Aux techniciens et livreurs qui livrent, reprennent, désinfectent, contrôlent le matériel et posent les étiquettes NFC.</div>'
              '<div class="c"><b>Ce qu\'il vous faut</b>Un téléphone avec NFC : iPhone avec l\'application, ou Android avec Chrome. Votre identifiant personnel.</div></div>')
-    return {'file': 'guide-technicien.pdf', 'footer': 'MédiParc NFC · Guide du technicien', 'intro': intro, 'chapters': ch,
+    quick = [('Préparer le téléphone', 'Application iPhone ou Chrome sur Android, NFC activé, votre identifiant personnel.'),
+             ('Consulter la tournée', 'Locations › Planning : livraisons, reprises et fins de location du jour.'),
+             ('Scanner chaque matériel', 'Bouton + › Scanner une puce NFC : la fiche s\'ouvre, le passage et la position sont enregistrés.'),
+             ('Prouver par la photo', 'Photo horodatée à chaque livraison, reprise ou panne, puis l\'action dans la fiche.')]
+    return {'quick': quick, 'chips': ('Sur téléphone',), 'file': 'guide-technicien.pdf', 'footer': 'MédiParc NFC · Guide du technicien', 'intro': intro, 'chapters': ch,
             'cover': ('Guide d\'utilisation', 'Technicien<br>et livreur', 'La tournée du jour, le scan des étiquettes NFC, les livraisons, reprises, désinfections et contrôles, avec des photos horodatées.',
-                      'Sur le téléphone, sur le terrain', [('t_plan', 46), ('t_fiche', 46)])}
+                      'Pour les techniciens et livreurs', [('t_plan', 40), ('t_fiche', 40)])}
