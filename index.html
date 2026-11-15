@@ -328,6 +328,21 @@ a.tel{color:var(--accent);font-weight:600;text-decoration:none}
 .kpi svg.i{width:24px;height:24px;color:var(--accent);margin-bottom:3px}
 .kpi b{font-family:var(--f-display);font-size:19px;font-weight:700;letter-spacing:-.02em;line-height:1.1;white-space:nowrap}
 .kpi b small{font-size:11px;font-weight:700}
+.qa4{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.qa4 button{background:var(--surface);border-radius:18px;box-shadow:var(--shadow);padding:12px;display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;min-width:0}
+.qa4 .ico{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;margin-bottom:4px}
+.qa4 .ico svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.qa4 b{font-family:var(--f-display);font-size:15px;font-weight:700}
+.qa4 small{font-size:12px;color:var(--muted);line-height:1.3}
+.subh{font-family:var(--f-display);font-size:14px;font-weight:700;color:var(--muted);margin:14px 2px 8px;text-align:left}
+textarea.gin{height:auto;min-height:78px;padding:12px 14px;resize:vertical;line-height:1.4}
+select.gin{appearance:auto;-webkit-appearance:menulist}
+.phkpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 6px}
+.phk{background:var(--bg);border-radius:14px;padding:10px;text-align:left;min-width:0}
+.phk b{display:block;font-family:var(--f-display);font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.phk span{font-size:11.5px;color:var(--muted);line-height:1.25;display:block}
+.phk.bad{background:var(--crit-soft)}.phk.bad b{color:var(--crit)}
+.phk.mid{background:var(--warn-soft)}.phk.mid b{color:var(--warn)}
 .kpi span{font-size:11px;color:var(--muted);line-height:1.25}
 .kpi .tg{align-self:flex-start;margin-top:3px;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:99px;color:var(--ok);background:var(--ok-soft);display:inline-flex;align-items:center;gap:2px}
 .kpi .tg.cr{color:var(--crit);background:var(--crit-soft)}
@@ -486,7 +501,8 @@ input.uid::placeholder{color:var(--muted);opacity:.6}
 /* Feuilles */
 .scrim{position:absolute;inset:0;background:var(--scrim);opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s;z-index:30}
 .scrim.open{opacity:1;visibility:visible}
-.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:28px 28px 0 0;padding-block:10px 20px;transform:translateY(105%);transition:transform .34s cubic-bezier(.2,.8,.2,1);z-index:31;display:flex;flex-direction:column;gap:14px;max-height:86%;visibility:hidden}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:28px 28px 0 0;padding-block:10px 20px;transform:translateY(105%);transition:transform .34s cubic-bezier(.2,.8,.2,1);z-index:31;display:flex;flex-direction:column;gap:14px;max-height:86%;visibility:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.sheet>*:not(.plist){flex-shrink:0}
 .sheet.open{transform:none;visibility:visible}
 .grab{width:40px;height:5px;border-radius:3px;background:var(--line);align-self:center}
 .sheet h2{font-family:var(--f-display);font-size:21px;font-weight:700;letter-spacing:-.02em;text-align:center}
@@ -766,12 +782,13 @@ function alerts(){
   var al=renewAlerts();
   equip.forEach(function(e){if(e.chk<0)al.push({o:e.id,k:'clock',c:'a-crit',t:'Contrôle en retard de '+(-e.chk)+' j',s:e.n+' · '+e.ref,g:['Retard','p-maint']});});
   equip.forEach(function(e){if(e.st==='loc'&&e.end===0)al.push({o:e.id,k:'ret',c:'a-info',t:'Retour prévu aujourd\'hui',s:e.n+' · '+pat(e.pt).n,g:['Retour','p-loc']});});
+  if(ONLINE)openReqs().forEach(function(r){if(r.status==='nouvelle')al.unshift({req:r.id,k:RK[r.kind][1],c:RK[r.kind][2],t:RK[r.kind][0]+' demandée · '+(phar(String(r.pharmacy_id))||{n:''}).n,s:reqTitle(r).replace(/^[^·]+· /,'')+(r.wanted?' · '+dayTxt(r.wanted):''),g:['Demande','p-desinf']});});
   var nd=count('desinf');
   if(nd)al.push({tab:'ent',k:'drop',c:'a-warn',t:nd+' désinfection'+(nd>1?'s':'')+' en attente',s:'À valider avant remise en stock',g:['Hygiène','p-desinf']});
   return al;
 }
 function alertRows(al){
-  return al.map(function(a){return '<button class="row" '+(a.o?'data-open="'+a.o+'"':'data-tab="'+a.tab+'"')+'><span class="ico '+a.c+'"><svg viewBox="0 0 24 24">'+ICON[a.k]+'</svg></span><span class="body"><div class="t">'+esc(a.t)+'</div><div class="s">'+esc(a.s)+'</div></span><span class="tagp '+a.g[1]+'">'+a.g[0]+'</span><span class="chev">'+ICON.chev+'</span></button>';}).join('')
+  return al.map(function(a){return '<button class="row" '+(a.o?'data-open="'+a.o+'"':a.req?'data-req="'+a.req+'"':'data-tab="'+a.tab+'"')+'><span class="ico '+a.c+'"><svg viewBox="0 0 24 24">'+ICON[a.k]+'</svg></span><span class="body"><div class="t">'+esc(a.t)+'</div><div class="s">'+esc(a.s)+'</div></span><span class="tagp '+a.g[1]+'">'+a.g[0]+'</span><span class="chev">'+ICON.chev+'</span></button>';}).join('')
     ||'<div class="empty">Rien à signaler, le parc est à jour.</div>';
 }
 /* Historique du taux d'occupation : valeurs de démonstration, la dernière est le taux réel du jour. */
@@ -811,16 +828,23 @@ function viewHome(){
   var leg=['loc','dispo','desinf','maint'].map(function(s){return '<button data-state="'+s+'"><span class="dot" style="background:var('+STATUS[s].seg+')"></span>'+STATUS[s].l+'<b class="num">'+count(s)+'</b></button>';}).join('');
   var al=alerts(),dispo=equip.filter(function(e){return e.st==='dispo';}),nm=count('maint');
   return '<div class="hero"><div class="lbl">'+ic('lit')+'Taux d\'occupation du parc</div><div class="hero-top"><div class="occ"><div class="big num">'+occ+'<small>%</small></div></div>'
-    +'<div class="side">'+ic('coins')+'<div><b class="num">'+xpf(rev)+'</b>de revenus par semaine</div></div></div><div class="trend"><span>'+ic('up')+'+5 %</span>vs semaine précédente</div><div class="segbar">'+seg+'</div><div class="legend">'+leg+'</div></div>'
-    +'<div class="kpis"><button class="kpi" data-tab="loc">'+ic('coins')+'<b class="num">'+rev.toLocaleString('fr-FR').replace(/\s/g,' ')+' <small>XPF</small></b><span>Revenus / semaine</span><span class="tg">'+ic('up')+'+5 %</span></button>'
+    +'<div class="side">'+ic('coins')+'<div><b class="num">'+xpf(rev)+'</b>de revenus par semaine</div></div></div>'+(ONLINE?'':'<div class="trend"><span>'+ic('up')+'+5 %</span>vs semaine précédente</div>')+'<div class="segbar">'+seg+'</div><div class="legend">'+leg+'</div></div>'
+    +'<div class="kpis"><button class="kpi" data-tab="loc">'+ic('coins')+'<b class="num">'+rev.toLocaleString('fr-FR').replace(/\s/g,' ')+' <small>XPF</small></b><span>Revenus / semaine</span>'+(ONLINE?'':'<span class="tg">'+ic('up')+'+5 %</span>')+'</button>'
     +'<button class="kpi" data-tab="parc">'+ic('cal')+'<b class="num">'+tot+'</b><span>Équipements dans le parc</span></button>'
     +'<button class="kpi" data-act="alerts">'+ic('okc')+'<b class="num">'+al.length+'</b><span>Actions à traiter</span></button>'
     +'<button class="kpi" data-state="maint">'+ic('tool')+'<b class="num">'+nm+'</b><span>Maintenance</span>'+(nm?'<span class="tg cr">en cours</span>':'')+'</button></div>'
+    +(ONLINE?homeReqs():'')
     +'<section>'+secH('clip','À traiter<span class="badge red num" style="margin-left:4px">'+al.length+'</span>','<button class="more" data-tab="ent">Tout voir'+ic('arrow')+'</button>')+'<div class="list">'+alertRows(al)+'</div></section>'
     +'<section>'+secH('bars','Aperçu du parc',histSeg(false))
     +'<div class="viz"><div class="vizc">'+occChart(occ)+'</div><div class="vizc">'+donut()+'</div></div></section>'
     +(dispo.length?'<section>'+secH('lit','Prêt à louer','<button class="more" data-filter="dispo">Tout voir'+ic('arrow')+'</button>')+'<div class="hscroll">'+dispo.map(function(e){return card(e,e.ref+' · '+xpf(e.px)+' / sem.');}).join('')+'</div></section>':'')
     +'<section>'+secH('pin','Où est le matériel','<button class="more" data-mode="plan">Ouvrir'+ic('arrow')+'</button>')+'<div class="mapcard">'+mapSvg(allPins(),null,true)+'</div></section>';
+}
+function homeReqs(){
+  var op=openReqs(),nw=op.filter(function(r){return r.status==='nouvelle';}),pl=op.filter(function(r){return r.status==='planifiee'&&off(r.planned)<=1;});
+  return '<section>'+secH('clip','Demandes des pharmacies'+(nw.length?'<span class="badge red num" style="margin-left:4px">'+nw.length+'</span>':''),'<button class="more" data-golt="dem">Tout voir'+ic('arrow')+'</button>')
+    +'<div class="list">'+(nw.slice(0,4).map(reqRow).join('')||'<div class="empty">Aucune nouvelle demande.</div>')+'</div>'
+    +'<div class="stack" style="margin-top:10px"><button class="btn soft" data-golt="plan">'+svg('pin')+'Planning des tournées'+(pl.length?' · '+pl.length+' passage'+(pl.length>1?'s':'')+' d\'ici demain':'')+'</button><button class="btn soft" data-act="ph-list">'+svg('cross')+'Suivi des pharmacies</button></div></section>';
 }
 function histSeg(months){return '<div class="seg sm"><button data-hist="7" aria-pressed="'+(histDays===7)+'">7 jours</button><button data-hist="30" aria-pressed="'+(histDays===30)+'">30 jours</button>'+(months?'<button data-hist="365" aria-pressed="'+(histDays===365)+'">12 mois</button>':'')+'</div>';}
 function actRows(n){
@@ -858,17 +882,17 @@ function viewRap(){
       return '<button data-export="'+x[0]+'"><svg viewBox="0 0 24 24">'+ICON[x[1]]+'</svg><span>'+x[2]+'<small>'+x[3]+'</small></span></button>';}).join('')+'</div></section>';
   return tabs+'<div class="hero"><div class="lbl">'+ic('coins')+'Rentabilité du parc</div><div class="hero-top"><div><small class="hs">Loyers encaissés</small><div class="hv num">'+xpf(rev)+'</div></div>'
     +'<div class="side2"><small class="hs">Investissement</small><div class="hv sm num">'+xpf(inv)+'</div><small class="hs">'+tot+' équipements</small></div></div>'
-    +'<div class="trend"><span>'+ic('up')+'+12 %</span>vs période précédente</div>'
+    +''+(ONLINE?'':'<div class="trend"><span>'+ic('up')+'+12 %</span>vs période précédente</div>')+''
     +'<div class="amo"><b>Investissement récupéré</b><span>'+done+' amortis sur '+tot+'</span><em class="num">'+pct+' %</em></div><div class="bar hb"><i style="width:'+Math.min(100,pct)+'%"></i></div></div>'
     +'<div class="kpis five"><button class="kpi" data-tab="parc">'+ic('lit')+'<b class="num">'+tot+'</b><span>Équipements dans le parc</span></button>'
-    +'<button class="kpi" data-rtab="util">'+ic('okc')+'<b class="num">'+occ+' %</b><span>Taux d\'occupation</span><span class="tg">'+ic('up')+'+5 %</span></button>'
+    +'<button class="kpi" data-rtab="util">'+ic('okc')+'<b class="num">'+occ+' %</b><span>Taux d\'occupation</span>'+(ONLINE?'':'<span class="tg">'+ic('up')+'+5 %</span>')+'</button>'
     +'<button class="kpi" data-rtab="renta">'+ic('coins')+'<b class="num">'+Math.round(wk*52/12/tot).toLocaleString('fr-FR').replace(/\s/g,' ')+' <small>XPF</small></b><span>Revenu moyen / équipement / mois</span></button>'
     +'<button class="kpi" data-state="maint"><span class="c-maint ki">'+ic('gear')+'</span><b class="num">'+count('maint')+'</b><span>En maintenance</span></button>'
     +'<button class="kpi" data-state="desinf"><span class="c-desinf ki">'+ic('drop')+'</span><b class="num">'+count('desinf')+'</b><span>À désinfecter</span></button></div>'
     +'<section>'+secH('bars','Occupation',histSeg(true))+'<div class="vizc">'+occChart(occ,true)+'</div></section>'
     +'<section>'+secH('hist','Répartition du parc')+'<div class="vizc dz">'+donut()+'</div></section>'
     +'<section>'+secH('cross','Locations par pharmacie')+'<div class="list">'+PHARM.map(function(f){var it=equip.filter(function(e){return e.st==='loc'&&e.fa===f.id;}),np=it.map(function(e){return e.pt;}).filter(function(x,i,a){return a.indexOf(x)===i;}).length;
-      return '<button class="row" data-fa="'+f.id+'"><span class="ico a-ok"><svg viewBox="0 0 24 24">'+ICON.cross+'</svg></span><span class="body"><div class="t">'+esc(f.n)+'</div><div class="s w2">'+esc(f.c)+' · '+it.length+' équipement'+(it.length>1?'s':'')+' · '+np+' bénéficiaire'+(np>1?'s':'')+'</div></span><b class="pct num">'+xpf(it.reduce(function(a,e){return a+e.px;},0))+'</b></button>';}).join('')+'</div><p class="note">Loyers par semaine des locations en cours.</p></section>'
+      return '<button class="row" '+(ONLINE?'data-phs':'data-fa')+'="'+f.id+'"><span class="ico a-ok"><svg viewBox="0 0 24 24">'+ICON.cross+'</svg></span><span class="body"><div class="t">'+esc(f.n)+'</div><div class="s w2">'+esc(f.c)+' · '+it.length+' équipement'+(it.length>1?'s':'')+' · '+np+' bénéficiaire'+(np>1?'s':'')+'</div></span><b class="pct num">'+xpf(it.reduce(function(a,e){return a+e.px;},0))+'</b></button>';}).join('')+'</div><p class="note">Loyers par semaine des locations en cours.</p></section>'
     +'<section>'+secH('clock','Activité récente','<button class="more" data-rtab="act">Tout voir'+ic('arrow')+'</button>')+'<div class="list">'+actRows(3)+'</div></section>';
 }
 function viewParc(){
@@ -936,9 +960,11 @@ function viewLoc(){
   var renew=rented.filter(function(e){return e.end<=14;}).sort(function(a,b){return a.end-b.end;});
   var np=patients.filter(function(p){return rented.some(function(e){return e.pt===p.id;});}).length;
   var PC=['--accent','--ok','--info','--warn','--info'];
-  var head='<div class="stat2"><div class="st-a">'+ic('coins')+'<div><b class="num">'+xpf(rev)+'</b><span>Loyers par semaine</span><span class="tr"><i>'+ic('up')+'+5 %</i>vs sem. précédente</span></div></div><div>'+ic('users')+'<div><b class="num">'+np+'</b><span>Bénéficiaires équipés</span></div></div></div>'
-    +'<div class="chips">'+[['cur','clip','Contrats en cours',rented.length],['renew','cal','À renouveler',renew.length],['done','okc','Terminés',DONE.length]].map(function(t){
+  var head='<div class="stat2"><div class="st-a">'+ic('coins')+'<div><b class="num">'+xpf(rev)+'</b><span>Loyers par semaine</span>'+(ONLINE?'':'<span class="tr"><i>'+ic('up')+'+5 %</i>vs sem. précédente</span>')+'</div></div><div>'+ic('users')+'<div><b class="num">'+np+'</b><span>Bénéficiaires équipés</span></div></div></div>'
+    +'<div class="chips">'+[['cur','clip','Contrats en cours',rented.length],['renew','cal','À renouveler',renew.length]].concat(ONLINE?[['dem','clip','Demandes',openReqs().length]]:[]).concat(ONLINE&&STAFF?[['plan','pin','Planning',planItems().length]]:[]).concat([['done','okc','Terminés',DONE.length]]).map(function(t){
       return '<button class="chip" data-ltab="'+t[0]+'" aria-pressed="'+(S.ltab===t[0])+'">'+ic(t[1])+t[2]+'<em class="num">'+t[3]+'</em></button>';}).join('')+'</div>';
+  if(S.ltab==='dem'&&ONLINE)return head+viewReqs();
+  if(S.ltab==='plan'&&ONLINE&&STAFF)return head+viewPlan();
   if(S.ltab==='renew')return head+'<section>'+secH('cal','À renouveler','<span>retour dans 14 jours ou moins</span>')+'<div class="list">'+(renew.map(function(e){
       return '<div class="row"><button class="rowin" data-open="'+e.id+'">'+ph(e)+'<span class="body"><div class="t">'+esc(e.n)+'</div><div class="s">'+esc(pat(e.pt).n)+' · '+leftTxt(rent(e))+'</div></span></button>'+(STAFF?'<button class="more" data-extend="'+e.id+'">+ 1 sem.</button>':'')+'</div>';}).join('')||'<div class="empty">Aucun contrat à renouveler.</div>')+'</div></section>';
   if(S.ltab==='done')return head+'<section>'+secH('okc','Contrats terminés','<span>'+DONE.length+' contrats</span>')+'<div class="list">'+DONE.map(function(c){
@@ -1006,6 +1032,11 @@ function renderDetail(){
   else if(e.st==='desinf')acts='<button class="btn" data-act="clean">'+ICON.check+'Valider la désinfection</button>';
   else acts='<button class="btn" data-act="repair">'+ICON.check+'Clôturer la maintenance</button>';
   if(e.st!=='maint')acts+='<button class="btn danger" data-act="fault">'+svg('warn')+'Signaler une panne</button>';
+  }else if(ONLINE&&e.st==='loc'){
+    var has=function(k){return reqsOf(e.id).some(function(r){return r.kind===k;});};
+    acts=(has('prolongation')?'':'<button class="btn" data-rqnew="prolongation">'+svg('clock')+'Demander une prolongation</button>')
+      +(has('reprise')?'':'<button class="btn soft" data-rqnew="reprise">'+svg('ret')+'Demander la reprise</button>')
+      +(has('probleme')?'':'<button class="btn danger" data-rqnew="probleme">'+svg('warn')+'Signaler un problème</button>');
   }
   var chk=e.chk<0?'<dd class="late">En retard de '+(-e.chk)+' j</dd>':'<dd>'+dateOf(e.chk).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})+'</dd>';
   var hist=e.h.slice().sort(function(a,b){return b.d-a.d||b.q-a.q;}).map(function(h,i){return '<li'+(i?'':' class="first"')+'><time>'+rel(h.d)+(h.t?' · '+h.t.replace(':',' h '):'')+(h.by&&ONLINE?' · '+esc(h.by):'')+'</time><div class="evt">'+ic(hIcon(h.txt))+'<span>'+esc(h.txt)+'</span>'+(i?'':OKC)+'</div>'+(h.pid?'<a class="tlph" href="api/photos/'+h.pid+'" target="_blank" rel="noopener"><img src="api/photos/'+h.pid+'" alt="Photo du matériel" loading="lazy"></a>':'')+'</li>';}).join('');
@@ -1021,6 +1052,7 @@ function renderDetail(){
     +'<div><dt>'+ic('clip')+'Prix catalogue</dt><dd class="num">'+esc(e.cat)+'</dd></div>'
     +'<div><dt>'+ic('coins')+'Tarif de location</dt><dd class="num">'+xpf(e.px)+' / semaine</dd></div>'
     +'<div><dt>'+ic('tool')+'Prochain contrôle</dt>'+chk.replace('</dd>',(STAFF&&e.chk<=30&&e.st!=='maint'?'<button class="more geo" data-act="check">'+ic('okc')+'Contrôle effectué</button>':'')+'</dd>')+'</div>'+scanRow(e)+'</dl>'
+    +(ONLINE&&reqsOf(e.id).length?'<section>'+secH('clip','Demandes en cours')+'<div class="list">'+reqsOf(e.id).map(reqRow).join('')+'</div></section>':'')
     +docsSection(e)
     +photosSection(e)
     +(STAFF?'<section>'+secH('coins','Rentabilité')+profitCard(e)+'</section>':'')
@@ -1176,9 +1208,11 @@ function saveBase(){
 function menuSheet(title,items){
   openSheet('<h2>'+title+'</h2><div class="menu">'+items.map(function(m){return '<button '+m[0]+'><svg viewBox="0 0 24 24">'+ICON[m[1]]+'</svg><span>'+m[2]+'<small>'+m[3]+'</small></span></button>';}).join('')+'</div><button class="btn soft" data-act="close-sheet">Fermer</button>');
 }
-function quickSheet(){if(!STAFF){menuSheet('Actions rapides',[['data-act="scan"','tag','Scanner une puce NFC','Ouvrir la fiche d\'un équipement'],['data-tab="loc"','clip','Confirmer une ordonnance','Depuis la fiche de la location']]);return;}menuSheet('Actions rapides',[['data-act="scan"','tag','Scanner une puce NFC','Ouvrir la fiche d\'un équipement'],['data-filter="dispo"','cal','Mettre en location','Choisir un équipement disponible'],['data-tab="loc"','ret','Enregistrer un retour','Depuis les contrats en cours'],['data-tab="ent"','drop','Valider une désinfection','Matériel en attente']]);}
+function quickSheet(){if(!STAFF){menuSheet('Nouvelle demande',(ONLINE?['location','reprise','prolongation','probleme'].map(function(k){return ['data-rqnew="'+k+'"',RK[k][1],RK[k][0],RK[k][3]];}).concat([['data-act="catalog"','grid','Catalogue','Matériel et tarifs de location']]):[]).concat([['data-act="scan"','tag','Scanner une puce NFC','Ouvrir la fiche d\'un équipement'],['data-tab="loc"','clip','Confirmer une ordonnance','Depuis la fiche de la location']]));return;}menuSheet('Actions rapides',(ONLINE?[['data-golt="dem"','clip','Demandes des pharmacies',openReqs().length+' en cours'],['data-golt="plan"','pin','Planning des tournées','Livraisons, reprises, fins de location']]:[]).concat([['data-act="scan"','tag','Scanner une puce NFC','Ouvrir la fiche d\'un équipement'],['data-filter="dispo"','cal','Mettre en location','Choisir un équipement disponible'],['data-tab="loc"','ret','Enregistrer un retour','Depuis les contrats en cours'],['data-tab="ent"','drop','Valider une désinfection','Matériel en attente']]));}
 function moreSheet(){
   var it=accountSheet();
+  if(STAFF&&ONLINE)it.push(['data-act="ph-list"','cross','Suivi des pharmacies','Contrats, retards, ordonnances, demandes'],['data-act="catalog"','grid','Catalogue et disponibilités','Unités disponibles par produit']);
+  if(!STAFF&&ONLINE)it.push(['data-act="catalog"','grid','Catalogue','Matériel et tarifs de location']);
   if(STAFF){it.push(['data-act="settings"','gear','Paramètres','Puces NFC et adresse des liens'],['data-mode="plan"','pin','Plan du matériel','Où se trouve chaque équipement'],['data-rtab="fact"','clip','Facturation','Montants par mois et par pharmacie']);
     if(ONLINE&&ROLE==='admin')it.push(['data-act="accounts"','users','Comptes et pharmacies','Accès des pharmacies et de l\'équipe']);}
   else it.push(['data-tab="fact"','clip','Facturation','Vos montants par mois'],['data-act="my-mail"','mail','E-mail des rappels',PHARM[0]&&PHARM[0].em?esc(PHARM[0].em):'Aucune adresse enregistrée']);
@@ -1232,6 +1266,7 @@ function applyState(st){
     h:e.events.map(function(v){return {d:off(v.at),txt:v.text,q:v.id,t:v.at.slice(11,16),by:v.by,pid:v.photo};})};});
   DONE=st.closed.map(function(c){var e=byId(String(c.equipment.id))||{id:String(c.equipment.id),ref:c.equipment.ref,n:c.equipment.name,ph:c.equipment.photo,k:c.equipment.kind,px:c.equipment.week_price,st:'dispo',stub:true};
     var s=off(c.start),en=off(c.end);return {e:e,p:pat(String(c.patient_id))||{n:'—'},fa:phar(String(c.pharmacy_id))||{n:'—'},start:s,end:en,dur:en-s,sum:c.amount};});
+  REQS=st.requests||[];CATALOG=st.catalog||[];REASONS=st.reasons||{};
   if(!phar(rentFa)&&PHARM[0])rentFa=PHARM[0].id;
 }
 function refresh(){
@@ -1264,6 +1299,7 @@ document.addEventListener('submit',function(x){
   else if(x.target.id==='f-pwd'){x.preventDefault();var c=$('pw-cur').value,n=$('pw-new').value,n2=$('pw-new2').value;if(n!==n2)return gateErr('pw-err','Les deux nouveaux mots de passe ne sont pas identiques.');
     srv('POST','password',{current:c,next:n}).then(function(r){setRole(r.me);toast('Mot de passe enregistré');enterApp();}).catch(function(e){if(e.status===401)return showLogin();gateErr('pw-err',e.message);});}
   else if(x.target.id==='f-user'||x.target.id==='f-pharm'||x.target.id==='f-pat'||x.target.id==='f-presc'||x.target.id==='f-mail'||x.target.id==='f-mtest'){x.preventDefault();submitForm(x.target.id);}
+  else if(x.target.id==='f-req'||x.target.id==='f-req2'){x.preventDefault();reqSubmit(x.target.id);}
 });
 function logout(){srv('POST','logout',{}).catch(function(){}).then(function(){ME=null;booted=false;closeSheet();if(S.cur)closeDetail();if(setOpen)closeSettings();showLogin();});}
 
@@ -1599,11 +1635,218 @@ function viewPharmaHome(){
   return '<div class="hero"><div class="lbl">'+ic('cross')+esc(ME&&ME.pharmacy?ME.pharmacy.name:'Votre pharmacie')+'</div><div class="hero-top"><div class="occ"><div class="big num">'+it.length+'</div><div class="hs2">équipement'+(it.length>1?'s':'')+'<br>en location</div></div>'
     +'<div class="side">'+ic('coins')+'<div><b class="num">'+xpf(rev)+'</b>de loyers par semaine</div></div></div></div>'
     +'<div class="kpis"><button class="kpi" data-tab="loc">'+ic('users')+'<b class="num">'+np+'</b><span>Bénéficiaires équipés</span></button><button class="kpi" data-ltab="renew">'+ic('cal')+'<b class="num">'+renew+'</b><span>À renouveler sous 14 j</span></button>'
-    +'<button class="kpi" data-tab="loc">'+ic('clip')+'<b class="num">'+miss+'</b><span>Ordonnances à traiter</span></button><button class="kpi" data-tab="fact">'+ic('coins')+'<b class="num">'+DONE.length+'</b><span>Locations terminées</span></button></div>'
+    +'<button class="kpi" data-tab="loc">'+ic('clip')+'<b class="num">'+miss+'</b><span>Ordonnances à traiter</span></button><button class="kpi" data-golt="dem">'+ic('clip')+'<b class="num">'+openReqs().length+'</b><span>Demandes en cours</span></button></div>'
+    +(ONLINE?'<section>'+secH('cal','Nouvelle demande','<button class="more" data-act="catalog">Catalogue'+ic('arrow')+'</button>')+reqActions()
+      +(openReqs().length?'<h3 class="subh">Mes demandes en cours</h3><div class="list">'+openReqs().slice(0,5).map(reqRow).join('')+'</div>':'')+'</section>':'')
     +'<div class="infobox">'+svg('cross')+'<div><b>Aucune ordonnance n\'est stockée en ligne.</b><span>Les ordonnances sont accessibles via le programme, qui va les récupérer sur votre serveur local. Seule la vérification (date, numéro interne, auteur) est enregistrée en ligne.</span></div></div>'
     +'<section>'+secH('clip','À traiter<span class="badge red num" style="margin-left:4px">'+al.length+'</span>')+'<div class="list">'+alertRows(al)+'</div></section>'
     +'<button class="guidecard" data-guide="pharmacie">'+svg('book')+'<span><b>Guide d\'utilisation du portail</b><small>Connexion, locations, ordonnances, rappels, facturation · PDF</small></span><span class="dl">'+svg('down')+'</span></button>'
     +'<section>'+secH('lit','Vos locations','<button class="more" data-tab="loc">Tout voir'+ic('arrow')+'</button>')+'<div class="list">'+it.slice().sort(function(a,b){return a.end-b.end;}).slice(0,6).map(function(e){return rowE(e,pat(e.pt).n+' · '+leftTxt(rent(e)),pill(e));}).join('')+'</div></section>';
+}
+
+/* ---------- Demandes des pharmacies et suivi du grossiste ---------- */
+var REQS=[],CATALOG=[],REASONS={},RQ={},rqView='open',patBack=null;
+var RK={location:['Location','cal','a-ok','Demander du matériel'],reprise:['Reprise','ret','a-info','Faire reprendre un équipement'],prolongation:['Prolongation','clock','a-warn','Prolonger une location'],probleme:['Problème','warn','a-crit','Signaler un souci sur un matériel']};
+var RS={nouvelle:['Nouvelle','p-desinf'],planifiee:['Planifiée','p-loc'],faite:['Effectuée','p-dispo'],refusee:['Refusée','p-maint'],annulee:['Annulée','p-acc']};
+function isoDay(d){var t=dateOf(d||0);return t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2);}
+function dayTxt(s){if(!s)return '';var d=off(s);return d===0?'aujourd\'hui':d===1?'demain':d===-1?'hier':dateOf(d).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});}
+function openReqs(){return REQS.filter(function(r){return r.status==='nouvelle'||r.status==='planifiee';});}
+function reqsOf(eid){return openReqs().filter(function(r){return String(r.equipment_id)===String(eid);});}
+function reqEq(r){return r.equipment_id?byId(String(r.equipment_id)):null;}
+function reqTitle(r){var e=reqEq(r);return RK[r.kind][0]+' · '+(e?e.n:r.product);}
+function reqSub(r){
+  var e=reqEq(r),p=r.patient_id?pat(String(r.patient_id)):null,b=[];
+  if(STAFF)b.push((phar(String(r.pharmacy_id))||{n:''}).n);
+  if(p)b.push(p.n+(p.z?' ('+p.z+')':''));else if(r.patient)b.push(r.patient);
+  if(e)b.push(e.ref);
+  if(r.status==='planifiee'&&r.planned)b.push('passage '+dayTxt(r.planned));
+  else if(r.status==='nouvelle'&&r.wanted)b.push('souhaitée '+dayTxt(r.wanted));
+  else if(r.status==='nouvelle'&&r.kind==='prolongation')b.push('+ '+sem(r.days));
+  else if(r.status==='nouvelle'&&r.kind==='probleme')b.push((REASONS[r.reason]||'').toLowerCase());
+  else if(r.answer)b.push(r.answer);
+  return b.filter(Boolean).join(' · ');
+}
+function reqRow(r){
+  var late=r.status==='nouvelle'&&r.wanted&&off(r.wanted)<=0;
+  return '<button class="row" data-req="'+r.id+'"><span class="ico '+RK[r.kind][2]+'"><svg viewBox="0 0 24 24">'+ICON[RK[r.kind][1]]+'</svg></span><span class="body"><div class="t">'+esc(reqTitle(r))+'</div><div class="s w2">'+esc(reqSub(r))+'</div></span>'
+    +'<span class="tagp '+(late?'p-maint':RS[r.status][1])+'">'+(late?'Urgent':RS[r.status][0])+'</span><span class="chev">'+ICON.chev+'</span></button>';
+}
+function reqActions(){
+  return '<div class="qa4">'+['location','reprise','prolongation','probleme'].map(function(k){
+    return '<button data-rqnew="'+k+'"><span class="ico '+RK[k][2]+'">'+svg(RK[k][1])+'</span><b>'+RK[k][0]+'</b><small>'+RK[k][3]+'</small></button>';}).join('')+'</div>';
+}
+/* Onglet Locations › Demandes (pharmacie et grossiste) */
+function viewReqs(){
+  var op=openReqs(),hist=REQS.filter(function(r){return op.indexOf(r)<0;});
+  var nw=op.filter(function(r){return r.status==='nouvelle';}),pl=op.filter(function(r){return r.status==='planifiee';});
+  var seg='<div class="seg sm" style="margin:2px 0 10px"><button data-rqview="open" aria-pressed="'+(rqView==='open')+'">En cours · '+op.length+'</button><button data-rqview="hist" aria-pressed="'+(rqView==='hist')+'">Historique · '+hist.length+'</button></div>';
+  var top=STAFF?'':'<section>'+secH('clip','Nouvelle demande')+reqActions()+'</section>';
+  if(rqView==='hist')return top+'<section>'+secH('hist','Demandes clôturées','<span>45 derniers jours</span>')+seg+'<div class="list">'+(hist.map(reqRow).join('')||'<div class="empty">Aucune demande clôturée.</div>')+'</div></section>';
+  return top+'<section>'+secH('clip',STAFF?'Demandes des pharmacies':'Mes demandes')+seg
+    +(STAFF?'<h3 class="subh">À traiter · '+nw.length+'</h3><div class="list">'+(nw.map(reqRow).join('')||'<div class="empty">Aucune nouvelle demande.</div>')+'</div>'
+      +'<h3 class="subh">Planifiées · '+pl.length+'</h3><div class="list">'+(pl.map(reqRow).join('')||'<div class="empty">Aucun passage planifié.</div>')+'</div>'
+      :'<div class="list">'+(op.map(reqRow).join('')||'<div class="empty">Aucune demande en cours. Utilisez les boutons ci-dessus.</div>')+'</div>')
+    +'</section>';
+}
+/* Onglet Locations › Planning des tournées (grossiste) : livraisons, reprises et fins de location sur 14 jours. */
+function planItems(){
+  var it=[];
+  openReqs().forEach(function(r){
+    var d=r.status==='planifiee'?off(r.planned):r.wanted?off(r.wanted):null;if(d===null||r.kind==='prolongation')return;
+    var p=r.patient_id?pat(String(r.patient_id)):null;
+    it.push({d:Math.max(d,-1),late:d<0,k:r.kind==='location'?'Livraison':r.kind==='reprise'?'Reprise':'Intervention',ico:RK[r.kind][1],c:RK[r.kind][2],t:reqTitle(r).replace(/^[^·]+· /,''),w:p?p.n:'',z:p?p.z:'',fa:(phar(String(r.pharmacy_id))||{n:''}).n,req:r.id,todo:r.status==='nouvelle'});
+  });
+  equip.forEach(function(e){
+    if(e.st!=='loc'||e.end===null||e.end>14)return;
+    if(reqsOf(e.id).some(function(r){return r.kind==='reprise'||r.kind==='prolongation';}))return;
+    var p=pat(e.pt);it.push({d:Math.max(e.end,-1),late:e.end<0,k:e.end<0?'Retour en retard':'Fin de location',ico:'ret',c:e.end<0?'a-crit':'a-info',t:e.n+' · '+e.ref,w:p.n,z:p.z,fa:e.fa?phar(e.fa).n:'',open:e.id});
+  });
+  return it.sort(function(a,b){return a.d-b.d||String(a.z).localeCompare(String(b.z));});
+}
+function viewPlan(){
+  var it=planItems(),days={};
+  it.forEach(function(x){(days[x.d]=days[x.d]||[]).push(x);});
+  var keys=Object.keys(days).map(Number).sort(function(a,b){return a-b;});
+  return '<section>'+secH('pin','Planning des tournées','<button class="more" data-act="plan-copy">'+ic('copy')+'Copier</button>')
+    +'<p class="note">Livraisons et reprises demandées par les pharmacies, et fins de location des 14 prochains jours, classées par jour puis par commune.</p>'
+    +(keys.map(function(k){
+      var lst=days[k],lbl=k<0?'En retard':k===0?'Aujourd\'hui':k===1?'Demain':dateOf(k).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+      return '<h3 class="subh">'+esc(lbl.charAt(0).toUpperCase()+lbl.slice(1))+' · '+lst.length+'</h3><div class="list">'+lst.map(function(x){
+        return '<button class="row" '+(x.req?'data-req="'+x.req+'"':'data-open="'+x.open+'"')+'><span class="ico '+x.c+'"><svg viewBox="0 0 24 24">'+ICON[x.ico]+'</svg></span><span class="body"><div class="t">'+esc(x.k)+' · '+esc(x.z||'')+'</div><div class="s w2">'+esc(x.t)+(x.w?' · '+esc(x.w):'')+(x.fa?' · '+esc(x.fa):'')+'</div></span>'
+          +(x.todo?'<span class="tagp p-desinf">À planifier</span>':x.late?'<span class="tagp p-maint">Retard</span>':'')+'<span class="chev">'+ICON.chev+'</span></button>';}).join('')+'</div>';
+    }).join('')||'<div class="list"><div class="empty">Rien de prévu dans les 14 prochains jours.</div></div>')+'</section>';
+}
+function planText(){
+  var cur=null,out=[];
+  planItems().forEach(function(x){var lbl=x.d<0?'EN RETARD':dateOf(x.d).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}).toUpperCase();
+    if(lbl!==cur){out.push('');out.push(lbl);cur=lbl;}
+    var p=x.req?pat(String((REQS.filter(function(r){return r.id===x.req;})[0]||{}).patient_id)):x.open?pat(byId(x.open).pt):null;
+    out.push('- '+x.k+' · '+x.t+(x.w?' · '+x.w:'')+(p&&p.a?' · '+p.a:'')+(x.z?' ('+x.z+')':'')+(p&&p.ph?' · tél. '+p.ph:'')+(x.fa?' · '+x.fa:''));});
+  return ('Tournées · '+new Date().toLocaleDateString('fr-FR')+'\n'+out.join('\n')).trim();
+}
+/* Catalogue : disponibilités par produit */
+function catSheet(){
+  openSheet('<h2>Catalogue</h2><p class="sub">'+(STAFF?'Unités disponibles par produit.':'Tarifs de location à la semaine. Touchez un produit pour le demander.')+'</p><div class="list">'+CATALOG.map(function(c,i){
+    var av=c.dispo>0;
+    return '<button class="row prow" data-rqcat="'+i+'">'+ph({ph:c.photo,k:c.kind,n:c.name})+'<span class="body"><div class="t">'+esc(c.name)+'</div><div class="s">'+esc(c.brand||'')+' · '+xpf(c.week_price)+' / sem.</div></span>'
+      +'<span class="tagp '+(av?'p-dispo':'p-desinf')+'">'+(STAFF?c.dispo+' / '+c.total:av?'Disponible':'Sur demande')+'</span></button>';}).join('')+'</div><button class="btn soft" data-act="close-sheet">Fermer</button>');
+  sheet.style.height='88%';
+}
+/* Formulaire : demande de location */
+function reqLocSheet(){
+  var d=RQ;if(!d.wanted)d.wanted=isoDay(1);if(!d.days)d.days='28';
+  var pts=patients.filter(function(p){return !/anonymisé/.test(p.n);});
+  openSheet('<h2>Demande de location</h2><form id="f-req" class="fform" novalidate>'
+    +'<label class="fld" for="rq-prod">Matériel</label><select class="gin" id="rq-prod"><option value="">Choisir…</option>'+CATALOG.map(function(c){return '<option value="'+esc(c.name)+'"'+(d.product===c.name?' selected':'')+'>'+esc(c.name)+' · '+xpf(c.week_price)+'/sem.'+(c.dispo>0?'':' (sur demande)')+'</option>';}).join('')+'</select>'
+    +'<label class="fld" for="rq-pat">Bénéficiaire</label><select class="gin" id="rq-pat"><option value="">Choisir…</option>'+pts.map(function(p){return '<option value="'+p.id+'"'+(String(d.patient)===p.id?' selected':'')+'>'+esc(p.n)+(p.z?' · '+esc(p.z):'')+'</option>';}).join('')+'</select>'
+    +'<button class="btn soft" type="button" data-act="rq-newpat">'+svg('users')+'Nouveau bénéficiaire</button>'
+    +(STAFF?'<label class="fld">Pharmacie</label>'+chipSel('rqfa',PHARM.map(function(f){return [f.id,f.n];}),d.pharmacy||''):'')
+    +'<label class="fld">Durée</label>'+chipSel('rqdays',DURS.map(function(x){return [String(x[0]),x[1]];}),String(d.days))
+    +'<label class="fld" for="rq-date">Livraison souhaitée le</label><input class="gin" id="rq-date" type="date" min="'+isoDay(0)+'" max="'+isoDay(120)+'" value="'+esc(d.wanted)+'">'
+    +'<label class="fld" for="rq-note">Précisions pour la livraison (facultatif)</label><textarea class="gin" id="rq-note" maxlength="300" placeholder="Accès, horaires, étage…">'+esc(d.note||'')+'</textarea>'
+    +'<p class="note">Aucune information médicale : ni pathologie, ni ordonnance. L\'ordonnance reste dans votre pharmacie.</p>'
+    +'<p class="err" id="rq-err" hidden></p><button class="btn" type="submit">Envoyer la demande</button><button class="btn soft" type="button" data-act="close-sheet">Annuler</button></form>');
+  sheet.style.height='92%';
+}
+function keepRq(){var g=function(id){var x=$(id);return x?x.value:'';};RQ.product=g('rq-prod');RQ.patient=g('rq-pat');RQ.wanted=g('rq-date');RQ.note=g('rq-note');RQ.days=selVal('rqdays')||RQ.days;if(STAFF)RQ.pharmacy=selVal('rqfa');}
+/* Formulaire : reprise, prolongation ou problème sur un équipement en location */
+function reqEqSheet(kind,id){
+  var e=byId(id);RQ={kind:kind,eq:id};
+  var body=kind==='prolongation'?'<label class="fld">Prolonger de</label>'+chipSel('rqdays',DURS.map(function(x){return [String(x[0]),x[1]];}),'7')
+    :kind==='reprise'?'<label class="fld" for="rq-date">Reprise souhaitée le</label><input class="gin" id="rq-date" type="date" min="'+isoDay(0)+'" max="'+isoDay(120)+'" value="'+isoDay(e.end>0?e.end:1)+'">'
+    :'<label class="fld">Nature du problème</label>'+chipSel('rqreason',Object.keys(REASONS).map(function(k){return [k,REASONS[k]];}),'');
+  openSheet('<h2>'+RK[kind][0]+'</h2><p class="sub">'+esc(e.n)+' · '+e.ref+(e.pt?' · '+esc(pat(e.pt).n):'')+'</p><form id="f-req2" class="fform" novalidate>'+body
+    +'<label class="fld" for="rq-note">'+(kind==='probleme'?'Décrivez le problème':'Précisions (facultatif)')+'</label><textarea class="gin" id="rq-note" maxlength="300" placeholder="'+(kind==='probleme'?'Ce qui ne fonctionne pas, depuis quand…':'Accès, horaires…')+'"></textarea>'
+    +'<p class="note">Aucune information médicale.</p><p class="err" id="rq-err" hidden></p><button class="btn" type="submit">Envoyer</button><button class="btn soft" type="button" data-act="close-sheet">Annuler</button></form>');
+}
+function pickEqForReq(kind){
+  var rented=equip.filter(function(e){return e.st==='loc'&&!e.stub;});
+  if(!rented.length)return toast('Aucun équipement en location');
+  RQ={kind:kind};
+  openSheet('<h2>'+RK[kind][0]+' · quel équipement ?</h2><div class="list">'+rented.map(function(e){var o=reqsOf(e.id).filter(function(r){return r.kind===kind;})[0];
+    return '<button class="row" '+(o?'data-req="'+o.id+'"':'data-rqeq="'+e.id+'"')+'>'+ph(e)+'<span class="body"><div class="t">'+esc(e.n)+'</div><div class="s">'+e.ref+' · '+esc(pat(e.pt).n)+'</div></span>'+(o?'<span class="tagp '+RS[o.status][1]+'">'+RS[o.status][0]+'</span>':'')+'</button>';}).join('')
+    +'</div><button class="btn soft" data-act="close-sheet">Annuler</button>');
+  sheet.style.height='88%';
+}
+/* Fiche d'une demande : détail, et traitement par le grossiste */
+function reqSheet(id){
+  var r=REQS.filter(function(x){return x.id===+id;})[0];if(!r)return toast('Demande introuvable');
+  var e=reqEq(r),p=r.patient_id?pat(String(r.patient_id)):null,f=phar(String(r.pharmacy_id))||{n:''},op=r.status==='nouvelle'||r.status==='planifiee';
+  var kv=function(k,v){return v?'<div><dt>'+k+'</dt><dd>'+v+'</dd></div>':'';};
+  var info='<dl class="kv">'+kv('Statut','<span class="tagp '+RS[r.status][1]+'">'+RS[r.status][0]+'</span>')+kv('Pharmacie',esc(f.n))
+    +kv('Bénéficiaire',p?esc(p.n)+(p.z?'<small class="dsub">'+esc(p.a&&p.a!==p.z?p.a+', '+p.z:p.z)+'</small>':''):esc(r.patient||''))
+    +(p&&p.ph&&STAFF?kv('Téléphone','<a class="tel num" href="tel:'+esc(p.ph.replace(/[^0-9+]/g,''))+'">'+esc(p.ph)+'</a>'):'')
+    +kv('Matériel',e?esc(e.n)+'<small class="dsub">'+e.ref+'</small>':esc(r.product))
+    +kv('Durée',r.days?sem(r.days):'')+kv('Souhaitée le',r.wanted?dayTxt(r.wanted):'')+kv('Passage prévu',r.planned?dayTxt(r.planned):'')
+    +kv('Problème',r.reason?esc(REASONS[r.reason]||''):'')+kv('Précisions',r.note?esc(r.note):'')+kv('Réponse',r.answer?esc(r.answer):'')
+    +kv('Envoyée',esc(stamp(r.created_at))+'<small class="dsub">'+esc(r.created_by)+'</small>')+(r.updated_by&&r.updated_at!==r.created_at?kv('Mise à jour',esc(stamp(r.updated_at))+'<small class="dsub">'+esc(r.updated_by)+'</small>'):'')+'</dl>';
+  var acts='';
+  if(op&&STAFF){
+    acts+='<label class="fld" for="rq-pdate">Date de passage</label><input class="gin" id="rq-pdate" type="date" min="'+isoDay(0)+'" value="'+esc(r.planned||(r.wanted&&off(r.wanted)>=0?r.wanted:isoDay(1)))+'">'
+      +'<label class="fld" for="rq-ans">Message à la pharmacie (facultatif, obligatoire pour refuser)</label><textarea class="gin" id="rq-ans" maxlength="300" placeholder="Créneau, matériel proposé…"></textarea>'
+      +'<p class="err" id="rq-err" hidden></p>';
+    if(r.kind!=='prolongation')acts+='<button class="btn soft" data-rqdo="plan" data-id="'+r.id+'">'+svg('cal')+(r.status==='planifiee'?'Changer la date de passage':'Planifier le passage')+'</button>';
+    if(r.kind==='location'){
+      var av=equip.filter(function(x){return x.st==='dispo'&&x.n===r.product;}),alt=equip.filter(function(x){return x.st==='dispo'&&x.n!==r.product&&e===null&&CATALOG.some(function(c){return c.name===r.product&&c.kind===x.k;});});
+      acts+='<h3 class="subh">Livrer · '+av.length+' disponible'+(av.length>1?'s':'')+'</h3><div class="list">'+(av.concat(alt.slice(0,8)).map(function(x){
+        return '<button class="row" data-rqdo="done" data-id="'+r.id+'" data-eq="'+x.id+'">'+ph(x)+'<span class="body"><div class="t">'+esc(x.n)+'</div><div class="s">'+x.ref+(x.n!==r.product?' · autre modèle':'')+'</div></span><span class="tagp p-dispo">Livrer</span></button>';}).join('')
+        ||'<div class="empty">Aucun équipement de ce modèle disponible. Planifiez la livraison ou proposez un autre matériel en répondant.</div>')+'</div>';
+    }
+    else if(r.kind==='reprise')acts+='<button class="btn" data-rqdo="done" data-id="'+r.id+'">'+svg('ret')+'Reprise effectuée</button>';
+    else if(r.kind==='prolongation')acts+='<button class="btn" data-rqdo="done" data-id="'+r.id+'">'+svg('clock')+'Accepter la prolongation (+ '+sem(r.days)+')</button>';
+    else acts+='<button class="btn" data-rqdo="done" data-id="'+r.id+'">'+ICON.check+'Problème réglé sur place</button><button class="btn soft" data-rqdo="fault" data-id="'+r.id+'">'+svg('tool')+'Reprendre pour réparation</button>';
+    acts+='<button class="btn danger" data-rqdo="refuse" data-id="'+r.id+'">Refuser la demande</button>';
+  }else if(op)acts='<p class="err" id="rq-err" hidden></p><button class="btn danger" data-rqdo="cancel" data-id="'+r.id+'">Annuler la demande</button>';
+  openSheet('<h2>'+esc(reqTitle(r))+'</h2>'+info+acts+(e?'<button class="btn soft" data-open="'+e.id+'">Ouvrir la fiche du matériel</button>':'')+'<button class="btn soft" data-act="close-sheet">Fermer</button>');
+  sheet.style.height='92%';
+}
+function reqDo(a,id,eq){
+  var body={action:a==='fault'?'done':a};
+  if(a==='fault')body.fault=true;
+  if(a==='plan')body.planned=$('rq-pdate').value;
+  if(eq)body.equipment=eq;
+  var an=$('rq-ans');if(an)body.answer=an.value;
+  if(a==='refuse'&&!(body.answer||'').trim())return gateErr('rq-err','Indiquez le motif du refus : il sera transmis à la pharmacie.');
+  srv('POST','requests/'+id,body).then(loadState).then(function(){closeSheet();refresh();if(S.cur&&detail.classList.contains('open'))loadHistory(S.cur);
+    toast({plan:'Passage planifié',refuse:'Demande refusée',done:'Demande traitée',fault:'Matériel envoyé à l\'atelier',cancel:'Demande annulée'}[a]);}).catch(function(err){if(err.status===401)return errToast(err);gateErr('rq-err',err.message);});
+}
+function reqSubmit(id){
+  var b;
+  if(id==='f-req'){keepRq();b={kind:'location',product:RQ.product,patient:RQ.patient,days:+RQ.days,wanted:RQ.wanted,note:RQ.note};if(STAFF)b.pharmacy=RQ.pharmacy;
+    if(!b.product)return gateErr('rq-err','Choisissez le matériel.');if(!b.patient)return gateErr('rq-err','Choisissez le bénéficiaire.');}
+  else{b={kind:RQ.kind,equipment:RQ.eq,note:$('rq-note').value};
+    if(RQ.kind==='prolongation')b.days=+selVal('rqdays');
+    if(RQ.kind==='reprise')b.wanted=$('rq-date').value;
+    if(RQ.kind==='probleme'){b.reason=selVal('rqreason');if(!b.reason)return gateErr('rq-err','Choisissez la nature du problème.');}}
+  srv('POST','requests',b).then(loadState).then(function(){RQ={};closeSheet();refresh();if(S.cur&&detail.classList.contains('open'))loadHistory(S.cur);toast(STAFF?'Demande enregistrée':'Demande envoyée au parc');}).catch(function(err){if(err.status===401)return errToast(err);gateErr('rq-err',err.message);});
+}
+function reqNew(kind){
+  if(kind==='location'){RQ={};reqLocSheet();return;}
+  if(S.cur&&detail.classList.contains('open')&&byId(S.cur).st==='loc'){reqEqSheet(kind,S.cur);return;}
+  pickEqForReq(kind);
+}
+/* Suivi par pharmacie (grossiste) */
+function phStats(fid){
+  var it=equip.filter(function(e){return e.st==='loc'&&e.fa===fid;});
+  return {n:it.length,wk:it.reduce(function(a,e){return a+e.px;},0),late:it.filter(function(e){return e.end<0;}).length,renew:it.filter(function(e){return e.end>=0&&e.end<=14;}).length,
+    presc:it.filter(function(e){return !e.prescription||renewInfo(e);}).length,req:openReqs().filter(function(r){return String(r.pharmacy_id)===fid;}).length,
+    ben:it.map(function(e){return e.pt;}).filter(function(x,i,a){return a.indexOf(x)===i;}).length};
+}
+function phListSheet(){
+  openSheet('<h2>Suivi des pharmacies</h2><p class="sub">Locations en cours, retards, ordonnances et demandes par pharmacie.</p><div class="list">'+PHARM.map(function(f){var s=phStats(f.id);
+    return '<button class="row" data-phs="'+f.id+'"><span class="ico a-ok"><svg viewBox="0 0 24 24">'+ICON.cross+'</svg></span><span class="body"><div class="t">'+esc(f.n)+'</div><div class="s w2">'+s.n+' en location · '+xpf(s.wk)+'/sem.'+(s.late?' · <b class="warnt">'+s.late+' en retard</b>':'')+(s.req?' · '+s.req+' demande'+(s.req>1?'s':''):'')+(s.presc?' · '+s.presc+' ordonnance'+(s.presc>1?'s':'')+' à traiter':'')+'</div></span><span class="chev">'+ICON.chev+'</span></button>';}).join('')
+    +'</div><button class="btn soft" data-act="close-sheet">Fermer</button>');
+  sheet.style.height='88%';
+}
+function phSheet(fid){
+  var f=phar(fid),s=phStats(fid);if(!f)return;
+  var tile=function(v,l,c){return '<div class="phk'+(c?' '+c:'')+'"><b class="num">'+v+'</b><span>'+l+'</span></div>';};
+  openSheet('<h2>'+esc(f.n)+'</h2><p class="sub">'+esc(f.c)+(f.em?' · '+esc(f.em):' · aucune adresse e-mail')+'</p>'
+    +'<div class="phkpis">'+tile(s.n,'en location')+tile(xpf(s.wk),'loyers / semaine')+tile(s.ben,'bénéficiaires')+tile(s.late,'retours en retard',s.late?'bad':'')+tile(s.renew,'fins sous 14 j',s.renew?'mid':'')+tile(s.presc,'ordonnances à traiter',s.presc?'mid':'')+'</div>'
+    +(s.req?'<h3 class="subh">Demandes en cours · '+s.req+'</h3><div class="list">'+openReqs().filter(function(r){return String(r.pharmacy_id)===fid;}).map(reqRow).join('')+'</div>':'')
+    +'<div class="stack"><button class="btn" data-fa="'+fid+'">'+svg('clip')+'Voir les contrats</button><button class="btn soft" data-phfact="'+fid+'">'+svg('coins')+'Facturation du mois</button>'
+    +(ROLE==='admin'?'<button class="btn soft" data-phmail="'+fid+'">'+svg('mail')+'Adresse e-mail des rappels</button>':'')+'</div><button class="btn soft" data-act="close-sheet">Fermer</button>');
+  sheet.style.height='92%';
 }
 
 /* Comptes et pharmacies (administrateur) */
@@ -1631,6 +1874,7 @@ function mailSection(){
     +'<p class="note">Chaque matin, chaque pharmacie reçoit un e-mail s\'il y a du nouveau : ordonnances à confirmer, à renouveler ou expirées. Le patient n\'y figure que par ses initiales et sa commune.</p>'
     +(m.configured?'':'<div class="renew">'+svg('warn')+'<div><b>Envoi d\'e-mails non configuré sur le serveur</b><span>Il faut brancher un service d\'envoi (Resend, Brevo ou votre messagerie). Les réglages ci-dessous sont enregistrés en attendant.</span></div></div>')
     +'<div class="list"><button class="row" data-act="mail-toggle"><span class="ico '+(m.enabled?'a-ok':'a-crit')+'">'+svg(m.enabled?'okc':'close')+'</span><span class="body"><div class="t">Envoi automatique '+(m.enabled?'activé':'désactivé')+'</div><div class="s">Toucher pour '+(m.enabled?'désactiver':'activer')+'</div></span></button></div>'
+    +'<div class="list" style="margin-top:8px"><button class="row" data-act="staff-mail"><span class="ico a-info">'+svg('mail')+'</span><span class="body"><div class="t">Nouvelles demandes des pharmacies</div><div class="s">'+(m.staff_email?esc(m.staff_email):'Aucune adresse : pas d\'e-mail à l\'équipe')+'</div></span><span class="chev">'+ICON.chev+'</span></button></div>'
     +'<label class="fld">Heure d\'envoi (heure de Tahiti)</label><div class="durs left">'+[6,7,8,9].map(function(h){return '<button class="chip" data-mhour="'+h+'" aria-pressed="'+(m.hour===h)+'">'+h+' h</button>';}).join('')+'</div>'
     +'<div class="stack"><button class="btn soft" data-act="mail-preview">Voir les rappels en attente</button>'
     +(m.configured?'<button class="btn soft" data-act="mail-test">Envoyer un e-mail de test</button><button class="btn" data-act="mail-run">'+svg('mail')+'Envoyer les rappels maintenant</button>':'')+'</div>'
@@ -1656,7 +1900,7 @@ function patForm(){
     +'<label class="fld" for="pa-addr">Adresse</label><input class="gin" id="pa-addr" placeholder="PK, quartier, servitude…">'
     +'<label class="fld" for="pa-tel">Téléphone</label><input class="gin" id="pa-tel" type="tel" inputmode="tel" autocomplete="off" placeholder="87 12 34 56">'
     +'<p class="note">Seuls le nom, l\'adresse et le téléphone sont enregistrés, chiffrés. Ne saisissez aucune information médicale.</p>'
-    +'<p class="err" id="pa-err" hidden></p><button class="btn" type="submit">Ajouter</button><button class="btn soft" type="button" data-act="assign">Retour</button></form>');
+    +'<p class="err" id="pa-err" hidden></p><button class="btn" type="submit">Ajouter</button><button class="btn soft" type="button" data-act="'+(patBack==='req'?'rq-back':'assign')+'">Retour</button></form>');
   sheet.style.height='92%';
 }
 function pwdSheet(login,pw,title){
@@ -1676,6 +1920,7 @@ function emailSheet(title,cur,target){
     +'<button class="btn" type="submit">Enregistrer</button><button class="btn soft" type="button" data-act="close-sheet">Annuler</button></form>');
 }
 function submitForm(id){
+  if(id==='f-mail'&&document.getElementById('f-mail').dataset.target==='staff'){srv('POST','mail/settings',{staff_email:$('ml-in').value}).then(loadMail).then(function(){closeSheet();toast('Adresse enregistrée');}).catch(function(e){gateErr('ml-err',e.message);});return;}
   if(id==='f-mail'){var tg=document.getElementById('f-mail').dataset.target;srv('POST','pharmacies/'+tg+'/email',{email:$('ml-in').value}).then(loadState).then(function(){closeSheet();if(setOpen&&ovMode==='accounts')renderAccounts();toast('Adresse enregistrée');}).catch(function(e){gateErr('ml-err',e.message);});return;}
   if(id==='f-mtest'){srv('POST','mail/test',{to:$('mt-in').value}).then(function(){closeSheet();toast('E-mail de test envoyé');}).catch(function(e){gateErr('mt-err',e.message);});return;}
   if(id==='f-user'){var role=selVal('role');srv('POST','users',{name:$('u-name').value,login:$('u-login').value,role:role,pharmacy:role==='pharmacie'?selVal('pharm'):null})
@@ -1683,7 +1928,7 @@ function submitForm(id){
   else if(id==='f-pharm'){srv('POST','pharmacies',{name:$('ph-name').value,commune:$('ph-c').value}).then(loadState).then(function(){closeSheet();renderAccounts();toast('Pharmacie ajoutée');}).catch(function(e){gateErr('ph-err',e.message);});}
   else if(id==='f-presc'){var pe=byId(S.cur);if(!$('pr-ok').checked)return gateErr('pr-err','Cochez la case pour confirmer que la pharmacie détient l\'ordonnance.');
     srv('POST','rentals/'+pe.rid+'/prescription',{date:$('pr-date').value,valid_until:$('pr-valid').value,ref:$('pr-ref').value,attest:true}).then(loadState).then(function(){closeSheet();refresh();loadHistory(pe.id);toast('Ordonnance vérifiée');}).catch(function(err){gateErr('pr-err',err.message);});}
-  else if(id==='f-pat'){srv('POST','patients',{name:$('pa-name').value,commune:selVal('commune'),address:$('pa-addr').value,phone:$('pa-tel').value}).then(loadState).then(function(){pickPatient();toast('Bénéficiaire ajouté');}).catch(function(e){gateErr('pa-err',e.message);});}
+  else if(id==='f-pat'){var nid=null;srv('POST','patients',{name:$('pa-name').value,commune:selVal('commune'),address:$('pa-addr').value,phone:$('pa-tel').value}).then(function(r){nid=r.id;return loadState();}).then(function(){if(patBack==='req'){patBack=null;RQ.patient=String(nid);reqLocSheet();}else pickPatient();toast('Bénéficiaire ajouté');}).catch(function(e){gateErr('pa-err',e.message);});}
 }
 function accountSheet(){
   var it=[];
@@ -1702,8 +1947,23 @@ function act(a,e){
   renderDetail();
 }
 document.addEventListener('click',function(x){
-  var t=x.target.closest('[data-opt],[data-fmonth],[data-ffa],[data-deldoc],[data-deldocok],[data-user],[data-ureset],[data-pkind],[data-guide],[data-pvalid],[data-phmail],[data-mhour],[data-uactive],[data-copy],[data-tab],[data-open],[data-act],[data-filter],[data-pick],[data-link],[data-place],[data-mode],[data-state],[data-tag],[data-map],[data-dur],[data-hist],[data-fav],[data-keb],[data-progid],[data-ltab],[data-extend],[data-pkeb],[data-zone],[data-pext],[data-cdays],[data-scroll],[data-rtab],[data-export],[data-fa],[data-rfa]');if(!t)return;
+  var t=x.target.closest('[data-req],[data-rqnew],[data-rqview],[data-rqcat],[data-rqeq],[data-rqdo],[data-phs],[data-phfact],[data-golt],[data-opt],[data-fmonth],[data-ffa],[data-deldoc],[data-deldocok],[data-user],[data-ureset],[data-pkind],[data-guide],[data-pvalid],[data-phmail],[data-mhour],[data-uactive],[data-copy],[data-tab],[data-open],[data-act],[data-filter],[data-pick],[data-link],[data-place],[data-mode],[data-state],[data-tag],[data-map],[data-dur],[data-hist],[data-fav],[data-keb],[data-progid],[data-ltab],[data-extend],[data-pkeb],[data-zone],[data-pext],[data-cdays],[data-scroll],[data-rtab],[data-export],[data-fa],[data-rfa]');if(!t)return;
   var d=t.dataset;
+  if(d.rqdo){reqDo(d.rqdo,d.id,d.eq);return;}
+  if(d.req){reqSheet(d.req);return;}
+  if(d.rqnew){reqNew(d.rqnew);return;}
+  if(d.rqview){rqView=d.rqview;render(true);return;}
+  if(d.rqcat){var cc=CATALOG[+d.rqcat];if(STAFF){closeSheet();S.tab='parc';S.mode='grid';S.filter='all';S.q=cc.name;render();return;}RQ={product:cc.name};reqLocSheet();return;}
+  if(d.rqeq){reqEqSheet(RQ.kind,d.rqeq);return;}
+  if(d.phs){phSheet(d.phs);return;}
+  if(d.phfact){closeSheet();fState.fa=d.phfact;fData=null;S.tab=STAFF?'rap':'fact';S.rtab='fact';render();return;}
+  if(d.golt){closeSheet();if(detail.classList.contains('open'))closeDetail();S.tab='loc';S.ltab=d.golt;render();return;}
+  if(d.act==='rq-newpat'){keepRq();patBack='req';patForm();return;}
+  if(d.act==='rq-back'){patBack=null;reqLocSheet();return;}
+  if(d.act==='plan-copy'){copyText(planText(),'Tournée copiée : collez-la dans un message');return;}
+  if(d.act==='catalog'){catSheet();return;}
+  if(d.act==='ph-list'){phListSheet();return;}
+  if(d.act==='staff-mail'){emailSheet('E-mail de l\'équipe',mailCache?mailCache.staff_email:'','staff');return;}
   if(d.opt!==undefined){var grp=t.parentNode;[].forEach.call(grp.querySelectorAll('.chip'),function(c){c.setAttribute('aria-pressed',String(c===t));});return;}
   if(d.fmonth){fState.month=shiftMonth(fState.month,+d.fmonth);fData=null;render(true);return;}
   if(d.ffa!==undefined){fState.fa=d.ffa;fData=null;render(true);return;}
@@ -1746,7 +2006,7 @@ document.addEventListener('click',function(x){
   if(d.act==='accounts'){closeSheet();openAccounts();return;}
   if(d.act==='new-user'){userForm();return;}
   if(d.act==='new-pharm'){pharmForm();return;}
-  if(d.act==='new-pat'){patForm();return;}
+  if(d.act==='new-pat'){patBack=null;patForm();return;}
   if(d.act==='open-ref'){openRef();return;}
   if(d.act==='reload'){location.reload();return;}
   if(d.act==='noop')return;

@@ -98,6 +98,23 @@ Puis ouvrir `http://localhost:3000/materiel/` (identifiant `admin`).
 
 Le projet Docker `mediparc-nfc` (`deploy/docker-compose.yml`) télécharge ce dépôt (qui doit rester public) à chaque démarrage, génère le site et lance le serveur derrière Traefik. Les données sont dans le volume `mediparc-data`. Pour publier une nouvelle version : pousser sur la branche, puis redémarrer le projet. Au premier démarrage, la base est remplie avec les données de démonstration.
 
+## Demandes des pharmacies et suivi du grossiste
+
+- **Portail pharmacie** : depuis l'accueil, le bouton + ou la fiche d'un matériel, la pharmacie envoie une demande de
+  **location** (matériel du catalogue, bénéficiaire, durée, date souhaitée), de **reprise**, de **prolongation** ou
+  signale un **problème**. Elle suit l'état de ses demandes (nouvelle, planifiée, effectuée, refusée) dans
+  Locations › Demandes, et peut créer un bénéficiaire. Catalogue avec tarifs et disponibilité.
+- **Portail grossiste** : nouvelles demandes sur l'accueil et dans la cloche ; chaque demande se planifie (date de
+  passage), se traite (livraison d'un équipement disponible, reprise, prolongation, réparation) ou se refuse avec un
+  motif. Locations › **Planning** regroupe sur 14 jours les livraisons, reprises et fins de location par jour et par
+  commune (bouton Copier pour l'envoyer au livreur). **Suivi des pharmacies** : locations, loyers, retards,
+  ordonnances à traiter et demandes, pharmacie par pharmacie.
+- E-mails (si l'envoi est configuré) : la pharmacie est prévenue quand sa demande est planifiée, traitée ou refusée
+  (patient désigné par ses initiales) ; l'équipe reçoit les nouvelles demandes à l'adresse réglée dans
+  Comptes et pharmacies › E-mails.
+- Les précisions saisies sont chiffrées, limitées à 300 caractères, effacées après 3 ans, et ne doivent contenir
+  aucune information médicale.
+
 ## Guides d'utilisation
 
 - `guides/guide-pharmacie.pdf` : portail pharmacie (téléchargeable sans connexion depuis l'écran de connexion, et depuis l'accueil et le menu Plus du portail).

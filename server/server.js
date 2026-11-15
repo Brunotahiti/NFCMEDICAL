@@ -90,6 +90,19 @@ db.exec(`CREATE TABLE IF NOT EXISTS notifications(id INTEGER PRIMARY KEY, rental
 const PHOTO_KINDS = { livraison: 'livraison', retour: 'retour', etat: 'état', panne: 'panne' };
 for (const [col, def] of [['phone', "TEXT NOT NULL DEFAULT ''"], ['anonymized', 'INTEGER NOT NULL DEFAULT 0']])
   if (!db.prepare('PRAGMA table_info(patients)').all().some(c => c.name === col)) db.exec('ALTER TABLE patients ADD COLUMN ' + col + ' ' + def);
+/* Bénéficiaire saisi par une pharmacie (pour qu'elle le retrouve avant la première location). */
+if (!db.prepare('PRAGMA table_info(patients)').all().some(c => c.name === 'pharmacy_id')) db.exec('ALTER TABLE patients ADD COLUMN pharmacy_id INTEGER');
+/* Demandes des pharmacies : location, reprise, prolongation, problème. La note est chiffrée et ne doit contenir aucune donnée médicale. */
+db.exec(`CREATE TABLE IF NOT EXISTS requests(id INTEGER PRIMARY KEY,
+  kind TEXT NOT NULL CHECK(kind IN ('location','reprise','prolongation','probleme')),
+  pharmacy_id INTEGER NOT NULL REFERENCES pharmacies(id), patient_id INTEGER REFERENCES patients(id), equipment_id INTEGER REFERENCES equipment(id),
+  product TEXT NOT NULL DEFAULT '', days INTEGER, wanted TEXT, reason TEXT NOT NULL DEFAULT '', note TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'nouvelle' CHECK(status IN ('nouvelle','planifiee','faite','refusee','annulee')),
+  planned TEXT, answer TEXT NOT NULL DEFAULT '', rental_id INTEGER,
+  created_at TEXT NOT NULL, created_by TEXT NOT NULL DEFAULT '', updated_at TEXT, updated_by TEXT NOT NULL DEFAULT '');
+CREATE INDEX IF NOT EXISTS requests_st ON requests(status, pharmacy_id);`);
+const REQ_KINDS = { location: 'Demande de location', reprise: 'Demande de reprise', prolongation: 'Demande de prolongation', probleme: 'Signalement d\'un problème' };
+const REQ_REASONS = { panne: 'Ne fonctionne plus', bruit: 'Bruit ou fonctionnement anormal', casse: 'Pièce cassée ou manquante', piles: 'Batterie ou alimentation', autre: 'Autre' };
 fs.mkdirSync(DOCS, { recursive: true });
 
 /* ---------- Chiffrement des données personnelles (AES-256-GCM) ----------
@@ -296,6 +309,7 @@ function purge() {
       for (const x of q('SELECT p.id, p.file FROM photos p JOIN rentals r ON r.id=p.rental_id WHERE r.end_date IS NOT NULL AND r.end_date < ?').all(limit)) {
         q('DELETE FROM photos WHERE id=?').run(x.id); q('UPDATE events SET photo_id=NULL WHERE photo_id=?').run(x.id); try { fs.unlinkSync(path.join(PHOTOS, x.file)); } catch (e) {}
       }
+      q("UPDATE requests SET note='', answer='' WHERE created_at < ?").run(limit);
       q("UPDATE prescriptions SET ref='' WHERE rental_id IN (SELECT id FROM rentals WHERE end_date IS NOT NULL AND end_date < ?)").run(limit);
       if (old.length) console.log(old.length + ' bénéficiaire(s) anonymisé(s) (conservation 3 ans).');
     });
@@ -465,6 +479,79 @@ function eventTexts(rows) {
   return rows.map(r => r.text.includes('{p}') ? r.text.split('{p}').join(names.get(rp.get(r.rental_id)) || 'bénéficiaire') : r.text);
 }
 function addEvent(eqId, rentalId, text, u, photoId) { q('INSERT INTO events(equipment_id,rental_id,at,text,user_name,photo_id) VALUES(?,?,?,?,?,?)').run(eqId, rentalId || null, nowStamp(), text, u ? u.name : '', photoId || null); }
+/* Démarre, termine ou prolonge une location (dans une transaction appelante). */
+function startRental(u, e, patientId, pharmacy, days) {
+  const T = today();
+  const rid = Number(q('INSERT INTO rentals(equipment_id,patient_id,pharmacy_id,start_date,planned_end,week_price,created_by) VALUES(?,?,?,?,?,?,?)')
+    .run(e.id, patientId, pharmacy.id, T, addDays(T, days), e.week_price, u.name).lastInsertRowid);
+  q("UPDATE equipment SET status='loc', status_since=? WHERE id=?").run(T, e.id);
+  addEvent(e.id, rid, 'Livré chez {p} par la ' + pharmacy.name + ' pour ' + durLabel(days), u);
+  return rid;
+}
+function returnRental(u, e) {
+  const r = openRental(e.id), T = today();
+  if (e.status !== 'loc' || !r) fail(409, 'Cet équipement n\'est pas en location.');
+  q('UPDATE rentals SET end_date=? WHERE id=?').run(T, r.id);
+  q("UPDATE equipment SET status='desinf', status_since=? WHERE id=?").run(T, e.id);
+  addEvent(e.id, r.id, 'Retour de location ({p}), en attente de désinfection', u);
+}
+function extendRental(u, r, days) {
+  q('UPDATE rentals SET planned_end=? WHERE id=?').run(addDays(r.planned_end, days), r.id);
+  addEvent(r.equipment_id, r.id, 'Location prolongée de ' + durLabel(days), u);
+}
+/* Demandes : clôture automatique quand l'équipe fait l'action directement depuis la fiche. */
+function closeRequests(u, eqId, kind, answer) {
+  const rows = q(`SELECT id FROM requests WHERE equipment_id=? AND status IN ('nouvelle','planifiee')` + (kind ? ' AND kind=?' : '')).all(...(kind ? [eqId, kind] : [eqId]));
+  for (const r of rows) q("UPDATE requests SET status='faite', answer=?, updated_at=?, updated_by=? WHERE id=?").run(enc(answer), nowStamp(), u.name, r.id);
+  return rows.length;
+}
+function publicRequest(r, names) {
+  return { id: r.id, kind: r.kind, pharmacy_id: r.pharmacy_id, patient_id: r.patient_id, patient: r.patient_id ? (names.get(r.patient_id) || '') : '',
+    equipment_id: r.equipment_id, product: r.product, days: r.days, wanted: r.wanted, reason: r.reason, note: dec(r.note), status: r.status,
+    planned: r.planned, answer: dec(r.answer), rental_id: r.rental_id, created_at: r.created_at, created_by: r.created_by, updated_at: r.updated_at, updated_by: r.updated_by };
+}
+function requestsFor(u) {
+  const staff = isStaff(u), since = addDays(today(), staff ? -45 : -120);
+  const rows = q(`SELECT * FROM requests WHERE (status IN ('nouvelle','planifiee') OR created_at >= ?) ${staff ? '' : 'AND pharmacy_id=?'}
+      ORDER BY CASE status WHEN 'nouvelle' THEN 0 WHEN 'planifiee' THEN 1 ELSE 2 END, COALESCE(planned, wanted, created_at), id DESC LIMIT 500`).all(...(staff ? [since] : [since, u.pharmacy_id]));
+  const names = patientNames([...new Set(rows.map(r => r.patient_id).filter(Boolean))]);
+  return rows.map(r => publicRequest(r, names));
+}
+/* Catalogue : un produit par nom d'équipement, avec le nombre d'unités disponibles. */
+function catalog() {
+  return q(`SELECT name, kind, MIN(photo) photo, MIN(brand) brand, MIN(week_price) week_price, COUNT(*) total, SUM(status='dispo') dispo, SUM(status='loc') loc
+      FROM equipment GROUP BY name ORDER BY kind, name`).all();
+}
+/* E-mail à la pharmacie quand sa demande avance (patient désigné par ses initiales et sa commune). */
+function requestMail(r, title, detail) {
+  if (!mailer.configured()) return;
+  const ph = q('SELECT * FROM pharmacies WHERE id=?').get(r.pharmacy_id), to = ph ? emailsOf(ph.email) : [];
+  if (!to.length) return;
+  const h = x => String(x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const p = r.patient_id ? q('SELECT name, commune FROM patients WHERE id=?').get(r.patient_id) : null;
+  const e = r.equipment_id ? q('SELECT ref, name FROM equipment WHERE id=?').get(r.equipment_id) : null;
+  const what = (e ? e.name + ' · ' + e.ref : r.product) + (p ? ' · bénéficiaire ' + initialsOf(dec(p.name)) + ' (' + p.commune + ')' : '');
+  const base = setting('link_base', PUBLIC_URL).replace(/[#=]$/, '').replace(/\/?$/, '/');
+  const html = '<div style="font-family:Arial,Helvetica,sans-serif;color:#0d2730;max-width:620px;margin:0 auto">'
+    + '<div style="background:#0b5361;color:#fff;padding:16px 20px;border-radius:12px 12px 0 0"><b style="font-size:18px;color:#62cfc4">Mana</b><b style="font-size:18px">Process</b> · Parc NFC</div>'
+    + '<div style="border:1px solid #d5dfe1;border-top:0;border-radius:0 0 12px 12px;padding:18px 20px"><p style="margin:0 0 10px">Bonjour,</p>'
+    + '<p style="margin:0 0 6px"><b>' + h(REQ_KINDS[r.kind]) + ' : ' + h(title) + '</b></p><p style="margin:0 0 10px;color:#5b7078">' + h(what) + '</p>'
+    + (detail ? '<p style="margin:0 0 10px">' + h(detail) + '</p>' : '')
+    + '<p style="margin:14px 0 0"><a href="' + h(base) + '" style="color:#0a7c88;font-weight:600">Ouvrir le portail</a></p></div></div>';
+  const text = REQ_KINDS[r.kind] + ' : ' + title + '\n' + what + (detail ? '\n' + detail : '') + '\n\n' + base;
+  mailer.send({ to, subject: REQ_KINDS[r.kind] + ' · ' + title, html, text }).catch(err => console.error('E-mail demande :', err.message));
+}
+/* E-mail à l'équipe du parc pour une nouvelle demande (adresse réglée par l'administrateur). */
+function staffMail(r, ph) {
+  const to = emailsOf(setting('staff_email', ''));
+  if (!mailer.configured() || !to.length) return;
+  const e = r.equipment_id ? q('SELECT ref, name FROM equipment WHERE id=?').get(r.equipment_id) : null;
+  const what = e ? e.name + ' · ' + e.ref : r.product;
+  const base = setting('link_base', PUBLIC_URL).replace(/[#=]$/, '').replace(/\/?$/, '/');
+  const text = REQ_KINDS[r.kind] + ' de la ' + ph.name + '\n' + what + (r.wanted ? '\nSouhaitée le ' + r.wanted.split('-').reverse().join('/') : '') + '\n\n' + base;
+  mailer.send({ to, subject: 'Nouvelle demande · ' + ph.name, text, html: '<p>' + text.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])).replace(/\n/g, '<br>') + '</p>' })
+    .catch(err => console.error('E-mail équipe :', err.message));
+}
 function durLabel(n) { return n % 7 === 0 ? (n / 7 === 1 ? '1 semaine' : n / 7 + ' semaines') : n === 90 ? '3 mois' : n + ' jours'; }
 
 function state(u) {
@@ -519,11 +606,13 @@ function state(u) {
     : q(`SELECT r.*, e.ref, e.name, e.photo, e.kind FROM rentals r JOIN equipment e ON e.id=r.equipment_id WHERE r.end_date IS NOT NULL AND r.pharmacy_id=? ORDER BY r.end_date DESC LIMIT 200`).all(ph))
     .map(r => ({ id: r.id, equipment: { id: r.equipment_id, ref: r.ref, name: r.name, photo: r.photo, kind: r.kind, week_price: r.week_price },
       patient_id: r.patient_id, pharmacy_id: r.pharmacy_id, start: r.start_date, end: r.end_date, amount: Math.round(r.week_price * diffDays(r.start_date, r.end_date) / 7) }));
-  const pIds = new Set(equipment.filter(e => e.patient_id).map(e => e.patient_id).concat(closed.map(c => c.patient_id)));
-  const patients = (staff ? q('SELECT * FROM patients').all() : q('SELECT * FROM patients').all().filter(p => pIds.has(p.id)))
+  const requests = requestsFor(u);
+  const pIds = new Set(equipment.filter(e => e.patient_id).map(e => e.patient_id).concat(closed.map(c => c.patient_id)).concat(requests.map(r => r.patient_id).filter(Boolean)));
+  const patients = (staff ? q('SELECT * FROM patients').all() : q('SELECT * FROM patients').all().filter(p => pIds.has(p.id) || (p.pharmacy_id === ph && !p.anonymized)))
     .map(p => ({ id: p.id, name: dec(p.name), address: dec(p.address), commune: p.commune, phone: dec(p.phone), lat: p.lat, lon: p.lon, anonymized: !!p.anonymized }))
     .sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-  return { me: publicUser(u), documents_enabled: DOCUMENTS_ENABLED, today: T, link_base: setting('link_base', PUBLIC_URL), communes: Object.keys(COMMUNES), pharmacies, patients, equipment, closed };
+  return { me: publicUser(u), documents_enabled: DOCUMENTS_ENABLED, today: T, link_base: setting('link_base', PUBLIC_URL), communes: Object.keys(COMMUNES), pharmacies, patients, equipment, closed,
+    requests, catalog: catalog(), reasons: REQ_REASONS };
 }
 
 /* Facturation : jours de location compris dans le mois (le jour du retour n'est pas facturé). */
@@ -628,10 +717,8 @@ async function api(req, res, route, url) {
     tx(() => {
       const r = openRental(e.id);
       if (a === 'return') {
-        if (e.status !== 'loc' || !r) fail(409, 'Cet équipement n\'est pas en location.');
-        q('UPDATE rentals SET end_date=? WHERE id=?').run(T, r.id);
-        q("UPDATE equipment SET status='desinf', status_since=? WHERE id=?").run(T, e.id);
-        addEvent(e.id, r.id, 'Retour de location ({p}), en attente de désinfection', u);
+        returnRental(u, e);
+        closeRequests(u, e.id, 'reprise', 'Reprise effectuée');
       } else if (a === 'clean') {
         if (e.status !== 'desinf') fail(409, 'Cet équipement n\'est pas en attente de désinfection.');
         q("UPDATE equipment SET status='dispo', status_since=? WHERE id=?").run(T, e.id);
@@ -645,6 +732,7 @@ async function api(req, res, route, url) {
         if (r) q('UPDATE rentals SET end_date=? WHERE id=?').run(T, r.id);
         q("UPDATE equipment SET status='maint', status_since=? WHERE id=?").run(T, e.id);
         addEvent(e.id, r ? r.id : null, 'Panne signalée, envoyé à l\'atelier', u);
+        closeRequests(u, e.id, null, 'Matériel repris pour réparation');
       } else if (a === 'check') {
         if (e.status === 'maint') fail(409, 'Clôturez d\'abord la maintenance.');
         q('UPDATE equipment SET next_check=? WHERE id=?').run(addDays(T, 365), e.id);
@@ -660,13 +748,7 @@ async function api(req, res, route, url) {
     if (![7, 14, 28, 90].includes(days)) fail(400, 'Durée invalide.');
     const p = q('SELECT * FROM patients WHERE id=?').get(Number(body.patient)); if (!p) fail(400, 'Bénéficiaire introuvable.');
     const f = q('SELECT * FROM pharmacies WHERE id=?').get(Number(body.pharmacy)); if (!f) fail(400, 'Pharmacie introuvable.');
-    const T = today();
-    tx(() => {
-      const rid = Number(q('INSERT INTO rentals(equipment_id,patient_id,pharmacy_id,start_date,planned_end,week_price,created_by) VALUES(?,?,?,?,?,?,?)')
-        .run(e.id, p.id, f.id, T, addDays(T, days), e.week_price, u.name).lastInsertRowid);
-      q("UPDATE equipment SET status='loc', status_since=? WHERE id=?").run(T, e.id);
-      addEvent(e.id, rid, 'Livré chez {p} par la ' + f.name + ' pour ' + durLabel(days), u);
-    });
+    tx(() => { startRental(u, e, p.id, f, days); });
     return json(req, res, 200, { ok: true });
   }
   if (route === 'rentals/extend' && m === 'POST') {
@@ -675,7 +757,7 @@ async function api(req, res, route, url) {
     const list = body.patient ? q('SELECT * FROM rentals WHERE patient_id=? AND end_date IS NULL').all(Number(body.patient))
       : [openRental(equipmentFor(u, body.equipment).id)].filter(Boolean);
     if (!list.length) fail(409, 'Aucune location en cours à prolonger.');
-    tx(() => list.forEach(r => { q('UPDATE rentals SET planned_end=? WHERE id=?').run(addDays(r.planned_end, days), r.id); addEvent(r.equipment_id, r.id, 'Location prolongée de ' + durLabel(days), u); }));
+    tx(() => list.forEach(r => { extendRental(u, r, days); closeRequests(u, r.equipment_id, 'prolongation', 'Location prolongée de ' + durLabel(days)); }));
     return json(req, res, 200, { ok: true, count: list.length });
   }
   if ((mm = route.match(/^equipment\/(\d+)\/link$/)) && m === 'POST') {
@@ -705,6 +787,98 @@ async function api(req, res, route, url) {
     if (!/[\/#=]$/.test(b)) b += '/';
     const old = setting('link_base', PUBLIC_URL);
     tx(() => { q('UPDATE equipment SET link=?||ref WHERE link=?||ref').run(b, old); setSetting('link_base', b); });
+    return json(req, res, 200, { ok: true });
+  }
+  if (route === 'requests' && m === 'POST') {
+    const kind = body.kind; if (!REQ_KINDS[kind]) fail(400, 'Type de demande inconnu.');
+    const T = today();
+    const f = isStaff(u) ? q('SELECT * FROM pharmacies WHERE id=?').get(Number(body.pharmacy)) : q('SELECT * FROM pharmacies WHERE id=?').get(u.pharmacy_id);
+    let e = null, patientId = null, product = '', days = null, wanted = null, reason = '';
+    if (kind === 'location') {
+      if (!f) fail(400, 'Choisissez la pharmacie.');
+      product = String(body.product || '').trim();
+      if (!q('SELECT 1 FROM equipment WHERE name=?').get(product)) fail(400, 'Choisissez un matériel du catalogue.');
+      const p = q('SELECT * FROM patients WHERE id=? AND anonymized=0').get(Number(body.patient)); if (!p) fail(400, 'Choisissez le bénéficiaire.');
+      if (!isStaff(u) && p.pharmacy_id !== u.pharmacy_id && !q('SELECT 1 FROM rentals WHERE patient_id=? AND pharmacy_id=?').get(p.id, u.pharmacy_id)) fail(400, 'Bénéficiaire introuvable.');
+      patientId = p.id;
+      if (q(`SELECT 1 FROM requests WHERE kind='location' AND patient_id=? AND product=? AND status IN ('nouvelle','planifiee')`).get(p.id, product)) fail(409, 'Cette demande a déjà été envoyée pour ce bénéficiaire.');
+    } else {
+      e = equipmentFor(u, body.equipment);
+      const r = openRental(e.id); if (!r) fail(409, 'Cet équipement n\'est pas en location.');
+      if (isStaff(u) ? false : r.pharmacy_id !== u.pharmacy_id) fail(404, 'Équipement introuvable.');
+      patientId = r.patient_id;
+      if (q(`SELECT 1 FROM requests WHERE equipment_id=? AND kind=? AND status IN ('nouvelle','planifiee')`).get(e.id, kind)) fail(409, 'Une demande de ce type est déjà en cours pour cet équipement.');
+      if (kind === 'probleme') { reason = REQ_REASONS[body.reason] ? body.reason : 'autre'; }
+    }
+    const pf = f || q('SELECT p.* FROM pharmacies p JOIN rentals r ON r.pharmacy_id=p.id WHERE r.equipment_id=? AND r.end_date IS NULL').get(e.id);
+    if (!pf) fail(400, 'Pharmacie introuvable.');
+    if (kind === 'location' || kind === 'prolongation') { days = Number(body.days); if (![7, 14, 28, 90].includes(days)) fail(400, 'Durée invalide.'); }
+    if (kind === 'location' || kind === 'reprise') {
+      wanted = String(body.wanted || '');
+      if (!isDate(wanted) || wanted < T || wanted > addDays(T, 120)) fail(400, 'Date souhaitée invalide (aujourd\'hui ou dans les 4 mois).');
+    }
+    const note = String(body.note || '').trim().slice(0, 300);
+    const id = Number(q(`INSERT INTO requests(kind,pharmacy_id,patient_id,equipment_id,product,days,wanted,reason,note,created_at,created_by,updated_at,updated_by)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(kind, pf.id, patientId, e ? e.id : null, product, days, wanted, reason, enc(note), nowStamp(), u.name, nowStamp(), u.name).lastInsertRowid);
+    if (e) addEvent(e.id, openRental(e.id).id, REQ_KINDS[kind] + ' par la ' + pf.name + (kind === 'probleme' ? ' (' + REQ_REASONS[reason].toLowerCase() + ')' : kind === 'prolongation' ? ' (' + durLabel(days) + ')' : ''), u);
+    staffMail(q('SELECT * FROM requests WHERE id=?').get(id), pf);
+    return json(req, res, 200, { id });
+  }
+  if ((mm = route.match(/^requests\/(\d+)$/)) && m === 'POST') {
+    const r = q('SELECT * FROM requests WHERE id=?').get(Number(mm[1]));
+    if (!r || (!isStaff(u) && r.pharmacy_id !== u.pharmacy_id)) fail(404, 'Demande introuvable.');
+    const a = body.action, T = today(), open = r.status === 'nouvelle' || r.status === 'planifiee';
+    const answer = String(body.answer || '').trim().slice(0, 300);
+    const upd = (status, extra) => q('UPDATE requests SET status=?, answer=?, planned=?, rental_id=?, updated_at=?, updated_by=? WHERE id=?')
+      .run(status, enc(answer || (extra && extra.answer) || dec(r.answer)), extra && extra.planned !== undefined ? extra.planned : r.planned, extra && extra.rental_id || r.rental_id, nowStamp(), u.name, r.id);
+    if (!open) fail(409, 'Cette demande est déjà clôturée.');
+    if (a === 'cancel') {
+      upd('annulee');
+      if (r.equipment_id && openRental(r.equipment_id)) addEvent(r.equipment_id, openRental(r.equipment_id).id, REQ_KINDS[r.kind] + ' annulée', u);
+      return json(req, res, 200, { ok: true });
+    }
+    needStaff(u);
+    const fr = d => d.split('-').reverse().join('/');
+    if (a === 'plan') {
+      const d = String(body.planned || ''); if (!isDate(d) || d < T || d > addDays(T, 180)) fail(400, 'Date de passage invalide.');
+      upd('planifiee', { planned: d });
+      if (r.equipment_id && openRental(r.equipment_id)) addEvent(r.equipment_id, openRental(r.equipment_id).id, REQ_KINDS[r.kind] + ' planifiée le ' + fr(d), u);
+      requestMail(r, 'planifiée le ' + fr(d), answer);
+    } else if (a === 'refuse') {
+      if (!answer) fail(400, 'Indiquez le motif à transmettre à la pharmacie.');
+      upd('refusee');
+      if (r.equipment_id && openRental(r.equipment_id)) addEvent(r.equipment_id, openRental(r.equipment_id).id, REQ_KINDS[r.kind] + ' refusée', u);
+      requestMail(r, 'non retenue', answer);
+    } else if (a === 'done') {
+      tx(() => {
+        if (r.kind === 'location') {
+          const e = equipmentFor(u, body.equipment);
+          if (e.status !== 'dispo') fail(409, 'Cet équipement n\'est pas disponible.');
+          const p = q('SELECT * FROM patients WHERE id=?').get(r.patient_id), f = q('SELECT * FROM pharmacies WHERE id=?').get(r.pharmacy_id);
+          if (!p || p.anonymized) fail(409, 'Bénéficiaire introuvable.');
+          const rid = startRental(u, e, p.id, f, r.days || 28);
+          q('UPDATE requests SET equipment_id=? WHERE id=?').run(e.id, r.id);
+          upd('faite', { rental_id: rid, answer: 'Livré : ' + e.name + ' · ' + e.ref });
+        } else {
+          const e = q('SELECT * FROM equipment WHERE id=?').get(r.equipment_id), rent = e && openRental(e.id);
+          if (r.kind === 'reprise') { if (rent) returnRental(u, e); upd('faite', { answer: 'Matériel repris le ' + fr(T) }); }
+          else if (r.kind === 'prolongation') { if (!rent) fail(409, 'La location est terminée.'); extendRental(u, rent, r.days || 7); upd('faite', { answer: 'Location prolongée de ' + durLabel(r.days || 7) }); }
+          else {
+            if (body.fault === true && e && e.status !== 'maint') {
+              if (rent) q('UPDATE rentals SET end_date=? WHERE id=?').run(T, rent.id);
+              q("UPDATE equipment SET status='maint', status_since=? WHERE id=?").run(T, e.id);
+              addEvent(e.id, rent ? rent.id : null, 'Panne signalée, envoyé à l\'atelier', u);
+              closeRequests(u, e.id, null, 'Matériel repris pour réparation');
+              upd('faite', { answer: 'Matériel repris pour réparation' });
+            } else {
+              if (rent) addEvent(e.id, rent.id, 'Problème signalé traité' + (answer ? ' : ' + answer : ''), u);
+              upd('faite', { answer: 'Problème traité' });
+            }
+          }
+        }
+      });
+      requestMail(q('SELECT * FROM requests WHERE id=?').get(r.id), 'effectuée', dec(q('SELECT answer FROM requests WHERE id=?').get(r.id).answer));
+    } else fail(400, 'Action inconnue.');
     return json(req, res, 200, { ok: true });
   }
   if (route === 'scans' && m === 'POST') {
@@ -805,14 +979,14 @@ async function api(req, res, route, url) {
     return send(req, res, 200, billingCsv(b), 'text/csv; charset=utf-8', { 'Cache-Control': 'no-store', 'Content-Disposition': 'attachment; filename="facturation-' + b.month + '.csv"' });
   }
   if (route === 'patients' && m === 'POST') {
-    needStaff(u);
+    if (!isStaff(u) && !u.pharmacy_id) fail(403, 'Compte sans pharmacie.');
     const name = String(body.name || '').trim(), commune = String(body.commune || '').trim();
     if (name.length < 2) fail(400, 'Indiquez le nom du bénéficiaire.');
     const c = COMMUNES[commune]; if (!c) fail(400, 'Choisissez une commune.');
     const phone = String(body.phone || '').trim();
     if (phone && !/^\+?[0-9 .-]{6,20}$/.test(phone)) fail(400, 'Numéro de téléphone invalide.');
-    const id = Number(q('INSERT INTO patients(name,address,commune,phone,lat,lon,created_at) VALUES(?,?,?,?,?,?,?)')
-      .run(enc(name.slice(0, 120)), enc(String(body.address || '').trim().slice(0, 200)), commune, enc(phone), c[0], c[1], nowStamp()).lastInsertRowid);
+    const id = Number(q('INSERT INTO patients(name,address,commune,phone,lat,lon,created_at,pharmacy_id) VALUES(?,?,?,?,?,?,?,?)')
+      .run(enc(name.slice(0, 120)), enc(String(body.address || '').trim().slice(0, 200)), commune, enc(phone), c[0], c[1], nowStamp(), isStaff(u) ? null : u.pharmacy_id).lastInsertRowid);
     return json(req, res, 200, { id });
   }
   if (route === 'pharmacies' && m === 'POST') {
@@ -834,11 +1008,12 @@ async function api(req, res, route, url) {
   if (route === 'mail' && m === 'GET') {
     needAdmin(u);
     let log = null; try { log = JSON.parse(setting('mail_log', 'null')); } catch (e) {}
-    return json(req, res, 200, Object.assign(mailer.info(), { enabled: setting('mail_enabled', '1') === '1', hour: Number(setting('mail_hour', '7')), last_run: setting('mail_last_run', null), log }));
+    return json(req, res, 200, Object.assign(mailer.info(), { enabled: setting('mail_enabled', '1') === '1', hour: Number(setting('mail_hour', '7')), staff_email: setting('staff_email', ''), last_run: setting('mail_last_run', null), log }));
   }
   if (route === 'mail/settings' && m === 'POST') {
     needAdmin(u);
     if (typeof body.enabled === 'boolean') setSetting('mail_enabled', body.enabled ? '1' : '0');
+    if (body.staff_email !== undefined) { const v = String(body.staff_email || '').trim(); if (v && !emailsOf(v).length) fail(400, 'Adresse e-mail invalide.'); setSetting('staff_email', emailsOf(v).join(', ')); }
     if (body.hour !== undefined) { const hh = Number(body.hour); if (!Number.isInteger(hh) || hh < 5 || hh > 20) fail(400, 'Heure invalide (5 à 20 h).'); setSetting('mail_hour', String(hh)); }
     return json(req, res, 200, { ok: true });
   }
