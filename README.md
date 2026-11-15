@@ -98,6 +98,12 @@ Puis ouvrir `http://localhost:3000/materiel/` (identifiant `admin`).
 
 Le projet Docker `mediparc-nfc` (`deploy/docker-compose.yml`) télécharge ce dépôt (qui doit rester public) à chaque démarrage, génère le site et lance le serveur derrière Traefik. Les données sont dans le volume `mediparc-data`. Pour publier une nouvelle version : pousser sur la branche, puis redémarrer le projet. Au premier démarrage, la base est remplie avec les données de démonstration.
 
+## Guides d'utilisation
+
+- `guides/guide-pharmacie.pdf` : portail pharmacie (téléchargeable sans connexion depuis l'écran de connexion, et depuis l'accueil et le menu Plus du portail).
+- `guides/guide-administrateur.pdf` : administrateur et équipe du parc (Paramètres et menu Plus, réservé à l'équipe).
+- Régénération : lancer le serveur de démonstration, `node guides/outils/capture.js` (captures d'écran), puis `python3 guides/outils/build.py <captures> guides`. Le texte est dans `guides/outils/contenu.py`.
+
 ## Icône
 
 `icons/` contient l'icône (1024 px et tailles web) et sa source `icon-source.html`. Elle sert d'icône à l'app iPhone (Assets.xcassets) et à l'ajout sur l'écran d'accueil depuis Safari (nom « MédiParc »).

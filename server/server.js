@@ -585,8 +585,16 @@ async function api(req, res, route, url) {
     return json(req, res, 200, { ok: true }, { 'Set-Cookie': sessionCookie('', 0) });
   }
 
+  const guide = route.match(/^guides\/(pharmacie|administrateur)\.pdf$/);
+  const sendGuide = n => {
+    const f = path.join(ROOT, 'guides', 'guide-' + n + '.pdf'); if (!fs.existsSync(f)) fail(404, 'Guide introuvable.');
+    return send(req, res, 200, fs.readFileSync(f), 'application/pdf', { 'Cache-Control': 'private, max-age=3600',
+      'Content-Disposition': 'attachment; filename="Guide-MediParc-' + (n === 'pharmacie' ? 'Pharmacie' : 'Administrateur') + '.pdf"' });
+  };
+  if (guide && m === 'GET' && guide[1] === 'pharmacie') return sendGuide('pharmacie');
   const u = currentUser(req);
   if (!u) fail(401, 'Connexion requise.');
+  if (guide && m === 'GET') { needStaff(u); return sendGuide('administrateur'); }
   if (route === 'me' && m === 'GET') return json(req, res, 200, { me: publicUser(u) });
   if (route === 'password' && m === 'POST') {
     const full = q('SELECT pass_hash FROM users WHERE id=?').get(u.id);
