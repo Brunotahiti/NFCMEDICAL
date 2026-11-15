@@ -263,3 +263,127 @@ def administrateur(g):
     return {'file': 'guide-administrateur.pdf', 'footer': 'MédiParc NFC · Guide administrateur et équipe du parc', 'intro': intro, 'chapters': ch,
             'cover': ('Guide d\'utilisation', 'Administrateur<br>et équipe du parc', 'Gérez le parc de matériel médical en location : étiquettes NFC, locations, entretien, facturation, comptes et pharmacies.',
                       'Pour l\'administrateur et l\'équipe du parc', [('a_home', 46), ('a_fiche_loc', 46)])}
+
+
+def technicien(g):
+    phone, crop, duo, steps, bullets, tip, warn, key, split, faq = (g[k] for k in ('phone','crop','duo','steps','bullets','tip','warn','key','split','faq'))
+    ui = lambda t: f'<span class="ui">{t}</span>'
+    flow = ('<div class="flow">' + ''.join(f'<div class="fs"><b>{a}</b><span>{b}</span></div>' for a, b in [
+        ('Dépôt', 'Disponible'), ('Livraison', 'scan + photo'), ('Chez le bénéficiaire', 'En location'), ('Retour', 'scan + photo'), ('Désinfection', 'validation'), ('Dépôt', 'Disponible')]) + '</div>')
+    ch = []
+    ch.append(('Votre rôle sur le terrain', 'Le cycle de chaque équipement, et vos gestes à chaque étape',
+      '<p>Vous êtes les yeux du parc. Chaque fois que vous touchez un matériel, vous le <b>scannez</b> : l\'application enregistre où il est, quand, et par qui. Avec une <b>photo horodatée</b>, son état est prouvé.</p>'
+      + flow
+      + '<table class="t"><tr><th>Étape</th><th>Vos gestes</th><th>Bouton dans la fiche</th></tr>'
+      + '<tr><td>Pose de l\'étiquette</td><td>Coller, programmer, tester</td><td>' + ui('Écrire le lien sur une puce') + '</td></tr>'
+      + '<tr><td>Livraison</td><td>Scanner, vérifier le bénéficiaire, photo « Livraison »</td><td>' + ui('Prendre une photo horodatée') + '</td></tr>'
+      + '<tr><td>Retour</td><td>Scanner, photo « Retour », enregistrer le retour</td><td>' + ui('Enregistrer le retour') + '</td></tr>'
+      + '<tr><td>Désinfection</td><td>Nettoyer, puis valider</td><td>' + ui('Valider la désinfection') + '</td></tr>'
+      + '<tr><td>Panne</td><td>Photo « Panne », signaler</td><td>' + ui('Signaler une panne') + '</td></tr>'
+      + '<tr><td>Contrôle de sécurité</td><td>Contrôler, puis enregistrer</td><td>' + ui('Contrôle effectué') + '</td></tr></table>'
+      + key('La règle d\'or', 'Un matériel touché = un matériel scanné. C\'est ce qui rend la localisation et l\'historique fiables.')))
+    ch.append(('Préparer son téléphone', 'À faire une seule fois',
+      split(steps('<b>iPhone</b> : installez l\'application <b>MédiParc</b> (fournie par l\'administrateur). Elle seule permet de lire et d\'écrire les étiquettes sur iPhone.',
+                  '<b>Android</b> : ouvrez <b>https://manaprocess.cloud/materiel/</b> dans <b>Chrome</b>, puis menu ⋮ › ' + ui('Installer l\'application') + '. Activez le <b>NFC</b> dans les réglages du téléphone.',
+                  'Connectez-vous avec <b>votre</b> identifiant (compte nominatif, rôle « Équipe du parc ») et choisissez votre mot de passe.',
+                  'Au premier scan et à la première photo, <b>autorisez la localisation et l\'appareil photo</b>.')
+        + warn('Compte personnel', 'Ne prêtez pas votre compte : l\'historique indique qui a scanné, livré ou désinfecté. Verrouillez votre téléphone par un code.')
+        + tip('Réseau', 'L\'application enregistre en ligne. Sans réseau, attendez de retrouver une connexion avant de valider une action, puis vérifiez qu\'elle apparaît dans l\'historique.'),
+        phone('t_home', 'L\'accueil de l\'équipe du parc'))))
+    ch.append(('Scanner une étiquette', 'Ouvrir la fiche d\'un équipement en 2 secondes',
+      (steps('Touchez le bouton rond ' + ui('+') + ' en bas de l\'écran.', 'Touchez ' + ui('Scanner une puce NFC') + '.',
+                  'Approchez l\'étiquette : <b>le haut de l\'iPhone</b>, ou <b>le dos d\'un Android</b> (au milieu), à 1 ou 2 cm, sans bouger.',
+                  'La fiche de l\'équipement s\'ouvre. Le scan est enregistré avec la date, votre nom et la position.')
+        + tip('Sans l\'application, sur iPhone', 'Approcher l\'étiquette d\'un iPhone déverrouillé affiche une notification qui ouvre la fiche dans Safari. Le scan est aussi enregistré.')
+        + duo('t_quick', 'Actions rapides', 't_scan', 'En attente de l\'étiquette'))
+      + split('<h3>Ce que vous vérifiez dans la fiche</h3>'
+        + bullets('<b>L\'état</b> en haut à droite : En location, Disponible, Désinfection, Maintenance.',
+                  '<b>L\'emplacement</b> et le <b>bénéficiaire</b> (touchez le téléphone pour l\'appeler).',
+                  '<b>Le prochain contrôle de sécurité</b> : en rouge s\'il est en retard.',
+                  '<b>Le dernier scan</b> : date, auteur, et lien <b>Position</b> vers la carte.'),
+        crop('t_kv', 'Les informations de la fiche, dont le dernier scan'))))
+    ch.append(('Poser et programmer une étiquette', 'Pour chaque nouvel équipement, ou pour remplacer une étiquette',
+      '<h3>1. Choisir l\'emplacement</h3><table class="t"><tr><th>Matériel</th><th>Où coller l\'étiquette</th></tr>'
+      + '<tr><td>Lit médicalisé</td><td>Sur le châssis métallique, côté tête de lit, sur une partie plane, à l\'abri des articulations et du sommier.</td></tr>'
+      + '<tr><td>Lève-personne, verticalisateur</td><td>Sur le mât, à hauteur de main, côté opposé aux sangles.</td></tr>'
+      + '<tr><td>Fauteuil, déambulateur, rollator</td><td>Sur le cadre sous l\'assise ou la traverse, à l\'abri des frottements.</td></tr>'
+      + '<tr><td>Aérosol, concentrateur, aspirateur, tire-lait, TENS</td><td>Sur la face arrière ou le dessous du boîtier, loin des grilles d\'aération.</td></tr>'
+      + '<tr><td>Porte-sérum</td><td>Sur le pied, au-dessus des roulettes.</td></tr></table>'
+      + bullets('Utilisez des étiquettes <b>anti-métal</b> sur toute surface métallique.', 'Nettoyez et séchez la surface (alcool), collez, appuyez fermement 30 secondes.',
+                'Toujours au même endroit pour un même type de matériel : vos collègues la trouvent sans chercher.')
+      + split('<h3>2. Programmer l\'étiquette</h3>' + steps('Ouvrez la fiche de l\'équipement (recherche dans le Parc, ou menu Plus › Paramètres › Puces NFC).',
+                'Touchez ' + ui('Écrire le lien sur une puce') + '.', 'Approchez le téléphone de l\'étiquette jusqu\'au message de réussite.',
+                '<b>Testez</b> : ' + ui('+') + ' › ' + ui('Scanner une puce NFC') + ' doit ouvrir la bonne fiche.')
+        + bullets('Étiquette déjà programmée (ancien équipement) : elle est automatiquement réattribuée au nouvel équipement.',
+                  'Paramètres › Puces NFC affiche combien d\'équipements ont encore besoin d\'une étiquette.'),
+        phone('t_write', 'Écriture de l\'étiquette'))))
+    ch.append(('Livraison chez le bénéficiaire', 'Installer le matériel et le prouver',
+      split(steps('À l\'arrivée, <b>scannez</b> l\'étiquette : la fiche s\'ouvre.',
+                  'Vérifiez que le matériel est bien <b>En location</b> au nom du bon bénéficiaire et à la bonne adresse. Sinon, appelez le gestionnaire avant d\'installer.',
+                  'Installez le matériel.',
+                  'Touchez ' + ui('Prendre une photo horodatée') + ', choisissez <b>Livraison</b>, photographiez le matériel installé.')
+        + tip('Matériel encore « Disponible » ?', 'Si la location n\'a pas encore été créée, touchez ' + ui('Mettre en location') + ' : durée, pharmacie, bénéficiaire (ou demandez au gestionnaire).')
+        + warn('Photographier le matériel seulement', 'Jamais le bénéficiaire, ses proches, ses papiers ou ses médicaments. Cadrez au plus près du matériel.'),
+        phone('t_fiche', 'Fiche d\'un lit en location'))
+      + crop('t_photos', 'La photo de livraison, avec date, heure, référence, auteur et position incrustées')))
+    ch.append(('Retour du matériel', 'Reprendre le matériel et clore la location',
+      split(steps('Chez le bénéficiaire, <b>scannez</b> l\'étiquette.',
+                  'Touchez ' + ui('Prendre une photo horodatée') + ', choisissez <b>Retour</b> : l\'état du matériel au moment de la reprise est prouvé.',
+                  'Touchez ' + ui('Enregistrer le retour') + '. La location se termine et le matériel passe en <b>Désinfection</b>.',
+                  'Au dépôt, déposez-le en zone de lavage.')
+        + tip('Comparer', 'Dans l\'historique de la fiche, la photo de livraison et celle du retour se suivent : une casse se voit immédiatement.')
+        + warn('Matériel endommagé', 'Prenez la photo de retour, enregistrez le retour, puis signalez la panne (chapitre 8) avec une photo <b>Panne</b> du dommage.'),
+        phone('t_fiche', 'Le bouton « Enregistrer le retour » en bas de la fiche'))))
+    ch.append(('Désinfection et remise en stock', 'Rendre le matériel à nouveau disponible',
+      (steps('Ouvrez ' + ui('Entretien') + ' : la section <b>À désinfecter</b> liste le matériel revenu de location.',
+                  'Désinfectez le matériel selon la procédure de l\'entreprise.',
+                  '<b>Scannez</b> l\'étiquette (ou touchez la ligne) puis ' + ui('Valider la désinfection') + '.',
+                  'Le matériel passe en <b>Disponible</b> : il apparaît dans « Prêt à louer ».')
+        + tip('Ne pas attendre', 'Validez la désinfection dès qu\'elle est faite : tant qu\'elle ne l\'est pas, le matériel ne peut pas être reloué et il reste dans les alertes.')
+        + duo('t_ent', 'Entretien › À désinfecter', 't_desinf', 'Valider la désinfection'))))
+    ch.append(('Panne et maintenance', 'Signaler, réparer, remettre en service',
+      split('<h3>Signaler une panne</h3>' + steps('Scannez l\'équipement.', 'Photo horodatée de type <b>Panne</b> sur le défaut.', 'Touchez ' + ui('Signaler une panne') + ' : l\'équipement passe en <b>Maintenance</b>. Une location en cours est arrêtée.')
+        + '<h3>Après réparation</h3>' + steps('Scannez l\'équipement.', 'Touchez ' + ui('Clôturer la maintenance') + ' : il redevient <b>Disponible</b>. Si son contrôle de sécurité était en retard, la date est repoussée d\'un an.')
+        + warn('Sécurité', 'Un matériel défectueux ne doit jamais rester chez un bénéficiaire. En cas de doute, retirez-le et signalez la panne.'),
+        phone('t_maint', 'Un équipement en maintenance'))))
+    ch.append(('Contrôles de sécurité', 'Tenir à jour les vérifications périodiques',
+      split(steps('Ouvrez ' + ui('Entretien') + ' › <b>Prochains contrôles</b> (7 ou 30 jours). Les retards apparaissent aussi en rouge sur le tableau de bord.',
+                  'Effectuez le contrôle de l\'équipement.',
+                  '<b>Conforme</b> : dans la fiche, à la ligne « Prochain contrôle », touchez ' + ui('Contrôle effectué') + '. Le prochain contrôle est fixé à dans un an et l\'historique le note.',
+                  '<b>Non conforme</b> : touchez ' + ui('Signaler une panne') + ' (chapitre 8).')
+        + tip('Bon à savoir', 'Le bouton « Contrôle effectué » apparaît quand le contrôle est en retard ou prévu dans les 30 jours.'),
+        crop('t_check', 'Le bouton « Contrôle effectué » dans la fiche'))))
+    ch.append(('Bonnes pratiques', 'Sécurité, confidentialité et qualité',
+      bullets('<b>Scanner à chaque mouvement</b> : sortie du dépôt, livraison, retour, entrée au dépôt.',
+              '<b>Photographier à chaque livraison et chaque retour</b>, de près et avec une bonne lumière.',
+              '<b>Ne jamais saisir d\'information médicale</b> : ni pathologie, ni traitement, ni motif. Les ordonnances ne passent jamais par vous dans l\'application : elles restent à la pharmacie.',
+              '<b>Ne rien photographier d\'autre que le matériel.</b>',
+              '<b>Téléphone verrouillé</b> par un code ; déconnectez-vous (menu Plus) si le téléphone est partagé.',
+              '<b>Étiquette abîmée</b> : posez-en une neuve et programmez-la, l\'ancienne est réattribuée automatiquement.',
+              '<b>Signaler sans attendre</b> une panne, un matériel introuvable ou une étiquette illisible.')
+      + key('Pourquoi c\'est important', 'L\'historique de chaque équipement (scans géolocalisés, photos horodatées, désinfections, contrôles) sert de preuve en cas de litige et d\'appui à la démarche qualité de l\'entreprise.')))
+    memo = ('<table class="t memo"><tr><th>Situation</th><th>Gestes, dans l\'ordre</th></tr>'
+      + ''.join(f'<tr><td><b>{a}</b></td><td>{b}</td></tr>' for a, b in [
+        ('Ouvrir une fiche', '+ › Scanner une puce NFC › approcher l\'étiquette'),
+        ('Nouvelle étiquette', 'Coller (surface propre) › fiche › Écrire le lien sur une puce › tester'),
+        ('Livraison', 'Scanner › vérifier bénéficiaire et adresse › installer › Photo « Livraison »'),
+        ('Retour', 'Scanner › Photo « Retour » › Enregistrer le retour › zone de lavage'),
+        ('Désinfection faite', 'Scanner › Valider la désinfection'),
+        ('Panne', 'Scanner › Photo « Panne » › Signaler une panne'),
+        ('Réparation terminée', 'Scanner › Clôturer la maintenance'),
+        ('Contrôle conforme', 'Scanner › Contrôle effectué'),
+        ('Étiquette illisible', 'Recherche dans le Parc › nouvelle étiquette › Écrire le lien sur une puce')]) + '</table>')
+    ch.append(('Aide-mémoire', 'À garder dans le véhicule', memo
+      + '<div class="contact"><b>Un doute ? Un problème ?</b><br>Appelez le gestionnaire du parc.<br>Assistance de l\'application : ' + g['CONTACT'] + '</div>'))
+    ch.append(('Problèmes fréquents', 'Les solutions rapides',
+      faq(('L\'étiquette ne se lit pas.', 'Vérifiez que le NFC est activé (Android) et que le téléphone est déverrouillé. Retirez une coque épaisse ou métallique. Approchez lentement, sans bouger, en cherchant la bonne zone du téléphone (haut de l\'iPhone, milieu du dos d\'un Android).'),
+          ('Sur iPhone, le bouton Scanner affiche « Lecture NFC indisponible ».', 'Vous êtes dans Safari : utilisez l\'application MédiParc, ou approchez simplement l\'étiquette pour ouvrir la fiche.'),
+          ('L\'étiquette ouvre le mauvais équipement.', 'Ouvrez la bonne fiche (recherche dans le Parc) et touchez « Écrire le lien sur une puce » : l\'étiquette est réattribuée.'),
+          ('La position n\'est pas enregistrée.', 'Autorisez la localisation pour l\'application (ou pour Safari / Chrome) dans les réglages du téléphone.'),
+          ('La photo ne s\'envoie pas.', 'Vérifiez le réseau et l\'autorisation de l\'appareil photo, puis recommencez. La photo apparaît dans la fiche une fois enregistrée.'),
+          ('Le bouton attendu n\'apparaît pas.', 'Les boutons dépendent de l\'état : par exemple « Enregistrer le retour » seulement pour un matériel En location. Vérifiez l\'état en haut de la fiche.'))))
+    intro = ('<div class="intro"><div class="c"><b>À qui s\'adresse ce guide ?</b>Aux techniciens et livreurs qui posent les étiquettes, livrent, reprennent, désinfectent et contrôlent le matériel.</div>'
+             '<div class="c"><b>Ce qu\'il vous faut</b>Un téléphone avec NFC : iPhone avec l\'application MédiParc, ou Android avec Chrome. Votre identifiant personnel.</div></div>')
+    return {'file': 'guide-technicien.pdf', 'footer': 'MédiParc NFC · Guide du technicien', 'intro': intro, 'chapters': ch,
+            'cover': ('Guide d\'utilisation', 'Technicien<br>et livreur', 'Scanner, poser les étiquettes NFC, livrer, reprendre, désinfecter et contrôler le matériel, avec des photos horodatées.',
+                      'Pour les techniciens et livreurs', [('t_scan', 46), ('t_fiche', 46)])}

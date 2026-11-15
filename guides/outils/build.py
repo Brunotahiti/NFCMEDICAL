@@ -74,6 +74,13 @@ table.t tr:nth-child(even) td{background:#F6FAFB}
 .intro{display:grid;grid-template-columns:1fr 1fr;gap:5mm;margin-top:7mm}
 .intro .c{background:var(--bg);border-radius:4mm;padding:4mm 5mm}.intro .c b{font-family:Sora,sans-serif;color:var(--hero);display:block;margin-bottom:1mm}
 .contact{margin-top:6mm;border-radius:4mm;padding:4mm 5mm;background:linear-gradient(120deg,var(--hero),var(--hero2));color:#fff;break-inside:avoid}
+.flow{display:flex;align-items:stretch;gap:0;margin:4mm 0 5mm;break-inside:avoid}
+.flow .fs{flex:1;background:var(--bg);border-radius:3mm;padding:3mm 2mm;text-align:center;position:relative;margin-right:4mm}
+.flow .fs:last-child{margin-right:0}
+.flow .fs:not(:last-child)::after{content:"›";position:absolute;right:-3.6mm;top:50%;transform:translateY(-50%);color:var(--accent);font:700 12pt Sora,sans-serif}
+.flow .fs b{display:block;font-family:Sora,sans-serif;font-size:8.8pt;color:var(--hero)}.flow .fs span{font-size:7.8pt;color:var(--muted)}
+.flow .fs:nth-child(3){background:linear-gradient(120deg,var(--hero),var(--hero2))}.flow .fs:nth-child(3) b{color:#fff}.flow .fs:nth-child(3) span{color:#CDEAEE}
+table.memo td{padding:3mm;font-size:10pt}table.memo td:first-child{width:42mm}
 .contact b{font-family:Sora,sans-serif;font-size:11pt;color:var(--brand)}
 """
 
@@ -143,8 +150,8 @@ await p.pdf(o);await b.close();})();""")
     print(out, len(w.pages), 'pages', os.path.getsize(out) // 1024, 'Ko', 'chapitres trouvés :', len(pages), '/', len(chapters))
 
 sys.path.insert(0, os.path.dirname(__file__))
-from contenu import pharmacie, administrateur
+from contenu import pharmacie, administrateur, technicien
 os.makedirs(OUT, exist_ok=True)
-for g in (pharmacie, administrateur):
+for g in (pharmacie, administrateur, technicien):
     c = g(globals())
     render(cover(*c['cover']), body, c['chapters'], c['intro'], c['footer'], os.path.join(OUT, c['file']))

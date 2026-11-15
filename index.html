@@ -304,6 +304,8 @@ a.btn{text-decoration:none}
 .guidecard span{flex:1;min-width:0}.guidecard b{display:block;font-family:var(--f-display);font-size:15.5px}.guidecard small{font-size:12.5px;color:var(--hero-muted)}
 .guidecard .dl{flex:none;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center}
 .guidecard .dl svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.guidecard.alt{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}.guidecard.alt>svg{color:var(--accent)}.guidecard.alt small{color:var(--muted)}.guidecard.alt .dl{background:var(--accent-soft);color:var(--accent)}
+.sbody>.guidecard+.guidecard{margin-top:-8px}
 .glink{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;color:var(--accent);font-weight:600;font-size:14px}
 .glink svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .renew{display:flex;gap:12px;align-items:flex-start;background:var(--warn-soft);border:1px solid var(--warn);border-radius:16px;padding:12px 14px;font-size:13.5px;line-height:1.4}
@@ -1018,7 +1020,7 @@ function renderDetail(){
     +(p?(p.ph?'<div><dt>'+ic('phone')+'Téléphone</dt><dd><a class="tel num" href="tel:'+esc(p.ph.replace(/[^0-9+]/g,''))+'">'+esc(p.ph)+'</a></dd></div>':'')+(e.fa?'<div><dt>'+ic('cross')+'Pharmacie</dt><dd>'+esc(phar(e.fa).n)+'<small class="dsub">'+esc(phar(e.fa).c)+'</small></dd></div>':''):'')
     +'<div><dt>'+ic('clip')+'Prix catalogue</dt><dd class="num">'+esc(e.cat)+'</dd></div>'
     +'<div><dt>'+ic('coins')+'Tarif de location</dt><dd class="num">'+xpf(e.px)+' / semaine</dd></div>'
-    +'<div><dt>'+ic('tool')+'Prochain contrôle</dt>'+chk+'</div>'+scanRow(e)+'</dl>'
+    +'<div><dt>'+ic('tool')+'Prochain contrôle</dt>'+chk.replace('</dd>',(STAFF&&e.chk<=30&&e.st!=='maint'?'<button class="more geo" data-act="check">'+ic('okc')+'Contrôle effectué</button>':'')+'</dd>')+'</div>'+scanRow(e)+'</dl>'
     +docsSection(e)
     +photosSection(e)
     +(STAFF?'<section>'+secH('coins','Rentabilité')+profitCard(e)+'</section>':'')
@@ -1133,7 +1135,8 @@ function renderSettings(){
     +'<div class="dscroll"><div class="sbody pad">'
     +'<div class="banner"><div>'+ic('tag')+'<div><b class="num">'+n+' / '+equip.length+'</b><span>Équipements avec puce</span></div></div><div>'+ic('warn')+'<div><b class="num">'+(equip.length-n)+'</b><span>Sans puce</span></div></div></div>'
     +'<p class="note">Chaque puce contient un lien propre à son équipement. Touchez un équipement pour écrire son lien sur une vraie puce, lire une puce déjà programmée ou saisir le lien à la main.</p>'
-    +(ONLINE?'<button class="guidecard" data-guide="administrateur">'+svg('book')+'<span><b>Guide d\'utilisation</b><small>Administrateur et équipe du parc · PDF</small></span><span class="dl">'+svg('down')+'</span></button>':'')
+    +(ONLINE?'<button class="guidecard" data-guide="administrateur">'+svg('book')+'<span><b>Guide d\'utilisation</b><small>Administrateur et équipe du parc · PDF</small></span><span class="dl">'+svg('down')+'</span></button>'
+      +'<button class="guidecard alt" data-guide="technicien">'+svg('book')+'<span><b>Guide du technicien</b><small>Scan, pose des étiquettes, livraisons, retours · PDF</small></span><span class="dl">'+svg('down')+'</span></button>':'')
     +'<section>'+secH('tag','Puces NFC')+'<div class="list">'+equip.map(function(e){
       return '<button class="row" data-tag="'+e.id+'">'+ph(e)+'<span class="body"><div class="t">'+esc(e.n)+'</div><div class="s lk">'+(e.link?'<code>'+esc(midLink(e.link))+'</code>':e.ref)+'</div></span>'
         +(e.link?'':'<span class="pill p-desinf">À associer</span>')+'<span class="chev">'+ICON.chev+'</span></button>';}).join('')+'</div></section>'
@@ -1179,7 +1182,7 @@ function moreSheet(){
   if(STAFF){it.push(['data-act="settings"','gear','Paramètres','Puces NFC et adresse des liens'],['data-mode="plan"','pin','Plan du matériel','Où se trouve chaque équipement'],['data-rtab="fact"','clip','Facturation','Montants par mois et par pharmacie']);
     if(ONLINE&&ROLE==='admin')it.push(['data-act="accounts"','users','Comptes et pharmacies','Accès des pharmacies et de l\'équipe']);}
   else it.push(['data-tab="fact"','clip','Facturation','Vos montants par mois'],['data-act="my-mail"','mail','E-mail des rappels',PHARM[0]&&PHARM[0].em?esc(PHARM[0].em):'Aucune adresse enregistrée']);
-  if(ONLINE){if(STAFF)it.push(['data-guide="administrateur"','book','Guide d\'utilisation (PDF)','Administrateur et équipe du parc'],['data-guide="pharmacie"','book','Guide du portail pharmacie (PDF)','À transmettre aux pharmacies']);else it.push(['data-guide="pharmacie"','book','Guide d\'utilisation (PDF)','Portail pharmacie']);}
+  if(ONLINE){if(STAFF)it.push(['data-guide="administrateur"','book','Guide d\'utilisation (PDF)','Administrateur et équipe du parc'],['data-guide="technicien"','book','Guide du technicien (PDF)','Scan, pose des étiquettes, livraisons, retours'],['data-guide="pharmacie"','book','Guide du portail pharmacie (PDF)','À transmettre aux pharmacies']);else it.push(['data-guide="pharmacie"','book','Guide d\'utilisation (PDF)','Portail pharmacie']);}
   if(ONLINE)it.push(['data-act="change-pwd"','tag','Changer le mot de passe','Au moins 10 caractères'],['data-act="logout"','ret','Se déconnecter','Fermer la session sur cet appareil']);
   it.push(['data-act="credits"','clip','Crédits photos','Auteurs et licences']);
   menuSheet('Plus',it);
@@ -1690,10 +1693,11 @@ function accountSheet(){
 
 /* ---------- Actions ---------- */
 function act(a,e){
-  if(ONLINE){mut('equipment/'+e.id+'/action',{action:a},{return:'Retour enregistré',clean:'Désinfection validée',repair:'Matériel remis en stock',fault:'Panne signalée'}[a]);return;}
+  if(ONLINE){mut('equipment/'+e.id+'/action',{action:a},{return:'Retour enregistré',clean:'Désinfection validée',repair:'Matériel remis en stock',fault:'Panne signalée',check:'Contrôle enregistré'}[a]);return;}
   if(a==='return'){var n=pat(e.pt).n;e.st='desinf';e.pt=null;e.fa=null;e.end=null;e.since=0;e.h.push(ev(0,'Retour de location ('+n+'), en attente de désinfection'));toast('Retour enregistré');}
   else if(a==='clean'){e.st='dispo';e.since=0;e.h.push(ev(0,'Désinfection validée, remis en stock'));toast('Désinfection validée');}
   else if(a==='repair'){e.st='dispo';e.since=0;if(e.chk<0)e.chk=365;e.h.push(ev(0,'Maintenance clôturée, contrôle conforme'));toast('Matériel remis en stock');}
+  else if(a==='check'){e.chk=365;e.h.push(ev(0,'Contrôle de sécurité effectué, conforme'));toast('Contrôle enregistré');}
   else if(a==='fault'){e.st='maint';e.pt=null;e.fa=null;e.end=null;e.since=0;e.h.push(ev(0,'Panne signalée, envoyé à l\'atelier'));toast('Panne signalée');}
   renderDetail();
 }

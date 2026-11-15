@@ -102,7 +102,8 @@ Le projet Docker `mediparc-nfc` (`deploy/docker-compose.yml`) télécharge ce d�
 
 - `guides/guide-pharmacie.pdf` : portail pharmacie (téléchargeable sans connexion depuis l'écran de connexion, et depuis l'accueil et le menu Plus du portail).
 - `guides/guide-administrateur.pdf` : administrateur et équipe du parc (Paramètres et menu Plus, réservé à l'équipe).
-- Régénération : lancer le serveur de démonstration, `node guides/outils/capture.js` (captures d'écran), puis `python3 guides/outils/build.py <captures> guides`. Le texte est dans `guides/outils/contenu.py`.
+- `guides/guide-technicien.pdf` : techniciens et livreurs (scan, pose des étiquettes, livraison, retour, désinfection, panne, contrôles ; aide-mémoire). Paramètres et menu Plus, réservé à l'équipe.
+- Régénération : lancer le serveur de démonstration, `node guides/outils/capture.js` et `node guides/outils/capture-technicien.js <captures> <photo>` (captures d'écran), puis `python3 guides/outils/build.py <captures> guides`. Le texte est dans `guides/outils/contenu.py`.
 
 ## Icône
 

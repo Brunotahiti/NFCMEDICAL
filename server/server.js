@@ -585,16 +585,16 @@ async function api(req, res, route, url) {
     return json(req, res, 200, { ok: true }, { 'Set-Cookie': sessionCookie('', 0) });
   }
 
-  const guide = route.match(/^guides\/(pharmacie|administrateur)\.pdf$/);
+  const guide = route.match(/^guides\/(pharmacie|administrateur|technicien)\.pdf$/);
   const sendGuide = n => {
     const f = path.join(ROOT, 'guides', 'guide-' + n + '.pdf'); if (!fs.existsSync(f)) fail(404, 'Guide introuvable.');
     return send(req, res, 200, fs.readFileSync(f), 'application/pdf', { 'Cache-Control': 'private, max-age=3600',
-      'Content-Disposition': 'attachment; filename="Guide-MediParc-' + (n === 'pharmacie' ? 'Pharmacie' : 'Administrateur') + '.pdf"' });
+      'Content-Disposition': 'attachment; filename="Guide-MediParc-' + n.charAt(0).toUpperCase() + n.slice(1) + '.pdf"' });
   };
   if (guide && m === 'GET' && guide[1] === 'pharmacie') return sendGuide('pharmacie');
   const u = currentUser(req);
   if (!u) fail(401, 'Connexion requise.');
-  if (guide && m === 'GET') { needStaff(u); return sendGuide('administrateur'); }
+  if (guide && m === 'GET') { needStaff(u); return sendGuide(guide[1]); }
   if (route === 'me' && m === 'GET') return json(req, res, 200, { me: publicUser(u) });
   if (route === 'password' && m === 'POST') {
     const full = q('SELECT pass_hash FROM users WHERE id=?').get(u.id);
@@ -645,6 +645,10 @@ async function api(req, res, route, url) {
         if (r) q('UPDATE rentals SET end_date=? WHERE id=?').run(T, r.id);
         q("UPDATE equipment SET status='maint', status_since=? WHERE id=?").run(T, e.id);
         addEvent(e.id, r ? r.id : null, 'Panne signalée, envoyé à l\'atelier', u);
+      } else if (a === 'check') {
+        if (e.status === 'maint') fail(409, 'Clôturez d\'abord la maintenance.');
+        q('UPDATE equipment SET next_check=? WHERE id=?').run(addDays(T, 365), e.id);
+        addEvent(e.id, r ? r.id : null, 'Contrôle de sécurité effectué, conforme (prochain contrôle le ' + addDays(T, 365).split('-').reverse().join('/') + ')', u);
       } else fail(400, 'Action inconnue.');
     });
     return json(req, res, 200, { ok: true });
