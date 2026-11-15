@@ -44,11 +44,11 @@ h3::before{content:"";width:2.4mm;height:2.4mm;border-radius:50%;background:var(
 .split{display:grid;grid-template-columns:1fr 60mm;gap:7mm;align-items:start;margin:2mm 0 4mm;break-inside:avoid}
 .split.rev{grid-template-columns:60mm 1fr}.split.rev .fig{order:-1}
 .phone{margin:0;break-inside:avoid}
-.phone .bezel{background:#0E1E24;border-radius:7mm;padding:1.6mm;box-shadow:0 2mm 6mm rgba(11,83,97,.25)}
+.phone .bezel{background:#0E1E24;border-radius:7mm;padding:1.6mm}
 .phone img{display:block;width:100%;border-radius:5.6mm}
 figcaption{font-size:8.4pt;color:var(--muted);text-align:center;margin-top:2mm;line-height:1.35}
 .duo{display:grid;grid-template-columns:1fr 1fr;gap:9mm;padding:0 12mm;margin:3mm 0 4mm;break-inside:avoid}
-.crop{margin:3mm auto;break-inside:avoid;max-width:118mm}.crop img{display:block;width:100%;border-radius:4mm;border:.3mm solid var(--line);box-shadow:0 1.5mm 4mm rgba(11,83,97,.12)}
+.crop{margin:3mm auto;break-inside:avoid;max-width:118mm}.crop img{display:block;width:100%;border-radius:4mm;border:.3mm solid var(--line)}
 .split .crop img{max-width:100%}
 .steps{list-style:none;padding:0;margin:2mm 0 3mm;counter-reset:s}
 .steps li{counter-increment:s;position:relative;padding:0 0 2.6mm 10mm;min-height:7mm}
@@ -90,7 +90,7 @@ COVER_CSS = r"""
 .cover .glow{position:absolute;right:-40mm;top:-30mm;width:150mm;height:150mm;border-radius:50%;background:radial-gradient(circle,rgba(127,233,242,.35),rgba(127,233,242,0) 70%)}
 .cover .wave{position:absolute;left:0;right:0;bottom:0;height:85mm}
 .cover .top{position:absolute;left:20mm;top:22mm;display:flex;align-items:center;gap:5mm}
-.cover .top img{width:22mm;height:22mm;border-radius:5mm;box-shadow:0 2mm 6mm rgba(0,0,0,.3)}
+.cover .top img{width:22mm;height:22mm;border-radius:5mm}
 .cover .brand{font-family:Sora,sans-serif;font-size:19pt;font-weight:700}.cover .brand span{color:#62CFC4}
 .cover .brand small{display:block;font-family:Inter,sans-serif;font-size:9.5pt;font-weight:400;color:#CDEAEE}
 .cover .title{position:absolute;left:20mm;right:20mm;top:70mm}
@@ -99,7 +99,7 @@ COVER_CSS = r"""
 .cover .sub{font-size:13pt;color:#DDF1F3;max-width:140mm;line-height:1.45}
 .cover .pill{display:inline-block;margin-top:8mm;background:rgba(255,255,255,.14);border:.3mm solid rgba(255,255,255,.35);border-radius:20mm;padding:2mm 5mm;font-size:10pt}
 .cover .phones{position:absolute;right:18mm;bottom:22mm;display:flex;gap:5mm;align-items:flex-end}
-.cover .phones .bezel{background:#071A1F;border-radius:6mm;padding:1.4mm;box-shadow:0 4mm 10mm rgba(0,0,0,.35)}
+.cover .phones .bezel{background:#071A1F;border-radius:6mm;padding:1.4mm}
 .cover .phones img{display:block;border-radius:4.8mm}
 .cover .foot{position:absolute;left:20mm;bottom:14mm;font-size:9pt;color:#CDEAEE}
 """
