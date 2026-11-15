@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Génère les guides PDF (pharmacie et administrateur) à partir des captures d'écran.
+"""Génère les guides PDF (pharmacie, grossiste, technicien) et leurs pages en images pour la liseuse du portail.
 Usage : python3 build.py <dossier des captures> <dossier de sortie>
 Les captures sont produites par capture.js (voir README du dossier)."""
 import sys, os, subprocess, json, tempfile, re
@@ -20,7 +20,13 @@ def bullets(*xs): return '<ul class="bul">' + ''.join(f'<li>{x}</li>' for x in x
 def tip(t, x): return f'<div class="box tip"><b>{t}</b><p>{x}</p></div>'
 def warn(t, x): return f'<div class="box warn"><b>{t}</b><p>{x}</p></div>'
 def key(t, x): return f'<div class="box key"><b>{t}</b><p>{x}</p></div>'
-def split(text, fig, rev=False): return f'<div class="split{" rev" if rev else ""}"><div class="txt">{text}</div><div class="fig">{fig}</div></div>'
+def split(text, fig, rev=False, wide=False): return f'<div class="split{" rev" if rev else ""}{" wide" if wide else ""}"><div class="txt">{text}</div><div class="fig">{fig}</div></div>'
+URL = 'manaprocess.cloud/materiel/'
+def desk(n, cap='', small=False):
+    return (f'<figure class="desk{" sm" if small else ""}"><div class="win"><div class="bar"><i></i><i></i><i></i><span>🔒 {URL}</span></div><img src="{img(n)}" alt=""></div>'
+            + (f'<figcaption>{cap}</figcaption>' if cap else '') + '</figure>')
+def win(n, cap=''):
+    return f'<figure class="crop win1"><img src="{img(n)}" alt="">' + (f'<figcaption>{cap}</figcaption>' if cap else '') + '</figure>'
 def faq(*qa): return '<div class="faq">' + ''.join(f'<div class="qa"><b>{q}</b><p>{a}</p></div>' for q, a in qa) + '</div>'
 
 CSS = r"""
@@ -43,6 +49,17 @@ h3{font-size:12pt;color:var(--hero);margin:4.5mm 0 2mm;display:flex;align-items:
 h3::before{content:"";width:2.4mm;height:2.4mm;border-radius:50%;background:var(--brand);flex:none}
 .split{display:grid;grid-template-columns:1fr 60mm;gap:7mm;align-items:start;margin:2mm 0 4mm;break-inside:avoid}
 .split.rev{grid-template-columns:60mm 1fr}.split.rev .fig{order:-1}
+.split.wide{grid-template-columns:1fr 82mm}.split.wide.rev{grid-template-columns:82mm 1fr}
+.desk{margin:3mm 0 4mm;break-inside:avoid}.desk.sm{margin:2mm 22mm 4mm}
+.desk .win{border-radius:3mm;overflow:hidden;border:.3mm solid #C3D2D6;background:#fff}
+.desk .bar{height:6.2mm;background:#E6EEF0;display:flex;align-items:center;gap:1.5mm;padding:0 3mm;border-bottom:.3mm solid #D3DEE1}
+.desk .bar i{width:2.2mm;height:2.2mm;border-radius:50%;background:#F26B5B}.desk .bar i:nth-child(2){background:#F5BE4F}.desk .bar i:nth-child(3){background:#5FCB6B}
+.desk .bar span{margin-left:5mm;width:70mm;background:#fff;border-radius:2mm;height:3.8mm;font-size:6.6pt;color:#5B7078;display:flex;align-items:center;padding:0 2.4mm}
+.desk img{display:block;width:100%}
+.win1 img{border-radius:4mm}
+.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm;margin:3mm 0 4mm}
+.roles .r{background:var(--bg);border-radius:4mm;padding:4mm;break-inside:avoid}.roles .r b{display:block;font-family:Sora,sans-serif;color:var(--hero);margin-bottom:1mm}
+.roles .r .dv{display:inline-block;font-size:8pt;font-weight:600;color:var(--accent);background:#fff;border-radius:10mm;padding:.3mm 2.4mm;margin-bottom:1.6mm}
 .phone{margin:0;break-inside:avoid}
 .phone .bezel{background:#0E1E24;border-radius:7mm;padding:1.6mm}
 .phone img{display:block;width:100%;border-radius:5.6mm}
@@ -101,11 +118,16 @@ COVER_CSS = r"""
 .cover .phones{position:absolute;right:18mm;bottom:22mm;display:flex;gap:5mm;align-items:flex-end}
 .cover .phones .bezel{background:#071A1F;border-radius:6mm;padding:1.4mm}
 .cover .phones img{display:block;border-radius:4.8mm}
+.cover .phones .dwin{background:#F4F8F9;border-radius:3mm;overflow:hidden;border:.4mm solid rgba(255,255,255,.5)}
+.cover .phones .dwin img{border-radius:0}
+.cover .dbar{height:5mm;display:flex;align-items:center;gap:1.3mm;padding:0 2.6mm;background:#E6EEF0}
+.cover .dbar i{width:1.9mm;height:1.9mm;border-radius:50%;background:#F26B5B}.cover .dbar i:nth-child(2){background:#F5BE4F}.cover .dbar i:nth-child(3){background:#5FCB6B}
 .cover .foot{position:absolute;left:20mm;bottom:14mm;font-size:9pt;color:#CDEAEE}
 """
 
 def cover(kicker, title, sub, audience, shots):
-    ph = ''.join(f'<div class="bezel"><img src="{img(s)}" style="width:{w}mm" alt=""></div>' for s, w in shots)
+    ph = ''.join((f'<div class="dwin"><div class="dbar"><i></i><i></i><i></i></div><img src="{img(s)}" style="width:{w}mm" alt=""></div>' if s[0] in 'gp' and not s.startswith('p_m')
+                  else f'<div class="bezel"><img src="{img(s)}" style="width:{w}mm" alt=""></div>') for s, w in shots)
     return f'''<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>{CSS}{COVER_CSS}</style></head><body>
 <div class="cover"><div class="glow"></div>
 <svg class="wave" viewBox="0 0 210 85" preserveAspectRatio="none"><path d="M0 40C40 28 80 30 120 42S185 56 210 44V85H0Z" fill="rgba(95,214,207,.18)"/><path d="M0 58C45 48 90 52 130 62S190 70 210 62V85H0Z" fill="rgba(95,214,207,.22)"/></svg>
@@ -147,8 +169,16 @@ await p.pdf(o);await b.close();})();""")
     w.add_metadata({'/Title': footer_label, '/Author': 'ManaProcess', '/Subject': 'Guide d\'utilisation MédiParc NFC'})
     w.compress_identical_objects(remove_duplicates=True, remove_unreferenced=True)
     with open(out, 'wb') as fh: w.write(fh)
+    pages_dir = os.path.join(OUT, 'pages', c_key(out)); os.makedirs(pages_dir, exist_ok=True)
+    for f in os.listdir(pages_dir): os.remove(os.path.join(pages_dir, f))
+    subprocess.run(['pdftoppm', '-r', '150', '-jpeg', '-jpegopt', 'quality=82', out, os.path.join(pages_dir, 'p')], check=True)
+    for f in sorted(os.listdir(pages_dir)):
+        n = int(re.sub(r'\D', '', f)); os.rename(os.path.join(pages_dir, f), os.path.join(pages_dir, '%02d.jpg' % n))
+    toc = [{'n': i + 1, 'title': re.sub('<[^>]+>', ' ', c[0]), 'page': pages.get(i + 1, 0) + 1} for i, c in enumerate(chapters)]
+    json.dump({'title': footer_label, 'pages': len(w.pages), 'toc': toc}, open(os.path.join(pages_dir, 'index.json'), 'w'), ensure_ascii=False)
     print(out, len(w.pages), 'pages', os.path.getsize(out) // 1024, 'Ko', 'chapitres trouvés :', len(pages), '/', len(chapters))
 
+def c_key(out): return os.path.basename(out).replace('guide-', '').replace('.pdf', '')
 sys.path.insert(0, os.path.dirname(__file__))
 from contenu import pharmacie, administrateur, technicien
 os.makedirs(OUT, exist_ok=True)

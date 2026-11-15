@@ -681,9 +681,17 @@ async function api(req, res, route, url) {
       'Content-Disposition': 'attachment; filename="Guide-MediParc-' + n.charAt(0).toUpperCase() + n.slice(1) + '.pdf"' });
   };
   if (guide && m === 'GET' && guide[1] === 'pharmacie') return sendGuide('pharmacie');
+  /* Liseuse intégrée : sommaire et pages en images (mêmes droits que le PDF). */
+  const gpage = route.match(/^guides\/(pharmacie|administrateur|technicien)\/(index\.json|\d{2}\.jpg)$/);
+  const sendPage = (n, f) => {
+    const file = path.join(ROOT, 'guides', 'pages', n, f); if (!fs.existsSync(file)) fail(404, 'Page introuvable.');
+    return send(req, res, 200, fs.readFileSync(file), f.endsWith('.json') ? 'application/json; charset=utf-8' : 'image/jpeg', { 'Cache-Control': 'private, max-age=3600' });
+  };
+  if (gpage && m === 'GET' && gpage[1] === 'pharmacie') return sendPage(gpage[1], gpage[2]);
   const u = currentUser(req);
   if (!u) fail(401, 'Connexion requise.');
   if (guide && m === 'GET') { needStaff(u); return sendGuide(guide[1]); }
+  if (gpage && m === 'GET') { needStaff(u); return sendPage(gpage[1], gpage[2]); }
   if (route === 'me' && m === 'GET') return json(req, res, 200, { me: publicUser(u) });
   if (route === 'password' && m === 'POST') {
     const full = q('SELECT pass_hash FROM users WHERE id=?').get(u.id);

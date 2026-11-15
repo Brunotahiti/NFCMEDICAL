@@ -115,12 +115,28 @@ Le projet Docker `mediparc-nfc` (`deploy/docker-compose.yml`) télécharge ce d�
 - Les précisions saisies sont chiffrées, limitées à 300 caractères, effacées après 3 ans, et ne doivent contenir
   aucune information médicale.
 
-## Guides d'utilisation
+## Guides d'utilisation et liseuse intégrée
 
-- `guides/guide-pharmacie.pdf` : portail pharmacie (téléchargeable sans connexion depuis l'écran de connexion, et depuis l'accueil et le menu Plus du portail).
-- `guides/guide-administrateur.pdf` : administrateur et équipe du parc (Paramètres et menu Plus, réservé à l'équipe).
-- `guides/guide-technicien.pdf` : techniciens et livreurs (scan, pose des étiquettes, livraison, retour, désinfection, panne, contrôles ; aide-mémoire). Paramètres et menu Plus, réservé à l'équipe.
-- Régénération : lancer le serveur de démonstration, `node guides/outils/capture.js` et `node guides/outils/capture-technicien.js <captures> <photo>` (captures d'écran), puis `python3 guides/outils/build.py <captures> guides`. Le texte est dans `guides/outils/contenu.py`.
+Chaque guide se lit **dans le portail**, dans une liseuse (sommaire cliquable, vignettes des pages, zoom,
+page suivante/précédente au clavier) avec un bouton **Télécharger le PDF**.
+
+- `guides/guide-pharmacie.pdf` : portail pharmacie, sur ordinateur (demandes, suivi, locations, ordonnances,
+  e-mails, facturation). Accessible sans connexion depuis l'écran de connexion, et depuis l'accueil et le menu Plus.
+- `guides/guide-administrateur.pdf` : **guide du grossiste**, sur ordinateur (demandes des pharmacies, planning,
+  suivi des pharmacies, parc, entretien, rapports, facturation, comptes, données). Réservé à l'équipe.
+- `guides/guide-technicien.pdf` : technicien et livreur, sur téléphone (tournée, scan NFC, livraison, reprise,
+  désinfection, panne, contrôles, pose des étiquettes, aide-mémoire). Réservé à l'équipe.
+- `guides/pages/<guide>/` : pages en images et sommaire (`index.json`) servis à la liseuse
+  (`/materiel/api/guides/<guide>/index.json` et `NN.jpg`, mêmes droits que le PDF).
+- Régénération : serveur de démonstration neuf
+  (`DATA_DIR=<dossier vide> ADMIN_PASSWORD=Provisoire2026 COOKIE_SECURE=0 PORT=3456 node server/server.js`),
+  puis `node guides/outils/capture.js <captures> <photo-lit.jpg> <photo-ordonnance.jpg>` et
+  `python3 guides/outils/build.py <captures> guides`. Le texte est dans `guides/outils/contenu.py`.
+
+## Version ordinateur
+
+Au-delà de 1 024 px de large, le portail passe en mise en page bureau : menu latéral, contenu large,
+fiche d'un matériel en panneau à droite, fenêtres centrées. Sur téléphone, la mise en page mobile est inchangée.
 
 ## Icône
 
