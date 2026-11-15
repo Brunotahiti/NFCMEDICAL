@@ -30,6 +30,18 @@ Fonctions natives : Core NFC (lecture et programmation des puces), CoreLocation
 (position au scan et sur les photos), appareil photo (bandeau date/heure/position
 incrusté), VisionKit (scan de l'ordonnance), MapKit, app Fichiers.
 
+### Demandes des pharmacies
+
+- **Pharmacie** : sur l'accueil, quatre boutons (location, reprise, prolongation, problème) et ses demandes en
+  cours ; demande de location avec choix du produit dans le catalogue, du bénéficiaire (création possible), de la
+  durée et de la date ; boutons de reprise, prolongation et problème dans la fiche d'un matériel loué ; annulation
+  d'une demande non traitée. Locations › Demandes et Plus › Mes demandes, Catalogue.
+- **Grossiste** : nouvelles demandes sur l'accueil ; fiche d'une demande pour planifier le passage, livrer un
+  équipement disponible (la location démarre), effectuer une reprise ou une prolongation, régler un problème ou
+  envoyer le matériel à l'atelier, refuser avec un motif. Locations › **Planning** des tournées sur 14 jours,
+  **Suivi des pharmacies** (chiffres clés, demandes, locations), catalogue avec disponibilités.
+- Guides d'utilisation : ils s'ouvrent dans l'application (QuickLook), avec partage ou enregistrement.
+
 ### Ordonnances
 
 Aucune ordonnance n'est envoyée au serveur. Le scan (ou l'import d'une photo, PDF,

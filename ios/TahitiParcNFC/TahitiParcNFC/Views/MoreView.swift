@@ -1,9 +1,12 @@
+import QuickLook
 import SwiftUI
 
 struct MoreView: View {
     @Environment(AppModel.self) private var model
     @State private var changingPassword = false
     @State private var shared: SharedFile?
+    @State private var guideURL: URL?
+    @State private var showCatalog = false
     @State private var confirmLogout = false
 
     var body: some View {
@@ -24,17 +27,27 @@ struct MoreView: View {
                 }
                 if model.isStaff {
                     Section("Gestion") {
+                        NavigationLink { RequestsScreen() } label: { Label("Demandes des pharmacies", systemImage: "tray.full").badge(model.openRequests.filter { $0.state == .nouvelle }.count) }
+                        NavigationLink { PlanningScreen() } label: { Label("Planning des tournées", systemImage: "map") }
+                        NavigationLink { PharmacyFollowView() } label: { Label("Suivi des pharmacies", systemImage: "cross.case") }
+                        Button { showCatalog = true } label: { Label("Catalogue et disponibilités", systemImage: "square.grid.2x2") }
                         NavigationLink { BillingContent() } label: { Label("Facturation", systemImage: "doc.text") }
                         NavigationLink { MaintenanceView() } label: { Label("Entretien et contrôles", systemImage: "wrench.and.screwdriver") }
                     }
                 }
-                Section("Guides d'utilisation (PDF)") {
-                    guide("pharmacie", "Guide de la pharmacie", "cross.case")
-                    if model.isStaff {
-                        guide("technicien", "Guide du technicien", "wave.3.right")
-                        guide("administrateur", "Guide de l'administrateur", "person.badge.key")
+                if !model.isStaff {
+                    Section("Demandes") {
+                        NavigationLink { RequestsScreen() } label: { Label("Mes demandes", systemImage: "tray.full").badge(model.openRequests.count) }
+                        Button { showCatalog = true } label: { Label("Catalogue", systemImage: "square.grid.2x2") }
                     }
                 }
+                Section {
+                    if model.isStaff {
+                        guide("technicien", "Guide du technicien", "wave.3.right")
+                        guide("administrateur", "Guide du grossiste", "person.badge.key")
+                    }
+                    guide("pharmacie", model.isStaff ? "Guide du portail pharmacie" : "Guide d'utilisation", "cross.case")
+                } header: { Text("Guides d'utilisation") } footer: { Text("Le guide s'ouvre dans l'application ; le bouton de partage permet de l'enregistrer ou de l'envoyer.") }
                 Section("Confidentialité") {
                     Label("Aucune ordonnance n'est stockée en ligne : elles restent sur le serveur de votre pharmacie.", systemImage: "lock.shield")
                     Label("Aucune donnée médicale : seuls le nom, l'adresse, la commune et le téléphone du bénéficiaire sont enregistrés, chiffrés.", systemImage: "person.text.rectangle")
@@ -52,6 +65,8 @@ struct MoreView: View {
             .navigationTitle("Plus")
             .sheet(isPresented: $changingPassword) { PasswordView(forced: false) }
             .sheet(item: $shared) { ShareSheet(items: [$0.url]) }
+            .quickLookPreview($guideURL)
+            .sheet(isPresented: $showCatalog) { CatalogView() }
             .confirmationDialog("Se déconnecter ?", isPresented: $confirmLogout, titleVisibility: .visible) {
                 Button("Se déconnecter", role: .destructive) { Task { await model.logout() } }
             }
@@ -61,7 +76,7 @@ struct MoreView: View {
 
     private func guide(_ name: String, _ title: String, _ icon: String) -> some View {
         Button {
-            Task { if let url = await model.guide(name) { shared = SharedFile(url: url) } }
+            Task { if let url = await model.guide(name) { guideURL = url } }
         } label: { Label(title, systemImage: icon) }
     }
 }

@@ -153,6 +153,106 @@ final class AppModel {
         return list.sorted { order($0.level) < order($1.level) }
     }
 
+    // MARK: Demandes
+
+    var requests: [RequestItem] { state?.requests ?? [] }
+    var openRequests: [RequestItem] { requests.filter(\.isOpen) }
+    var catalog: [CatalogItem] { state?.catalog ?? [] }
+    var reasons: [(String, String)] {
+        let order = ["panne", "bruit", "casse", "piles", "autre"]
+        let r = state?.reasons ?? [:]
+        return order.compactMap { k in r[k].map { (k, $0) } }
+    }
+    func request(_ id: Int) -> RequestItem? { requests.first { $0.id == id } }
+    func openRequests(for e: Equipment) -> [RequestItem] { openRequests.filter { $0.equipmentId == e.id } }
+
+    func requestTitle(_ r: RequestItem) -> String {
+        r.type.label + " · " + (r.equipmentId.flatMap { equipment(id: $0)?.name } ?? r.product)
+    }
+
+    func requestSubtitle(_ r: RequestItem) -> String {
+        var parts: [String] = []
+        if isStaff, let f = pharmacy(r.pharmacyId) { parts.append(f.name) }
+        if let p = patient(r.patientId) { parts.append(p.name + (p.commune.map { " (\($0))" } ?? "")) } else if !r.patient.isEmpty { parts.append(r.patient) }
+        if let e = r.equipmentId.flatMap({ equipment(id: $0) }) { parts.append(e.ref) }
+        switch r.state {
+        case .planifiee: if let d = r.planned { parts.append("passage le " + Fmt.date(d)) }
+        case .nouvelle:
+            if let d = r.wanted { parts.append("souhaitée le " + Fmt.date(d)) }
+            else if r.type == .prolongation, let d = r.days { parts.append("+ " + Fmt.duration(d)) }
+        default: if !r.answer.isEmpty { parts.append(r.answer) }
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    func isUrgent(_ r: RequestItem) -> Bool {
+        r.state == .nouvelle && (Fmt.days(from: today, to: r.wanted) ?? 1) <= 0
+    }
+
+    /// Crée une demande (body : kind, et selon le type product/patient/days/wanted/equipment/reason/note).
+    func createRequest(_ body: [String: Any]) async -> Bool {
+        await mutate("requests", body, isStaff ? "Demande enregistrée" : "Demande envoyée au parc")
+    }
+
+    /// Traite une demande : plan, refuse, done, cancel.
+    func requestAction(_ r: RequestItem, action: String, planned: String? = nil, answer: String = "", equipment: Int? = nil, fault: Bool = false) async -> Bool {
+        var body: [String: Any] = ["action": action, "answer": answer]
+        if let planned { body["planned"] = planned }
+        if let equipment { body["equipment"] = equipment }
+        if fault { body["fault"] = true }
+        let msg = ["plan": "Passage planifié", "refuse": "Demande refusée", "done": fault ? "Matériel envoyé à l'atelier" : "Demande traitée", "cancel": "Demande annulée"][action] ?? "Enregistré"
+        return await mutate("requests/\(r.id)", body, msg)
+    }
+
+    struct PlanItem: Identifiable {
+        let id: String
+        let day: Int
+        let late: Bool
+        let title: String
+        let detail: String
+        let commune: String
+        let symbol: String
+        let toPlan: Bool
+        let requestId: Int?
+        let equipmentId: Int?
+    }
+
+    /// Planning des tournées : livraisons et reprises demandées, fins de location sur 14 jours.
+    var planItems: [PlanItem] {
+        var out: [PlanItem] = []
+        for r in openRequests where r.type != .prolongation {
+            let date = r.state == .planifiee ? r.planned : r.wanted
+            guard let d = Fmt.days(from: today, to: date) else { continue }
+            let p = patient(r.patientId)
+            out.append(PlanItem(id: "r\(r.id)", day: max(d, -1), late: d < 0, title: (r.type == .location ? "Livraison" : r.type == .reprise ? "Reprise" : "Intervention"),
+                                detail: [requestTitle(r).components(separatedBy: " · ").dropFirst().joined(separator: " · "), p?.name ?? "", pharmacy(r.pharmacyId)?.name ?? ""].filter { !$0.isEmpty }.joined(separator: " · "),
+                                commune: p?.commune ?? "", symbol: r.type.symbol, toPlan: r.state == .nouvelle, requestId: r.id, equipmentId: nil))
+        }
+        for e in equipment where e.state == .loc {
+            guard let d = daysLeft(e), d <= 14 else { continue }
+            if openRequests(for: e).contains(where: { $0.type == .reprise || $0.type == .prolongation }) { continue }
+            let p = patient(e.patientId)
+            out.append(PlanItem(id: "e\(e.id)", day: max(d, -1), late: d < 0, title: d < 0 ? "Retour en retard" : "Fin de location",
+                                detail: [e.name + " · " + e.ref, p?.name ?? "", pharmacy(e.pharmacyId)?.name ?? ""].filter { !$0.isEmpty }.joined(separator: " · "),
+                                commune: p?.commune ?? "", symbol: "arrow.uturn.backward", toPlan: false, requestId: nil, equipmentId: e.id))
+        }
+        return out.sorted { ($0.day, $0.commune) < ($1.day, $1.commune) }
+    }
+
+    struct PharmacyStats {
+        let rented: Int, weekly: Int, late: Int, soon: Int, prescriptions: Int, requests: Int, beneficiaries: Int
+    }
+
+    func stats(for f: Pharmacy) -> PharmacyStats {
+        let it = equipment.filter { $0.state == .loc && $0.pharmacyId == f.id }
+        return PharmacyStats(rented: it.count, weekly: it.reduce(0) { $0 + $1.weekPrice },
+                             late: it.filter { (daysLeft($0) ?? 0) < 0 }.count,
+                             soon: it.filter { (0...14).contains(daysLeft($0) ?? -1) }.count,
+                             prescriptions: it.filter { $0.prescription == nil || (prescriptionDaysLeft($0) ?? 99) <= 15 }.count,
+                             requests: openRequests.filter { $0.pharmacyId == f.id }.count,
+                             beneficiaries: Set(it.compactMap(\.patientId)).count)
+    }
+
     // MARK: Actions
 
     func action(_ e: Equipment, _ action: String, message: String) async {
@@ -240,7 +340,8 @@ final class AppModel {
     }
 
     func guide(_ name: String) async -> URL? {
-        do { return try await api.download("guides/\(name).pdf", filename: "Guide-\(name.capitalized).pdf") } catch { handle(error); return nil }
+        let title = ["pharmacie": "Guide-portail-pharmacie", "administrateur": "Guide-grossiste", "technicien": "Guide-technicien"][name] ?? "Guide"
+        do { return try await api.download("guides/\(name).pdf", filename: title + ".pdf") } catch { handle(error); return nil }
     }
 
     // MARK: Outils

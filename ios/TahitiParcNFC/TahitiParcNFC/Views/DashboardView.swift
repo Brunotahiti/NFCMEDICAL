@@ -11,6 +11,7 @@ struct DashboardView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     hero
                     if model.isStaff { stateGrid }
+                    HomeRequestsSection()
                     alertsSection
                 }
                 .padding(16)

@@ -125,6 +125,89 @@ struct AppState: Decodable {
     let patients: [Patient]
     let equipment: [Equipment]
     let closed: [ClosedRental]
+    let requests: [RequestItem]?
+    let catalog: [CatalogItem]?
+    let reasons: [String: String]?
+}
+
+/// Demande d'une pharmacie : location, reprise, prolongation ou problème.
+struct RequestItem: Decodable, Identifiable, Hashable {
+    let id: Int
+    let kind: String
+    let pharmacyId: Int
+    let patientId: Int?
+    let patient: String
+    let equipmentId: Int?
+    let product: String
+    let days: Int?
+    let wanted: String?
+    let reason: String
+    let note: String
+    let status: String
+    let planned: String?
+    let answer: String
+    let rentalId: Int?
+    let createdAt: String
+    let createdBy: String
+    let updatedAt: String?
+    let updatedBy: String
+
+    var type: RequestKind { RequestKind(rawValue: kind) ?? .location }
+    var state: RequestStatus { RequestStatus(rawValue: status) ?? .nouvelle }
+    var isOpen: Bool { state == .nouvelle || state == .planifiee }
+}
+
+struct CatalogItem: Decodable, Identifiable, Hashable {
+    let name: String
+    let kind: String
+    let photo: String?
+    let brand: String?
+    let weekPrice: Int
+    let total: Int
+    let dispo: Int
+    var id: String { name }
+}
+
+enum RequestKind: String, CaseIterable, Identifiable {
+    case location, reprise, prolongation, probleme
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .location: return "Location"
+        case .reprise: return "Reprise"
+        case .prolongation: return "Prolongation"
+        case .probleme: return "Problème"
+        }
+    }
+    var subtitle: String {
+        switch self {
+        case .location: return "Demander du matériel"
+        case .reprise: return "Faire reprendre un équipement"
+        case .prolongation: return "Prolonger une location"
+        case .probleme: return "Signaler un souci sur un matériel"
+        }
+    }
+    var symbol: String {
+        switch self {
+        case .location: return "calendar.badge.plus"
+        case .reprise: return "arrow.uturn.backward"
+        case .prolongation: return "clock.arrow.circlepath"
+        case .probleme: return "exclamationmark.triangle"
+        }
+    }
+}
+
+enum RequestStatus: String {
+    case nouvelle, planifiee, faite, refusee, annulee
+    var label: String {
+        switch self {
+        case .nouvelle: return "Nouvelle"
+        case .planifiee: return "Planifiée"
+        case .faite: return "Effectuée"
+        case .refusee: return "Refusée"
+        case .annulee: return "Annulée"
+        }
+    }
 }
 
 struct DetailScan: Decodable, Hashable {

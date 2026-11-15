@@ -9,6 +9,7 @@ struct EquipmentDetailView: View {
     @State private var sheet: DetailSheet?
     @State private var confirm: ConfirmAction?
     @State private var viewedPhoto: PhotoInfo?
+    @State private var reqSheet: RequestSheet?
 
     enum DetailSheet: String, Identifiable {
         case rent, prescription, photo, prescriptionFile
@@ -46,7 +47,8 @@ struct EquipmentDetailView: View {
                     rentalCard(e)
                     PrescriptionCard(e: e, onVerify: { sheet = .prescription }, onFile: { sheet = .prescriptionFile })
                 }
-                if model.isStaff { actionsCard(e) }
+                if !model.openRequests(for: e).isEmpty { requestsCard(e) }
+                if model.isStaff { actionsCard(e) } else if e.state == .loc { pharmacyActions(e) }
                 scanCard(e)
                 photosCard(e)
                 if model.isStaff {
@@ -69,6 +71,7 @@ struct EquipmentDetailView: View {
             }
         }
         .sheet(item: $viewedPhoto) { p in PhotoViewer(photo: p, canDelete: model.isStaff) }
+        .sheet(item: $reqSheet) { RequestSheetView($0) }
         .confirmationDialog(confirm?.title ?? "", isPresented: Binding(get: { confirm != nil }, set: { if !$0 { confirm = nil } }), titleVisibility: .visible, presenting: confirm) { c in
             Button(c.title, role: c.destructive ? .destructive : nil) { Task { await model.action(e, c.action, message: c.toast) } }
             Button("Annuler", role: .cancel) {}
@@ -127,6 +130,32 @@ struct EquipmentDetailView: View {
                 let elapsed = Double(max(model.daysRented(e) ?? 0, 0)), total = elapsed + Double(max(left, 0))
                 ProgressView(value: min(elapsed, max(total, 1)), total: max(total, 1)).tint(left < 0 ? Color.tpCrit : Color.tpAccent)
             }
+        }
+    }
+
+    // MARK: Demandes
+
+    private func requestsCard(_ e: Equipment) -> some View {
+        Card {
+            Label("Demandes en cours", systemImage: "tray.full").font(.headline)
+            ForEach(model.openRequests(for: e)) { r in
+                Button { reqSheet = .detail(r.id) } label: { RequestRow(r: r) }.buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func pharmacyActions(_ e: Equipment) -> some View {
+        Card {
+            Label("Une demande au parc", systemImage: "paperplane").font(.headline)
+            let pending = Set(model.openRequests(for: e).map(\.type))
+            ForEach([RequestKind.prolongation, .reprise, .probleme]) { k in
+                if !pending.contains(k) {
+                    actionButton(k == .prolongation ? "Demander une prolongation" : k == .reprise ? "Demander la reprise" : "Signaler un problème", k.symbol, k.color) {
+                        reqSheet = .onEquipment(k, e.id)
+                    }
+                }
+            }
+            if pending.count == 3 { Text("Toutes les demandes sont en cours de traitement.").font(.caption).foregroundStyle(.secondary) }
         }
     }
 

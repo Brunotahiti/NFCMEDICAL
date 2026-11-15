@@ -114,7 +114,11 @@ struct PatientForm: View {
 struct LocationsView: View {
     @Environment(AppModel.self) private var model
     @State private var search = ""
-    @State private var showClosed = false
+    @State private var tab: LocTab
+    @State private var sheet: RequestSheet?
+    init(tab: LocTab = .current) { _tab = State(initialValue: tab) }
+
+    enum LocTab: Hashable { case current, requests, planning, closed }
 
     private var current: [Equipment] {
         model.equipment.filter { $0.state == .loc }
@@ -125,13 +129,19 @@ struct LocationsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Picker("", selection: $showClosed) {
-                    Text("En cours").tag(false)
-                    Text("Terminées").tag(true)
+                Picker("", selection: $tab) {
+                    Text("En cours").tag(LocTab.current)
+                    Text("Demandes" + (model.openRequests.isEmpty ? "" : " \(model.openRequests.count)")).tag(LocTab.requests)
+                    if model.isStaff { Text("Planning").tag(LocTab.planning) }
+                    Text("Terminées").tag(LocTab.closed)
                 }
                 .pickerStyle(.segmented)
                 .listRowBackground(Color.clear)
-                if showClosed {
+                if tab == .requests {
+                    RequestsListView(sheet: $sheet)
+                } else if tab == .planning {
+                    PlanningView(sheet: $sheet)
+                } else if tab == .closed {
                     let closed = model.state?.closed ?? []
                     if closed.isEmpty { Text("Aucune location terminée.").foregroundStyle(.secondary) }
                     ForEach(closed) { r in
@@ -157,6 +167,7 @@ struct LocationsView: View {
             .navigationTitle("Locations")
             .refreshable { await model.refresh() }
             .navigationDestination(for: EquipmentLink.self) { EquipmentDetailView(id: $0.id) }
+            .sheet(item: $sheet) { RequestSheetView($0) }
         }
     }
 }
