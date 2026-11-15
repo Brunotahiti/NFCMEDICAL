@@ -1940,7 +1940,7 @@ function openGuide(n){
     var pg='';for(var i=1;i<=ix.pages;i++)pg+='<div class="rd-page" id="rdp'+i+'" data-n="'+i+'"><img src="'+rdUrl(pad2(i)+'.jpg')+'" loading="'+(i<=2?'eager':'lazy')+'" width="1240" height="1754" alt="Page '+i+'"></div>';
     $('rd-pages').innerHTML=pg;
     var th='';for(var j=1;j<=ix.pages;j++)th+='<button data-rdgo="'+j+'" id="rdt'+j+'" aria-label="Page '+j+'"><img src="'+rdUrl(pad2(j)+'.jpg')+'" loading="lazy" alt=""><i>'+j+'</i></button>';
-    $('rd-side').innerHTML='<div class="rd-sh">Sommaire</div>'+ix.toc.map(function(t){return '<button class="rd-ti" data-rdgo="'+t.page+'" data-p="'+t.page+'"><span>'+pad2(t.n)+'</span><b>'+esc(t.title)+'</b><em>'+t.page+'</em></button>';}).join('')
+    $('rd-side').innerHTML='<div class="rd-sh">Sommaire</div>'+ix.toc.map(function(t){return '<button class="rd-ti" data-rdgo="'+t.page+'" data-p="'+t.page+'"><span>'+pad2(t.n)+'</span><b>'+esc(t.title)+'</b><em>'+(t.page-1)+'</em></button>';}).join('')
       +'<div class="rd-sh">Pages</div><div class="rd-th">'+th+'</div>';
     rdFit();rdSet(1);
     if(rdObs)rdObs.disconnect();
@@ -1949,7 +1949,7 @@ function openGuide(n){
   }).catch(function(e){var p=$('rd-pg');if(p)p.textContent=e.status===401?'Connectez-vous pour lire ce guide':'Guide indisponible';});
 }
 function rdSet(n){
-  rdCur=n;var p=$('rd-pg');if(p)p.textContent='Page '+n+' / '+rdN;
+  rdCur=n;var p=$('rd-pg');if(p)p.textContent=n===1?'Couverture':n===rdN?'Quatrième de couverture':'Page '+(n-1)+' / '+(rdN-2);
   [].forEach.call(document.querySelectorAll('.rd-th button.on,.rd-ti.on'),function(b){b.classList.remove('on');});
   var t=$('rdt'+n);if(t)t.classList.add('on');
   var best=null;[].forEach.call(document.querySelectorAll('.rd-ti'),function(b){if(+b.dataset.p<=n)best=b;});if(best)best.classList.add('on');
