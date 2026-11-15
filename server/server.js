@@ -73,6 +73,8 @@ db.exec(`CREATE TABLE IF NOT EXISTS prescriptions(rental_id INTEGER PRIMARY KEY 
 /* Dépôt de fichiers d'ordonnance : désactivé par défaut (serveur non certifié HDS). La pharmacie conserve
    l'ordonnance et en déclare seulement la vérification. Activer (DOCUMENTS_ENABLED=1) uniquement sur un hébergement certifié HDS. */
 const DOCUMENTS_ENABLED = process.env.DOCUMENTS_ENABLED === '1';
+/* Fin de validité de l'ordonnance : sert au rappel « nouvelle ordonnance à prévoir ». */
+if (!db.prepare('PRAGMA table_info(prescriptions)').all().some(c => c.name === 'valid_until')) db.exec('ALTER TABLE prescriptions ADD COLUMN valid_until TEXT');
 const DOCS = path.join(DATA, 'documents');
 /* Photos horodatées du matériel (état à la livraison, au retour, panne). Pas de donnée médicale : stockées sur le serveur. */
 db.exec(`CREATE TABLE IF NOT EXISTS photos(id INTEGER PRIMARY KEY, equipment_id INTEGER NOT NULL REFERENCES equipment(id), rental_id INTEGER REFERENCES rentals(id),
@@ -246,6 +248,19 @@ if (setting('privacy_cleanup') === '1') {
   } catch (e) { console.error('Nettoyage après migration impossible :', e.message); }
 }
 if (!setting('seeded') && q('SELECT COUNT(*) n FROM equipment').get().n === 0) seedDemo();
+if (setting('demo_presc') !== '1') {
+  const open = q('SELECT * FROM rentals WHERE end_date IS NULL ORDER BY id').all();
+  if (open.length && open.every(r => r.created_by === 'Démonstration') && q('SELECT COUNT(*) n FROM prescriptions').get().n === 0) tx(() => {
+    const T = today();
+    /* [décalage de la date d'ordonnance, validité en jours] : expirée, bientôt expirée, plus courte que la location, valide. */
+    const plan = [[-60, 50], [-80, 90], [-20, 30], [-30, 180], [-15, 365], [-40, 120], [-10, 90], [-25, 365], [-5, 60], [-35, 365]];
+    open.slice(0, plan.length).forEach((r, i) => {
+      const d = addDays(T, plan[i][0]), v = addDays(d, plan[i][1]);
+      q('INSERT INTO prescriptions(rental_id,presc_date,valid_until,ref,at,user_name) VALUES(?,?,?,?,?,?)').run(r.id, d, v, 'ORD-DEMO-' + (100 + i), addDays(T, plan[i][0]) + ' 10:00', 'Démonstration');
+    });
+  });
+  setSetting('demo_presc', '1');
+}
 if (q('SELECT COUNT(*) n FROM users').get().n === 0) {
   let pw = process.env.ADMIN_PASSWORD;
   if (!pw) { pw = tempPassword(); console.log('Compte admin créé. Mot de passe provisoire : ' + pw); }
@@ -401,7 +416,7 @@ function state(u) {
          JOIN rentals r ON r.id=p.rental_id WHERE r.pharmacy_id=?) WHERE rn<=6`).all(ph);
   const photos = new Map(); for (const x of phRows) { if (!photos.has(x.equipment_id)) photos.set(x.equipment_id, []); photos.get(x.equipment_id).push({ id: x.id, at: x.at, by: x.user_name, kind: x.kind, lat: x.lat, lon: x.lon }); }
   const presc = new Map(q(`SELECT p.* FROM prescriptions p JOIN rentals r ON r.id=p.rental_id WHERE r.end_date IS NULL ${staff ? '' : 'AND r.pharmacy_id=?'}`)
-    .all(...(staff ? [] : [ph])).map(p => [p.rental_id, { date: p.presc_date, ref: p.ref, at: p.at, by: p.user_name }]));
+    .all(...(staff ? [] : [ph])).map(p => [p.rental_id, { date: p.presc_date, valid: p.valid_until || null, ref: p.ref, at: p.at, by: p.user_name }]));
   const docs = new Map();
   for (const d of q(`SELECT d.id, d.rental_id, d.filename, d.mime, d.size, d.at, d.user_name FROM documents d JOIN rentals r ON r.id=d.rental_id
       WHERE r.end_date IS NULL ${staff ? '' : 'AND r.pharmacy_id=?'} ORDER BY d.at`).all(...(staff ? [] : [ph]))) {
@@ -667,10 +682,16 @@ async function api(req, res, route, url) {
     if (!isDate(d) || d > today() || d < addDays(today(), -400)) fail(400, 'Date d\'ordonnance invalide.');
     const ref = String(body.ref || '').trim().slice(0, 80);
     if (/[^\p{L}\p{N} ._\/-]/u.test(ref)) fail(400, 'Le numéro interne ne peut contenir que des lettres, chiffres, espaces et . _ / -');
+    const v = String(body.valid_until || '');
+    if (!isDate(v)) fail(400, 'Indiquez jusqu\'à quand l\'ordonnance est valable.');
+    if (v < d) fail(400, 'La fin de validité doit être après la date de l\'ordonnance.');
+    if (v > addDays(d, 400)) fail(400, 'Validité trop longue : 13 mois au plus après la date de l\'ordonnance.');
+    const before = q('SELECT presc_date FROM prescriptions WHERE rental_id=?').get(r.id);
+    const fr = x => x.split('-').reverse().join('/');
     tx(() => {
-      q('INSERT INTO prescriptions(rental_id,presc_date,ref,at,user_name) VALUES(?,?,?,?,?) ON CONFLICT(rental_id) DO UPDATE SET presc_date=excluded.presc_date, ref=excluded.ref, at=excluded.at, user_name=excluded.user_name')
-        .run(r.id, d, ref, nowStamp(), u.name);
-      addEvent(r.equipment_id, r.id, 'Ordonnance vérifiée par la pharmacie (ordonnance du ' + d.split('-').reverse().join('/') + (ref ? ', n° ' + ref : '') + ')', u);
+      q(`INSERT INTO prescriptions(rental_id,presc_date,valid_until,ref,at,user_name) VALUES(?,?,?,?,?,?) ON CONFLICT(rental_id) DO UPDATE SET
+         presc_date=excluded.presc_date, valid_until=excluded.valid_until, ref=excluded.ref, at=excluded.at, user_name=excluded.user_name`).run(r.id, d, v, ref, nowStamp(), u.name);
+      addEvent(r.equipment_id, r.id, (before && before.presc_date !== d ? 'Nouvelle ordonnance vérifiée' : 'Ordonnance vérifiée') + ' par la pharmacie (ordonnance du ' + fr(d) + ', valable jusqu\'au ' + fr(v) + (ref ? ', n° ' + ref : '') + ')', u);
     });
     return json(req, res, 200, { ok: true });
   }
