@@ -340,7 +340,7 @@ final class AppModel {
     }
 
     func guide(_ name: String) async -> URL? {
-        let title = ["pharmacie": "Guide-portail-pharmacie", "administrateur": "Guide-grossiste", "technicien": "Guide-technicien"][name] ?? "Guide"
+        let title = ["pharmacie": "Guide-portail-pharmacie", "administrateur": "Guide-grossiste", "technicien": "Guide-technicien", "iphone": "Guide-application-iPhone"][name] ?? "Guide"
         do { return try await api.download("guides/\(name).pdf", filename: title + ".pdf") } catch { handle(error); return nil }
     }
 

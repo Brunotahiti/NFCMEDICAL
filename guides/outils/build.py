@@ -81,7 +81,7 @@ figcaption::before{content:"Figure " counter(fig) "  ·  ";font-weight:700;color
 .phone{margin:0;break-inside:avoid}
 .phone .bezel{background:linear-gradient(145deg,#1A2E35,#071418);border-radius:7.5mm;padding:1.7mm;border:.35mm solid #31474F}
 .phone img{display:block;width:100%;border-radius:5.8mm}
-.duo{display:grid;grid-template-columns:1fr 1fr;gap:9mm;padding:0 12mm;margin:3mm 0 5mm;break-inside:avoid}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:10mm;padding:0 26mm;margin:3mm 0 5mm;break-inside:avoid}
 .crop{margin:3mm auto;break-inside:avoid;max-width:118mm}.crop img{display:block;width:100%;border-radius:4mm;border:.35mm solid #C9D7DA}
 .split .crop img{max-width:100%}
 /* Étapes */
@@ -210,6 +210,7 @@ def backcover(label):
 <div class="box2"><b>Assistance</b><br>{CONTACT}<br>Du lundi au vendredi, de 8 h à 16 h (heure de Tahiti)<br><br><b>Portail</b><br>https://manaprocess.cloud/materiel/</div></div>
 <div class="ft">{label} · Édition {DATE} · © ManaProcess</div></div></body></html>'''
 
+QCAP = {'t_plan': 'La tournée', 't_fiche': 'La fiche d\'un matériel', 'i_home_g': 'L\'accueil', 'i_scan': 'L\'onglet Scanner'}
 def body(chapters, intro_html, pages=None, quick=None, label='', shots=()):
     toc = ''.join(f'<div class="row"><span class="n">{i+1:02d}</span><span class="t">{c[0]}<span class="d">{c[1]}</span></span><span class="pg">{(pages or {}).get(i+1, "")}</span></div>' for i, c in enumerate(chapters))
     chs = ''.join(f'<section class="chap"><div class="chead"><div class="n">{i+1:02d}</div><div><div class="kk">Chapitre {i+1}</div><h2>{c[0]}</h2></div><div class="lead">{c[1]}</div><span class="mk">§CHAP{i+1:02d}§</span></div>{c[2]}</section>' for i, c in enumerate(chapters))
@@ -218,7 +219,7 @@ def body(chapters, intro_html, pages=None, quick=None, label='', shots=()):
         qk = ('<section class="quick"><div class="tochead"><div class="toch">Prise en main rapide</div><small>L\'essentiel en 4 étapes</small></div><div class="qgrid">'
               + ''.join(f'<div class="qc"><div class="qn">{k+1:02d}</div><b>{t}</b><p>{d}</p></div>' for k, (t, d) in enumerate(quick)) + '</div>'
               + (('<div class="qshot">' + desk(shots[0][0], 'Votre écran d\'accueil', small=True) + '</div>') if shots and shots[0][0][0] in 'gp'
-                 else ('<div class="qshot ph2">' + ''.join(phone(n, c) for n, c in ((shots[0][0], 'La tournée'), (shots[1][0], 'La fiche d\'un matériel'))) + '</div>') if shots else '')
+                 else ('<div class="qshot ph2">' + ''.join(phone(n, QCAP.get(n, '')) for n in (shots[0][0], shots[1][0])) + '</div>') if shots else '')
               + '</section>')
     return f'''<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>@page{{size:A4;margin:22mm 17mm 20mm}}{CSS}</style></head><body>
 <div class="tochead"><div class="toch">Sommaire</div><small>{label}</small></div>{intro_html}<div class="toc">{toc}</div>{qk}{chs}</body></html>'''
@@ -268,8 +269,10 @@ await p.pdf(o);await b.close();})();""")
 
 def c_key(out): return os.path.basename(out).replace('guide-', '').replace('.pdf', '')
 sys.path.insert(0, os.path.dirname(__file__))
-from contenu import pharmacie, administrateur, technicien
+from contenu import pharmacie, administrateur, technicien, iphone
 os.makedirs(OUT, exist_ok=True)
-for g in (pharmacie, administrateur, technicien):
+ONLY = sys.argv[3:] 
+for g in (pharmacie, administrateur, technicien, iphone):
+    if ONLY and g.__name__ not in ONLY: continue
     c = g(globals())
     render(cover(*c['cover'], learn=c.get('quick', ()), chips=c.get('chips', ())), body, c['chapters'], c['intro'], c['footer'], os.path.join(OUT, c['file']), c.get('quick'), c['cover'][4])

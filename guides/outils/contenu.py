@@ -441,3 +441,143 @@ def technicien(g):
     return {'quick': quick, 'chips': ('Sur téléphone',), 'file': 'guide-technicien.pdf', 'footer': 'MédiParc NFC · Guide du technicien', 'intro': intro, 'chapters': ch,
             'cover': ('Guide d\'utilisation', 'Technicien<br>et livreur', 'La tournée du jour, le scan des étiquettes NFC, les livraisons, reprises, désinfections et contrôles, avec des photos horodatées.',
                       'Pour les techniciens et livreurs', [('t_plan', 40), ('t_fiche', 40)])}
+
+
+# --------------------------------------------------------------------------------------------
+def iphone(g):
+    h = _h(g); phone, crop, duo, steps, bullets, tip, warn, key, split, faq = (h[k] for k in ('phone', 'crop', 'duo', 'steps', 'bullets', 'tip', 'warn', 'key', 'split', 'faq'))
+    ch = []
+    ch.append(('L\'application en bref', 'Le parc NFC dans la poche, pour le grossiste, les techniciens et les pharmacies',
+      '<p><b>Tahiti Parc NFC</b> est l\'application iPhone du portail MédiParc. Elle utilise les <b>mêmes comptes</b> et les <b>mêmes données</b> que le portail sur ordinateur, et ajoute ce que seul un téléphone sait faire : <b>lire et programmer les étiquettes NFC</b>, enregistrer la <b>position</b> au moment du scan et prendre des <b>photos horodatées</b>.</p>'
+      + key('Les illustrations de ce guide', 'Elles reproduisent les écrans de l\'application. Selon la version d\'iOS et la taille de votre iPhone, certains détails peuvent légèrement différer.')
+      + duo('i_home_g', 'L\'accueil du grossiste et des techniciens', 'i_home_p', 'L\'accueil d\'une pharmacie')
+      + '<table class="t"><tr><th>Vous êtes</th><th>Ce que l\'application vous apporte</th></tr>'
+      + '<tr><td><b>Technicien, livreur</b></td><td>La tournée du jour, le scan de chaque matériel, la livraison, la reprise, la désinfection, la panne et les contrôles, avec des photos qui font foi.</td></tr>'
+      + '<tr><td><b>Grossiste</b></td><td>Les nouvelles demandes des pharmacies, à planifier, livrer ou refuser où que vous soyez ; le suivi des pharmacies et du parc.</td></tr>'
+      + '<tr><td><b>Pharmacie</b></td><td>Les demandes de location, reprise, prolongation ou problème ; la vérification des ordonnances, scannées vers le serveur de la pharmacie.</td></tr></table>'
+))
+    ch.append(('Installer l\'application', 'Une seule fois, sur chaque iPhone',
+      steps('Vérifiez votre iPhone : <b>iPhone XS ou plus récent</b> pour l\'écriture des étiquettes (lecture dès l\'iPhone 7), <b>iOS 17</b> ou plus récent.',
+            'Installez <b>Tahiti Parc NFC</b> depuis le lien transmis par ManaProcess : App Store, distribution réservée aux clients ou TestFlight pendant la phase de test.',
+            'Ouvrez l\'application et connectez-vous (chapitre suivant).',
+            'Au premier scan, à la première photo et au premier enregistrement de position, iOS vous demande l\'autorisation : répondez <b>Autoriser</b>.')
+      + '<table class="t"><tr><th>Autorisation</th><th>Pourquoi</th><th>Si vous refusez</th></tr>'
+      + '<tr><td>NFC</td><td>Lire et programmer les étiquettes du matériel.</td><td>Saisie manuelle de la référence seulement.</td></tr>'
+      + '<tr><td>Localisation (pendant l\'utilisation)</td><td>Enregistrer où le matériel a été scanné ou photographié.</td><td>Le scan est enregistré sans position.</td></tr>'
+      + '<tr><td>Appareil photo</td><td>Photos horodatées, scan des ordonnances.</td><td>Pas de photo ni de scan d\'ordonnance.</td></tr></table>'
+      + tip('Modifier une autorisation', 'Réglages de l\'iPhone › <b>Tahiti Parc NFC</b> : Localisation, Appareil photo.')))
+    ch.append(('Se connecter', 'Votre identifiant personnel',
+      split(steps('Saisissez l\'<b>identifiant</b> et le <b>mot de passe</b> fournis par l\'administrateur du parc.',
+                  'Touchez ' + ui('Se connecter') + '.',
+                  'À la première connexion, choisissez votre mot de passe : <b>10 caractères au moins</b>, avec des lettres et des chiffres.')
+        + tip('Rester connecté', 'La session reste ouverte 30 jours. Pour quitter : ' + ui('Plus') + ' › ' + ui('Se déconnecter') + '.')
+        + warn('Un compte par personne', 'Ne prêtez pas votre compte : chaque scan, livraison ou vérification d\'ordonnance est signé de votre nom. Verrouillez l\'iPhone par un code ou Face ID.'),
+        phone('i_login', 'L\'écran de connexion'))))
+    ch.append(('Se repérer', 'Les onglets en bas de l\'écran',
+      '<table class="t"><tr><th>Onglet</th><th>Grossiste et techniciens</th><th>Pharmacie</th></tr>'
+      + '<tr><td><b>Accueil</b></td><td>Taux d\'occupation, états du parc, demandes des pharmacies, actions à traiter.</td><td>Locations en cours, nouvelle demande, mes demandes, actions à traiter.</td></tr>'
+      + '<tr><td><b>Parc</b> / <b>Locations</b></td><td>Parc : tous les équipements, filtrés par état et recherche.</td><td>Locations : vos locations, demandes et locations terminées.</td></tr>'
+      + '<tr><td><b>Scanner</b></td><td colspan="2">Lire une étiquette NFC ou saisir une référence.</td></tr>'
+      + '<tr><td><b>Locations</b> / <b>Facturation</b></td><td>Locations : en cours, demandes, planning des tournées, terminées.</td><td>Facturation : vos montants du mois, export.</td></tr>'
+      + '<tr><td><b>Plus</b></td><td>Demandes, planning, suivi des pharmacies, catalogue, facturation, entretien, guides.</td><td>Mes demandes, catalogue, guide, mot de passe.</td></tr></table>'
+      + tip('Actualiser', 'Tirez l\'écran vers le bas pour recharger les dernières informations du serveur.')))
+    ch.append(('Scanner une étiquette', 'Ouvrir la fiche d\'un matériel en deux secondes',
+      steps('Touchez l\'onglet ' + ui('Scanner') + ', puis le grand bouton <b>Scanner une puce</b>.',
+            'La fenêtre <b>Prêt à scanner</b> d\'iOS s\'affiche : approchez le <b>haut de l\'iPhone</b> de l\'étiquette, à 1 ou 2 cm, sans bouger.',
+            'La fiche du matériel s\'ouvre. Le passage est enregistré avec la date, votre nom et votre position.')
+      + bullets('<b>Sans étiquette</b> : saisissez la référence (par exemple LIT-0101) dans <b>Saisie manuelle</b>, puis ' + ui('Ouvrir') + '.',
+                '<b>Application fermée</b> : approcher l\'étiquette d\'un iPhone déverrouillé affiche une notification qui ouvre la fiche dans Safari.',
+                '<b>Étiquette inconnue</b> : un message indique qu\'aucun matériel de votre compte ne correspond.')
+      + duo('i_scan', 'L\'onglet Scanner', 'i_nfc', 'La fenêtre de lecture d\'iOS')))
+    ch.append(('La fiche d\'un matériel', 'Tout savoir, et agir',
+      split(bullets('<b>En-tête</b> : photo, nom, référence, état, tarif, prochain contrôle (en rouge s\'il est dépassé).',
+                    '<b>Location en cours</b> : bénéficiaire (touchez le téléphone pour l\'appeler), pharmacie, début, fin prévue, barre de progression.',
+                    '<b>Ordonnance</b>, <b>Demandes en cours</b>, <b>Position</b> du dernier scan sur la carte (itinéraire dans Plans).',
+                    '<b>Photos horodatées</b>, <b>Rentabilité</b> (grossiste), <b>Puce NFC</b> et <b>Historique</b>.')
+        + '<h3>Les actions du grossiste et des techniciens</h3><table class="t"><tr><th>État</th><th>Actions</th></tr>'
+        + '<tr><td>En location</td><td>Prolonger, Retour du matériel, Signaler une panne</td></tr>'
+        + '<tr><td>Disponible</td><td>Mettre en location</td></tr>'
+        + '<tr><td>Désinfection</td><td>Désinfection validée</td></tr>'
+        + '<tr><td>Maintenance</td><td>Maintenance clôturée</td></tr>'
+        + '<tr><td>Contrôle sous 30 jours</td><td>Contrôle effectué</td></tr></table>'
+        + tip('Confirmation', 'Chaque action demande une confirmation, puis apparaît aussitôt dans l\'historique, sur l\'iPhone comme sur le portail.'),
+        phone('i_fiche', 'La fiche d\'un lit en location'))
+      + tip('Enregistrer sa position sans étiquette', 'Le bouton ' + ui('Enregistrer ma position ici') + ' de la section Position note l\'endroit où se trouve le matériel, comme un scan.')))
+    ch.append(('Les photos horodatées', 'Prouver l\'état du matériel',
+      split(steps('Dans la fiche, section <b>Photos horodatées</b>, touchez ' + ui('Prendre') + '.',
+                  'Choisissez le type : <b>Livraison</b>, <b>Retour</b>, <b>État</b> ou <b>Panne</b>.',
+                  'Photographiez le matériel. Un bandeau est incrusté : <b>référence, type, date, heure et position</b>.',
+                  'Touchez ' + ui('Envoyer') + '. La photo rejoint la fiche et l\'historique.')
+        + warn('Le matériel seulement', 'Jamais le bénéficiaire, ses proches, ses papiers ou ses médicaments. Cadrez au plus près du matériel.')
+        + tip('Comparer', 'Les photos de livraison et de retour se suivent dans l\'historique : une casse se voit immédiatement.'),
+        phone('i_photo', 'Une photo de livraison, prête à envoyer'))))
+    ch.append(('Les demandes des pharmacies', 'Côté pharmacie : demander et suivre',
+      split('<h3>Demander une location</h3>' + steps('Accueil › <b>Location</b> (ou ' + ui('Plus') + ' › ' + ui('Catalogue') + ', puis un produit).',
+                  '<b>Produit</b>, <b>bénéficiaire</b> (ou ' + ui('Nouveau bénéficiaire') + '), <b>durée</b>, <b>date de livraison souhaitée</b>.',
+                  '<b>Précisions</b> pour la livraison si besoin, puis ' + ui('Envoyer') + '.')
+        + warn('Aucune information médicale', 'Ni pathologie ni motif dans les précisions. L\'ordonnance reste dans votre pharmacie.'),
+        phone('i_req_loc', 'Demande de location'))
+      + split('<h3>Reprise, prolongation, problème</h3>' + steps('Ouvrez la fiche du matériel loué (onglet Locations).',
+                  'Section <b>Une demande au parc</b> : ' + ui('Demander une prolongation') + ', ' + ui('Demander la reprise') + ' ou ' + ui('Signaler un problème') + '.',
+                  'Indiquez la durée, la date ou la nature du problème, puis ' + ui('Envoyer') + '.')
+        + '<p>Une demande en cours remplace son bouton : elle apparaît dans <b>Demandes en cours</b>, avec son état.</p>'
+        + '<h3>Suivre ses demandes</h3>' + bullets('Accueil › <b>Mes demandes en cours</b>, ou Locations › <b>Demandes</b>.',
+                  '<span class="tag t-w">Nouvelle</span> reçue, <span class="tag t-o">Planifiée</span> date de passage fixée, puis effectuée ou refusée avec la réponse du parc.',
+                  'Touchez une demande pour son détail ; ' + ui('Annuler la demande') + ' tant qu\'elle n\'est pas traitée.'),
+        phone('i_fiche_p', 'Les demandes depuis la fiche'), rev=True)))
+    ch.append(('Traiter les demandes', 'Côté grossiste : planifier, livrer, organiser la tournée',
+      split(steps('Les nouvelles demandes s\'affichent sur l\'<b>Accueil</b> (et dans Plus › Demandes des pharmacies). Touchez-en une.',
+                  '<b>Planifier</b> : choisissez la date de passage, ajoutez un message, ' + ui('Planifier le passage') + '. La pharmacie est prévenue par e-mail.',
+                  '<b>Livrer</b> : dans <b>Livrer</b>, touchez l\'équipement installé. La location démarre au nom du bénéficiaire et de la pharmacie.',
+                  '<b>Reprise, prolongation</b> : ' + ui('Reprise effectuée') + ' ou ' + ui('Accepter la prolongation') + '. <b>Problème</b> : réglé sur place ou repris pour réparation.',
+                  '<b>Refuser</b> : saisissez le motif, puis ' + ui('Refuser la demande') + '.'),
+        phone('i_req_g', 'Une demande de location à traiter'))
+      + split('<h3>Le planning des tournées</h3>' + bullets('Onglet ' + ui('Locations') + ' › <b>Planning</b> : les 14 prochains jours.',
+                  'Par jour, puis par commune : livraisons, reprises, fins de location, retards en rouge.',
+                  '<span class="tag t-w">À planifier</span> : demande pas encore datée.',
+                  'Touchez une ligne pour ouvrir la demande ou la fiche.')
+        + '<h3>Le suivi des pharmacies</h3><p>' + ui('Plus') + ' › <b>Suivi des pharmacies</b> : locations, loyers, retards, ordonnances à traiter et demandes de chaque pharmacie.</p>',
+        phone('i_plan', 'Locations › Planning'), rev=True)))
+    ch.append(('Les ordonnances', 'Côté pharmacie : scanner vers le serveur de la pharmacie',
+      split(key('Aucune ordonnance n\'est stockée en ligne', 'Le scan est enregistré <b>dans le dossier de la pharmacie</b> que vous choisissez (serveur, NAS ou dossier partagé ajouté dans l\'app Fichiers). Seule la vérification est enregistrée en ligne.')
+        + '<h3>Scanner et enregistrer</h3>' + steps('Fiche de la location › section <b>Ordonnance</b> › ' + ui('Scanner / voir') + '.',
+                  ui('Scanner l\'ordonnance') + ' : le scanner de documents d\'iOS détecte les bords et redresse la page ; ou ' + ui('Importer un fichier') + '.',
+                  'Le PDF est proposé à l\'enregistrement : choisissez le <b>dossier de la pharmacie</b> dans Fichiers.')
+        + '<h3>Vérifier</h3>' + steps('Touchez ' + ui('Confirmer') + ' (ou ' + ui('Nouvelle') + ' pour un renouvellement).', 'Date de l\'ordonnance, validité (1, 3, 6 ou 12 mois), numéro interne.', 'Cochez <b>La pharmacie détient l\'ordonnance originale</b>, puis ' + ui('Enregistrer') + '.')
+        + tip('Brancher le serveur de la pharmacie', 'App Fichiers › ⋯ › <b>Se connecter au serveur</b> : saisissez l\'adresse du serveur (smb://…) une fois ; il apparaît ensuite dans la liste des emplacements.'),
+        phone('i_ordo', 'Scanner, voir, vérifier'))))
+    ch.append(('Programmer les étiquettes', 'Grossiste et techniciens : nouvelle étiquette ou remplacement',
+      split(steps('Ouvrez la fiche de l\'équipement (Parc ou recherche).',
+                  'Section <b>Puce NFC</b> : ' + ui('Programmer une puce vierge') + '.',
+                  'Approchez l\'iPhone de l\'étiquette jusqu\'au message <b>Puce programmée</b>.',
+                  '<b>Testez</b> : onglet Scanner, la bonne fiche doit s\'ouvrir.')
+        + bullets('<b>Étiquette déjà programmée</b> : ' + ui('Associer une puce déjà programmée') + ' puis lisez-la.',
+                  '<b>Étiquette verrouillée</b> en lecture seule : utilisez-en une neuve.',
+                  'Étiquettes <b>anti-métal</b> sur toute surface métallique (lits, lève-personnes).'),
+        phone('i_tag', 'Écriture d\'une étiquette'))))
+    ch.append(('Le menu Plus', 'Gestion, guides et compte',
+      split(bullets('<b>Gestion</b> (grossiste) : demandes, planning, suivi des pharmacies, catalogue, facturation, entretien.',
+                    '<b>Demandes</b> (pharmacie) : mes demandes, catalogue.',
+                    '<b>Guides d\'utilisation</b> : ils s\'ouvrent dans l\'application ; le bouton de partage permet de les enregistrer ou de les envoyer.',
+                    '<b>Compte</b> : changer de mot de passe, se déconnecter.',
+                    '<b>Ouvrir la version web</b> : le portail dans Safari.')
+        + key('Confidentialité', 'Aucune donnée médicale. Les coordonnées des bénéficiaires sont chiffrées sur le serveur et anonymisées 3 ans après la dernière location. Les ordonnances restent à la pharmacie.'),
+        phone('i_more', 'Le menu Plus'))))
+    ch.append(('Problèmes fréquents', 'Les solutions rapides',
+      faq(('L\'étiquette ne se lit pas.', 'iPhone déverrouillé, coque épaisse ou métallique retirée. Approchez lentement le haut de l\'iPhone et ne bougez plus pendant une seconde.'),
+          ('« La lecture NFC n\'est pas disponible ».', 'Votre iPhone ne lit pas le NFC (avant l\'iPhone 7) : utilisez la saisie manuelle de la référence.'),
+          ('L\'écriture échoue.', 'L\'étiquette est verrouillée ou trop petite pour le lien : utilisez une étiquette neuve (NTAG 213 ou plus).'),
+          ('La position n\'est pas enregistrée.', 'Réglages › Tahiti Parc NFC › Position : « Lorsque l\'app est active ».'),
+          ('« Votre session a expiré ».', 'Reconnectez-vous ; si le mot de passe ne fonctionne plus, demandez une réinitialisation à l\'administrateur.'),
+          ('Je ne vois pas le dossier de la pharmacie.', 'Ajoutez le serveur dans l\'app Fichiers (Se connecter au serveur) depuis le réseau de l\'officine.'),
+          ('Un bouton attendu n\'apparaît pas.', 'Les boutons dépendent de l\'état du matériel et de votre rôle : vérifiez l\'état en haut de la fiche.'))
+      + f'<div class="contact"><b>Assistance</b><br>{g["CONTACT"]}</div>'))
+    intro = ('<div class="intro"><div class="c"><b>À qui s\'adresse ce guide ?</b>À tous les utilisateurs de l\'application iPhone : techniciens, grossiste et pharmacies.</div>'
+             '<div class="c"><b>Ce qu\'il vous faut</b>Un iPhone sous iOS 17 ou plus récent, l\'application Tahiti Parc NFC et votre identifiant personnel.</div></div>')
+    quick = [('Installer', 'L\'application Tahiti Parc NFC depuis le lien ManaProcess, puis autorisez NFC, position et appareil photo.'),
+             ('Se connecter', 'Votre identifiant personnel ; mot de passe de 10 caractères au moins à la première connexion.'),
+             ('Scanner', 'Onglet Scanner › Scanner une puce : la fiche s\'ouvre, le passage est enregistré avec la position.'),
+             ('Agir', 'Actions, photos horodatées, demandes et ordonnances depuis la fiche du matériel.')]
+    return {'quick': quick, 'chips': ('Sur iPhone',), 'file': 'guide-iphone.pdf', 'footer': 'MédiParc NFC · Guide de l\'application iPhone', 'intro': intro, 'chapters': ch,
+            'cover': ('Guide d\'utilisation', 'Application<br>iPhone', 'Tahiti Parc NFC : le scan des étiquettes, les fiches du matériel, les photos horodatées, les demandes et les ordonnances, dans votre poche.',
+                      'Pour tous les utilisateurs', [('i_home_g', 40), ('i_scan', 40)])}

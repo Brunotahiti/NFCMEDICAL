@@ -126,12 +126,16 @@ page suivante/précédente au clavier) avec un bouton **Télécharger le PDF**.
   suivi des pharmacies, parc, entretien, rapports, facturation, comptes, données). Réservé à l'équipe.
 - `guides/guide-technicien.pdf` : technicien et livreur, sur téléphone (tournée, scan NFC, livraison, reprise,
   désinfection, panne, contrôles, pose des étiquettes, aide-mémoire). Réservé à l'équipe.
+- `guides/guide-iphone.pdf` : application iPhone « Tahiti Parc NFC » (installation, autorisations, scan, fiche,
+  photos, demandes, ordonnances, étiquettes). Accessible sans connexion, dans les portails et dans l'application.
+  Ses illustrations sont des maquettes des écrans SwiftUI (`guides/outils/iphone/maquettes.py` puis `rendu.js`),
+  à remplacer par de vraies captures une fois l'application compilée.
 - `guides/pages/<guide>/` : pages en images et sommaire (`index.json`) servis à la liseuse
   (`/materiel/api/guides/<guide>/index.json` et `NN.jpg`, mêmes droits que le PDF).
 - Régénération : serveur de démonstration neuf
   (`DATA_DIR=<dossier vide> ADMIN_PASSWORD=Provisoire2026 COOKIE_SECURE=0 PORT=3456 node server/server.js`),
   puis `node guides/outils/capture.js <captures> <photo-lit.jpg> <photo-ordonnance.jpg>` et
-  `python3 guides/outils/build.py <captures> guides`. Le texte est dans `guides/outils/contenu.py`.
+  `python3 guides/outils/build.py <captures> guides [guide …]`. Le texte est dans `guides/outils/contenu.py`.
 
 ## Version ordinateur
 

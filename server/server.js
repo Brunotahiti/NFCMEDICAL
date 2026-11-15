@@ -674,20 +674,20 @@ async function api(req, res, route, url) {
     return json(req, res, 200, { ok: true }, { 'Set-Cookie': sessionCookie('', 0) });
   }
 
-  const guide = route.match(/^guides\/(pharmacie|administrateur|technicien)\.pdf$/);
+  const guide = route.match(/^guides\/(pharmacie|administrateur|technicien|iphone)\.pdf$/);
   const sendGuide = n => {
     const f = path.join(ROOT, 'guides', 'guide-' + n + '.pdf'); if (!fs.existsSync(f)) fail(404, 'Guide introuvable.');
     return send(req, res, 200, fs.readFileSync(f), 'application/pdf', { 'Cache-Control': 'private, max-age=3600',
       'Content-Disposition': 'attachment; filename="Guide-MediParc-' + n.charAt(0).toUpperCase() + n.slice(1) + '.pdf"' });
   };
-  if (guide && m === 'GET' && guide[1] === 'pharmacie') return sendGuide('pharmacie');
+  if (guide && m === 'GET' && (guide[1] === 'pharmacie' || guide[1] === 'iphone')) return sendGuide(guide[1]);
   /* Liseuse intégrée : sommaire et pages en images (mêmes droits que le PDF). */
-  const gpage = route.match(/^guides\/(pharmacie|administrateur|technicien)\/(index\.json|\d{2}\.jpg)$/);
+  const gpage = route.match(/^guides\/(pharmacie|administrateur|technicien|iphone)\/(index\.json|\d{2}\.jpg)$/);
   const sendPage = (n, f) => {
     const file = path.join(ROOT, 'guides', 'pages', n, f); if (!fs.existsSync(file)) fail(404, 'Page introuvable.');
     return send(req, res, 200, fs.readFileSync(file), f.endsWith('.json') ? 'application/json; charset=utf-8' : 'image/jpeg', { 'Cache-Control': 'private, max-age=3600' });
   };
-  if (gpage && m === 'GET' && gpage[1] === 'pharmacie') return sendPage(gpage[1], gpage[2]);
+  if (gpage && m === 'GET' && (gpage[1] === 'pharmacie' || gpage[1] === 'iphone')) return sendPage(gpage[1], gpage[2]);
   const u = currentUser(req);
   if (!u) fail(401, 'Connexion requise.');
   if (guide && m === 'GET') { needStaff(u); return sendGuide(guide[1]); }

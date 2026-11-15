@@ -47,6 +47,7 @@ struct MoreView: View {
                         guide("administrateur", "Guide du grossiste", "person.badge.key")
                     }
                     guide("pharmacie", model.isStaff ? "Guide du portail pharmacie" : "Guide d'utilisation", "cross.case")
+                    guide("iphone", "Guide de l'application iPhone", "iphone")
                 } header: { Text("Guides d'utilisation") } footer: { Text("Le guide s'ouvre dans l'application ; le bouton de partage permet de l'enregistrer ou de l'envoyer.") }
                 Section("Confidentialité") {
                     Label("Aucune ordonnance n'est stockée en ligne : elles restent sur le serveur de votre pharmacie.", systemImage: "lock.shield")

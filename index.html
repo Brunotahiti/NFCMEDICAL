@@ -1287,7 +1287,7 @@ function moreSheet(){
   if(STAFF){it.push(['data-act="settings"','gear','Paramètres','Puces NFC et adresse des liens'],['data-mode="plan"','pin','Plan du matériel','Où se trouve chaque équipement'],['data-rtab="fact"','clip','Facturation','Montants par mois et par pharmacie']);
     if(ONLINE&&ROLE==='admin')it.push(['data-act="accounts"','users','Comptes et pharmacies','Accès des pharmacies et de l\'équipe']);}
   else it.push(['data-tab="fact"','clip','Facturation','Vos montants par mois'],['data-act="my-mail"','mail','E-mail des rappels',PHARM[0]&&PHARM[0].em?esc(PHARM[0].em):'Aucune adresse enregistrée']);
-  if(ONLINE){if(STAFF)it.push(['data-guide="administrateur"','book','Guide du grossiste','Lire ou télécharger · sur ordinateur'],['data-guide="technicien"','book','Guide du technicien','Lire ou télécharger · scan NFC sur téléphone'],['data-guide="pharmacie"','book','Guide du portail pharmacie','Celui de vos pharmacies clientes']);else it.push(['data-guide="pharmacie"','book','Guide d\'utilisation','Lire ou télécharger le guide du portail']);}
+  if(ONLINE){if(STAFF)it.push(['data-guide="administrateur"','book','Guide du grossiste','Lire ou télécharger · sur ordinateur'],['data-guide="technicien"','book','Guide du technicien','Lire ou télécharger · scan NFC sur téléphone'],['data-guide="pharmacie"','book','Guide du portail pharmacie','Celui de vos pharmacies clientes'],['data-guide="iphone"','book','Guide de l\'application iPhone','Tahiti Parc NFC : scan, fiches, demandes']);else it.push(['data-guide="pharmacie"','book','Guide d\'utilisation','Lire ou télécharger le guide du portail'],['data-guide="iphone"','book','Guide de l\'application iPhone','Tahiti Parc NFC sur votre iPhone']);}
   if(ONLINE)it.push(['data-act="change-pwd"','tag','Changer le mot de passe','Au moins 10 caractères'],['data-act="logout"','ret','Se déconnecter','Fermer la session sur cet appareil']);
   it.push(['data-act="credits"','clip','Crédits photos','Auteurs et licences']);
   menuSheet('Plus',it);
@@ -1921,7 +1921,7 @@ function phSheet(fid){
 }
 
 /* ---------- Liseuse des guides d'utilisation ---------- */
-var GUIDES={pharmacie:'Guide du portail pharmacie',administrateur:'Guide du grossiste',technicien:'Guide du technicien'},rdG=null,rdN=0,rdCur=1,rdZoom=1,rdObs=null;
+var GUIDES={pharmacie:'Guide du portail pharmacie',administrateur:'Guide du grossiste',technicien:'Guide du technicien',iphone:'Guide de l\'application iPhone'},rdG=null,rdN=0,rdCur=1,rdZoom=1,rdObs=null;
 function pad2(n){return (n<10?'0':'')+n;}
 function rdUrl(f){return (ONLINE?API:'/materiel/api/')+'guides/'+rdG+'/'+f;}
 function openGuide(n){
